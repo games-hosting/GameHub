@@ -6,6 +6,7 @@
   <title>GAMES MEGAFOLDER</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+    
     body {
       margin: 0;
       padding: 20px;
@@ -16,17 +17,29 @@
       text-align: center;
       overflow-x: hidden;
       position: relative;
+      transition: background 0.8s ease, filter 0.8s ease;
     }
-    body::before {
+
+    /* Background types */
+    body.no-bg { background: #000000; }
+    body.dots-bg { background: #0a0a0a; }
+    body.normal-bg::before {
       content: "";
       position: absolute;
       inset: 0;
-      background:
-        radial-gradient(circle at 20% 30%, rgba(0, 255, 255, 0.03) 0%, transparent 60%),
-        radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.03) 0%, transparent 60%);
+      background: radial-gradient(circle at 20% 30%, rgba(0, 255, 255, 0.03) 0%, transparent 60%), radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.03) 0%, transparent 60%);
       z-index: -2;
       pointer-events: none;
     }
+    body.meme-bg { background: url('https://i.imgur.com/nevergonna.gif') center/cover fixed; }
+
+    /* Color themes */
+    body.theme-rgb { animation: rgbShift 12s linear infinite; }
+    @keyframes rgbShift { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+    body.theme-neon { color: #00ffff; }
+    body.theme-neon h1, body.theme-neon .random-btn { filter: brightness(1.4); }
+    body.theme-mono { filter: grayscale(100%) brightness(1.2); }
+
     .topo-bg {
       position: fixed;
       inset: 0;
@@ -55,6 +68,7 @@
       50% { transform: translate(0%, 0%) rotate(180deg) scale(1.2); opacity: 0.6; }
       100% { transform: translate(50%, 50%) rotate(360deg) scale(0.8); opacity: 0.3; }
     }
+
     h1 {
       font-size: 3em;
       background: linear-gradient(45deg, #ff00ff, #00ffff, #ffff00);
@@ -70,12 +84,7 @@
       from { filter: drop-shadow(0 0 10px #00ffff); }
       to { filter: drop-shadow(0 0 30px #ff00ff); }
     }
-    p {
-      font-size: 1.2em;
-      color: #ccc;
-      max-width: 600px;
-      margin: 0 auto 40px;
-    }
+    p { font-size: 1.2em; color: #ccc; max-width: 600px; margin: 0 auto 40px; }
     .random-btn {
       display: inline-block;
       background: linear-gradient(45deg, #00ffff, #ffff00, #ff00ff);
@@ -125,11 +134,7 @@
       color: #ffff00;
       text-shadow: 0 0 10px #ffff00aa;
     }
-    .game-card p {
-      font-size: 0.9em;
-      color: #aaa;
-      margin: 0 0 15px;
-    }
+    .game-card p { font-size: 0.9em; color: #aaa; margin: 0 0 15px; }
     a {
       display: block;
       background: linear-gradient(45deg, #ff4757, #ff6b7a);
@@ -153,24 +158,6 @@
       position: relative;
       z-index: 1;
     }
-    /* Secret message styling */
-    #secret-msg {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 2.5em;
-      color: #ff00ff;
-      background: rgba(0,0,0,0.95);
-      padding: 40px 80px;
-      border-radius: 15px;
-      border: 3px solid #00ffff;
-      box-shadow: 0 0 50px #ff00ff;
-      z-index: 9999;
-      font-weight: bold;
-      text-shadow: 0 0 15px #00ffff;
-      display: none;
-    }
   </style>
 </head>
 <body>
@@ -185,7 +172,6 @@
   <h1>🚀 MEGAFOLDER - GAMES</h1>
   <p>Click any game & have fun.</p>
 
-  <!-- Random Game Button -->
   <button class="random-btn" onclick="launchRandom()">RANDOM GAME</button>
 
   <div class="grid">
@@ -271,9 +257,6 @@
     </div>
   </div>
 
-  <!-- Secret message overlay -->
-  <div id="secret-msg">you did it, you sick fuck, redirecting you now..</div>
-
   <footer>gaming</footer>
 
   <script>
@@ -300,28 +283,20 @@
       window.open(links[randomIndex], '_blank');
     }
 
-    // Konami code trigger
-    const konami = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','KeyB','KeyA'];
-    let konamiPos = 0;
-
-    document.addEventListener('keydown', e => {
-      if (e.code === konami[konamiPos]) {
-        konamiPos++;
-        if (konamiPos === konami.length) {
-          // Show message
-          document.getElementById('secret-msg').style.display = 'block';
-          
-          // Redirect after 4.5 seconds
-          setTimeout(() => {
-            window.location.href = 'secret.html'; // change this to your secret game/page when ready
-          }, 4500);
-
-          konamiPos = 0;
-        }
-      } else {
-        konamiPos = 0;
+    // Load saved settings
+    const saved = JSON.parse(localStorage.getItem('hubSettings')) || {};
+    if (saved.bgType) {
+      document.body.classList.add(saved.bgType + '-bg');
+      if (saved.bgType === 'solid' && saved.solidColor) {
+        document.body.style.background = saved.solidColor;
       }
-    });
+      if (saved.bgType === 'custom' && saved.customUrl) {
+        document.body.style.background = `url("${saved.customUrl}") center/cover fixed`;
+      }
+      if (saved.colorTheme && saved.colorTheme !== 'default') {
+        document.body.classList.add('theme-' + saved.colorTheme);
+      }
+    }
   </script>
 </body>
 </html>
