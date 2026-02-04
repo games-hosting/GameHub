@@ -159,29 +159,6 @@
       z-index: 1;
     }
   </style>
-  #searchBar {
-  width: 100%;
-  max-width: 520px;
-  padding: 14px 22px;
-  margin: 0 auto 35px;
-  display: block;
-  font-size: 1.2em;
-  border-radius: 50px;
-  border: 2px solid #00ffff;
-  background: rgba(0, 0, 0, 0.6);
-  color: #00ffff;
-  font-family: 'Orbitron', monospace;
-  outline: none;
-  box-shadow: 0 0 25px rgba(0,255,255,0.25);
-}
-
-#searchBar::placeholder {
-  color: #88ffff;
-}
-
-#searchBar:focus {
-  box-shadow: 0 0 40px rgba(0,255,255,0.6);
-}
 </head>
 <body>
   <div class="topo-bg" id="topo">
@@ -192,10 +169,8 @@
     <div class="contour" style="top:55%; left:10%; animation-delay:60s;"></div>
   </div>
 
-  
   <h1>🚀 MEGAFOLDER - GAMES</h1>
   <p>Click any game & have fun.</p>
-  <input id="searchBar" type="text" placeholder="Search games..." />
 
   <button class="random-btn" onclick="launchRandom()">RANDOM GAME</button>
 
@@ -322,18 +297,6 @@
         document.body.classList.add('theme-' + saved.colorTheme);
       }
     }
-    const searchBar = document.getElementById("searchBar");
-const cards = document.querySelectorAll(".game-card");
-
-searchBar.addEventListener("input", () => {
-  const query = searchBar.value.toLowerCase();
-  cards.forEach(card => {
-    card.style.display = card.innerText.toLowerCase().includes(query)
-      ? ""
-      : "none";
-  });
-});
-
   </script>
 </body>
 </html>
