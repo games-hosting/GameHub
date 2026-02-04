@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>gamble your life away</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: #0a0a0a;
+      color: #0ff;
+      font-family: 'Orbitron', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    body::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 30%, rgba(255,255,0,0.03) 0%, transparent 70%);
+      pointer-events: none;
+      animation: pulse 8s ease-in-out infinite;
+      z-index: -2;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+    }
+    h1 {
+      font-size: 3.2em;
+      background: linear-gradient(45deg, #ff00ff, #00ffff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 15px 0;
+      text-shadow: 0 0 25px #00ffff;
+    }
+    #board {
+      position: relative;
+      width: 520px;
+      height: 620px;
+      background: #0f0f1a;
+      border: 5px solid #0ff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 0 60px rgba(0,255,255,0.5);
+    }
+    canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+    }
+    .controls {
+      margin: 25px 0;
+      text-align: center;
+    }
+    .credits {
+      font-size: 2.5em;
+      color: #ffff00;
+      text-shadow: 0 0 20px #ffff00;
+      margin: 15px 0;
+    }
+    .multi-btn {
+      background: linear-gradient(45deg, #00ffff, #ffff00);
+      color: #000;
+      border: none;
+      padding: 14px 32px;
+      font-size: 1.3em;
+      border-radius: 50px;
+      cursor: pointer;
+      margin: 8px;
+      transition: all 0.25s;
+      box-shadow: 0 0 25px rgba(0,255,255,0.5);
+      font-weight: bold;
+    }
+    .multi-btn:hover:not(:disabled) {
+      transform: scale(1.12);
+      box-shadow: 0 0 45px rgba(255,255,0,0.8);
+    }
+    .multi-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    #result {
+      font-size: 2.8em;
+      margin: 20px 0;
+      min-height: 70px;
+      font-weight: bold;
+    }
+    .win { color: #00ff00; text-shadow: 0 0 30px #00ff00; animation: flash 0.6s infinite; }
+    .big-win { animation: shake 0.5s, flash 0.4s infinite; }
+    .lose { color: #ff4444; text-shadow: 0 0 25px #ff4444; }
+    @keyframes flash { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+  </style>
+</head>
+<body>
+  <h1>Plinko</h1>
+  <div class="credits">Credits: <span id="credits">1000</span></div>
+
+  <div id="board">
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div class="controls">
+    <button class="multi-btn" onclick="dropBalls(1)">DROP 1 (10)</button>
+    <button class="multi-btn" onclick="dropBalls(10)">DROP 10 (100)</button>
+    <button class="multi-btn" onclick="dropBalls(50)">DROP 50 (500)</button>
+    <button class="multi-btn" onclick="dropBalls(100)">DROP 100 (1000)</button>
+    <button class="multi-btn" onclick="dropBalls(500)">DROP 500 (5000)</button>
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const creditsEl = document.getElementById('credits');
+    const resultEl = document.getElementById('result');
+
+    let credits = 1000;
+    canvas.width = 520;
+    canvas.height = 620;
+
+    const cols = 11;
+    const rows = 18; // more rows = faster drops, tighter feel
+    const pegRadius = 6;
+    const ballRadius = 12;
+    const slotValues = [0, 0.5, 1, 2, 5, 10, 5, 2, 1, 0.5, 0];
+    const slotColors = ['#444', '#666', '#888', '#aaa', '#ff0', '#ff00ff', '#ff0', '#aaa', '#888', '#666', '#444'];
+
+    let pegs = [];
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols - (row % 2); col++) {
+        const offset = (row % 2 === 0) ? 0 : (canvas.width / (cols - 1)) / 2;
+        const x = offset + (canvas.width / (cols - 1)) * col;
+        const y = 60 + row * 28; // tighter vertical spacing
+        pegs.push({x, y});
+      }
+    }
+
+    let balls = [];
+    let particles = [];
+    let animationFrame = null;
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playBounce() {
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = 220 + Math.random() * 180;
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.07);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.07);
+    }
+
+    function playWin(amount) {
+      const osc = audioCtx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.35);
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.5);
+
+      if (amount >= 1000) {
+        setTimeout(() => {
+          const osc2 = audioCtx.createOscillator();
+          osc2.type = 'sawtooth';
+          osc2.frequency.value = 1100;
+          const g2 = audioCtx.createGain();
+          g2.gain.setValueAtTime(0.45, audioCtx.currentTime);
+          g2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+          osc2.connect(g2);
+          g2.connect(audioCtx.destination);
+          osc2.start();
+          osc2.stop(audioCtx.currentTime + 0.25);
+        }, 150);
+      }
+    }
+
+    function playLose() {
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.value = 140;
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.35);
+    }
+
+    function createParticles(x, y, count = 20, color = '#ffff00') {
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x, y,
+          vx: (Math.random() - 0.5) * 10,
+          vy: (Math.random() - 0.5) * 10 - 5,
+          life: 1,
+          color
+        });
+      }
+    }
+
+    function drawParticles() {
+      particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5 * p.life, 0, Math.PI * 2);
+        ctx.fill();
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.25;
+        p.life -= 0.03;
+      });
+      particles = particles.filter(p => p.life > 0);
+      ctx.globalAlpha = 1;
+    }
+
+    function drawPegs() {
+      ctx.fillStyle = '#0ff';
+      pegs.forEach(peg => {
+        ctx.beginPath();
+        ctx.arc(peg.x, peg.y, pegRadius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawSlots() {
+      const slotWidth = canvas.width / cols;
+      for (let i = 0; i < cols; i++) {
+        const x = i * slotWidth;
+        ctx.fillStyle = slotColors[i];
+        ctx.fillRect(x, canvas.height - 70, slotWidth, 70);
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 28px Orbitron';
+        ctx.textAlign = 'center';
+        ctx.fillText(slotValues[i] + 'x', x + slotWidth/2, canvas.height - 30);
+      }
+    }
+
+    drawPegs();
+    drawSlots();
+
+    function dropBalls(count) {
+      const cost = 10 * count;
+      if (credits < cost) {
+        resultEl.textContent = "Not enough credits, fam 😭";
+        resultEl.className = 'lose';
+        return;
+      }
+
+      credits -= cost;
+      creditsEl.textContent = credits;
+      resultEl.textContent = `Dropping ${count} balls...`;
+      resultEl.className = '';
+
+      for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+          const ball = {
+            x: canvas.width / 2 + (Math.random() - 0.5) * 80,
+            y: 40,
+            vx: (Math.random() - 0.5) * 2.5,
+            vy: 0,
+            radius: ballRadius,
+            path: [],
+            trailColor: `hsl(${Math.random()*60 + 180}, 100%, 65%)`
+          };
+          balls.push(ball);
+          createParticles(ball.x, ball.y, 15, '#00ffff');
+          if (animationFrame === null) animate();
+        }, i * 50); // faster stagger for multi-drop chaos
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPegs();
+      drawSlots();
+      drawParticles();
+
+      balls = balls.filter(ball => {
+        ball.vy += 0.55; // stronger gravity = faster fall, less floaty
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+        ball.path.push({x: ball.x, y: ball.y});
+        if (ball.path.length > 35) ball.path.shift();
+
+        ctx.strokeStyle = ball.trailColor;
+        ctx.lineWidth = 5;
+        ctx.globalAlpha = 0.75;
+        ctx.beginPath();
+        ball.path.forEach((p, i) => {
+          if (i === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        });
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        pegs.forEach(peg => {
+          const dx = ball.x - peg.x;
+          const dy = ball.y - peg.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < ball.radius + pegRadius) {
+            const angle = Math.atan2(dy, dx);
+            ball.vx = Math.cos(angle) * 3.5; // weaker bounce
+            ball.vy = Math.sin(angle) * 3.5 + 0.5; // small upward nudge only
+            ball.vx += (Math.random() - 0.5) * 3; // random zig-zag
+            playBounce();
+            createParticles(ball.x, ball.y, 6, '#0ff');
+          }
+        });
+
+        if (ball.x < ball.radius) { ball.x = ball.radius; ball.vx *= -0.85; }
+        if (ball.x > canvas.width - ball.radius) { ball.x = canvas.width - ball.radius; ball.vx *= -0.85; }
+
+        if (ball.y > canvas.height - ball.radius - 80) {
+          const slotIndex = Math.min(cols - 1, Math.max(0, Math.floor(ball.x / (canvas.width / cols))));
+          const multiplier = slotValues[slotIndex];
+          const win = Math.round(10 * multiplier); // base cost per ball was 10
+          credits += win;
+          creditsEl.textContent = credits;
+
+          if (win > 0) {
+            resultEl.textContent = `+${win} credits (${multiplier}x)`;
+            resultEl.className = win >= 50 ? 'big-win' : 'win';
+            playWin(win);
+            createParticles(ball.x, ball.y, 35, win >= 100 ? '#ff00ff' : '#00ff00');
+            if (win >= 100) {
+              document.body.style.background = '#ffff00';
+              setTimeout(() => document.body.style.background = '#0a0a0a', 250);
+            }
+          } else {
+            resultEl.textContent = "0x... rough";
+            resultEl.className = 'lose';
+            playLose();
+          }
+
+          return false;
+        }
+
+        return true;
+      });
+
+      if (balls.length > 0) {
+        animationFrame = requestAnimationFrame(animate);
+      } else {
+        animationFrame = null;
+      }
+    }
+  </script>
+</body>
+</html>
