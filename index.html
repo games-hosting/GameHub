@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -6,7 +6,6 @@
   <title>GAMES MEGAFOLDER</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-
 
     body {
       margin: 0;
@@ -20,7 +19,6 @@
       position: relative;
     }
 
-
     body::before {
       content: "";
       position: absolute;
@@ -32,7 +30,6 @@
       pointer-events: none;
     }
 
-
     .topo-bg {
       position: fixed;
       inset: 0;
@@ -40,7 +37,6 @@
       pointer-events: none;
       overflow: hidden;
     }
-
 
     .contour {
       position: absolute;
@@ -53,7 +49,6 @@
       box-shadow: 0 0 15px rgba(0, 255, 255, 0.08);
     }
 
-
     .contour:nth-child(odd) {
       border-color: rgba(255, 0, 255, 0.10);
       box-shadow: 0 0 20px rgba(255, 0, 255, 0.06);
@@ -61,13 +56,11 @@
       animation-direction: reverse;
     }
 
-
     @keyframes contourMove {
       0% { transform: translate(-50%, -50%) rotate(0deg) scale(0.8); opacity: 0.3; }
       50% { transform: translate(0%, 0%) rotate(180deg) scale(1.2); opacity: 0.6; }
       100% { transform: translate(50%, 50%) rotate(360deg) scale(0.8); opacity: 0.3; }
     }
-
 
     h1 {
       font-size: 3em;
@@ -81,12 +74,10 @@
       z-index: 1;
     }
 
-
     @keyframes glow {
       from { filter: drop-shadow(0 0 10px #00ffff); }
       to { filter: drop-shadow(0 0 30px #ff00ff); }
     }
-
 
     p {
       font-size: 1.2em;
@@ -94,7 +85,6 @@
       max-width: 600px;
       margin: 0 auto 40px;
     }
-
 
     .random-btn {
       display: inline-block;
@@ -112,13 +102,11 @@
       border: none;
     }
 
-
     .random-btn:hover {
       transform: scale(1.08) translateY(-4px);
       box-shadow: 0 0 50px rgba(255, 255, 0, 0.7);
       background: linear-gradient(45deg, #ffff00, #ff00ff, #00ffff);
     }
-
 
     .grid {
       display: grid;
@@ -130,7 +118,6 @@
       z-index: 1;
     }
 
-
     .game-card {
       background: rgba(255,255,255,0.05);
       backdrop-filter: blur(12px);
@@ -141,13 +128,11 @@
       box-shadow: 0 4px 30px rgba(0,0,0,0.3);
     }
 
-
     .game-card:hover {
       transform: scale(1.06) translateY(-5px);
       box-shadow: 0 0 40px rgba(0, 255, 255, 0.4);
       border-color: rgba(0, 255, 255, 0.5);
     }
-
 
     .game-card h3 {
       font-size: 1.5em;
@@ -156,13 +141,11 @@
       text-shadow: 0 0 10px #ffff00aa;
     }
 
-
     .game-card p {
       font-size: 0.9em;
       color: #aaa;
       margin: 0 0 15px;
     }
-
 
     a {
       display: block;
@@ -176,13 +159,11 @@
       transition: all 0.3s;
     }
 
-
     a:hover {
       background: linear-gradient(45deg, #ff6b7a, #ff4757);
       transform: translateY(-3px);
       box-shadow: 0 10px 20px rgba(255,71,87,0.4);
     }
-
 
     footer {
       margin-top: 50px;
@@ -195,7 +176,6 @@
 </head>
 <body>
 
-
   <div class="topo-bg" id="topo">
     <div class="contour" style="top:10%; left:20%; animation-delay:0s;"></div>
     <div class="contour" style="top:40%; left:60%; animation-delay:15s;"></div>
@@ -204,121 +184,115 @@
     <div class="contour" style="top:55%; left:10%; animation-delay:60s;"></div>
   </div>
 
-
   <h1>🚀 MEGAFOLDER - GAMES</h1>
   <p>Double-click any game & have fun.</p>
 
-
   <!-- Random Game Button -->
   <button class="random-btn" onclick="launchRandom()">RANDOM GAME</button>
-
 
   <div class="grid">
     <div class="game-card">
       <h3>🌀 Backrooms</h3>
       <p>Endless yellow hell.</p>
-      <a href="games/backrooms.html">LAUNCH</a>
+      <a href="backrooms.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🐷 Bacon May Die</h3>
       <p>Pig vs zombie hordes.</p>
-      <a href="games/baconmaydie.html">LAUNCH</a>
+      <a href="baconmaydie.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🃏 Balatro</h3>
       <p>Poker roguelite madness.</p>
-      <a href="games/balatro.html">LAUNCH</a>
+      <a href="balatro.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🔫 Buckshot Roulette</h3>
       <p>Shotgun tension.</p>
-      <a href="games/buckshot.html">LAUNCH</a>
+      <a href="buckshot.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🐦 Flappy Bird</h3>
       <p>Tap to flap.</p>
-      <a href="games/flappy.html">LAUNCH</a>
+      <a href="flappy.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🦍 Flying Gorilla</h3>
       <p>Dodge pillars for bananas.</p>
-      <a href="games/flying-gorilla.html">LAUNCH</a>
+      <a href="flying-gorilla.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🚗 GTA Vice City</h3>
       <p>80s Miami open world.</p>
-      <a href="games/gta-vice-city.html">LAUNCH</a>
+      <a href="gta-vice-city.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>⛏️ Minecraft</h3>
       <p>Eaglercraft build mode.</p>
-      <a href="games/minecraft.html">LAUNCH</a>
+      <a href="minecraft.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🌱 PvZ</h3>
       <p>Zombie lawn defense.</p>
-      <a href="games/pvz.html">LAUNCH</a>
+      <a href="pvz.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>⭐ SM64</h3>
       <p>Star collecting 3D platformer.</p>
-      <a href="games/sm64.html">LAUNCH</a>
+      <a href="sm64.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🚪 That's Not My Neighbor</h3>
       <p>Doppelganger door checker.</p>
-      <a href="games/notmyneighbor.html">LAUNCH</a>
+      <a href="notmyneighbor.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>💀 Ultrakill</h3>
       <p>Blood-fueled FPS frenzy.</p>
-      <a href="games/ultrakill.html">LAUNCH</a>
+      <a href="ultrakill.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>❤️ Undertale</h3>
       <p>Mercy or genocide RPG.</p>
-      <a href="games/undertale.html">LAUNCH</a>
+      <a href="undertale.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🔴 World's Hardest Game</h3>
       <p>Red square rage maze.</p>
-      <a href="games/worldshardest.html">LAUNCH</a>
+      <a href="worldshardest.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🐍 Snake</h3>
       <p>Eat food, grow long—don't crash.</p>
-      <a href="games/snake.html">LAUNCH</a>
+      <a href="snake.html">LAUNCH</a>
     </div>
   </div>
 
-
   <footer>gaming</footer>
-
 
   <script>
     function launchRandom() {
       const links = [
-        "games/backrooms.html",
-        "games/baconmaydie.html",
-        "games/balatro.html",
-        "games/buckshot.html",
-        "games/flappy.html",
-        "games/flying-gorilla.html",
-        "games/gta-vice-city.html",
-        "games/minecraft.html",
-        "games/pvz.html",
-        "games/sm64.html",
-        "games/notmyneighbor.html",
-        "games/ultrakill.html",
-        "games/undertale.html",
-        "games/worldshardest.html",
-        "games/snake.html"
+        "backrooms.html",
+        "baconmaydie.html",
+        "balatro.html",
+        "buckshot.html",
+        "flappy.html",
+        "flying-gorilla.html",
+        "gta-vice-city.html",
+        "minecraft.html",
+        "pvz.html",
+        "sm64.html",
+        "notmyneighbor.html",
+        "ultrakill.html",
+        "undertale.html",
+        "worldshardest.html",
+        "snake.html"
       ];
       const randomIndex = Math.floor(Math.random() * links.length);
       window.open(links[randomIndex], '_blank');
     }
   </script>
-
 
 </body>
 </html>
