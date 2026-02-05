@@ -74,13 +74,28 @@
       font-weight: 500;
       cursor: pointer;
       transition: background 0.2s;
-      margin-bottom: 16px;
+      margin: 16px 0 24px;
     }
     .sign-in-btn:hover {
       background: #1765cc;
     }
+    .use-another-btn {
+      width: 100%;
+      padding: 12px;
+      background: white;
+      color: #1a73e8;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 16px;
+    }
+    .use-another-btn:hover {
+      background: #f8f9fa;
+    }
     .footer-links {
-      margin-top: 32px;
       font-size: 12px;
       color: #5f6368;
       text-align: center;
@@ -113,8 +128,9 @@
 
     <button class="sign-in-btn" id="signInBtn">Sign in</button>
 
+    <button class="use-another-btn" onclick="window.location.href='https://classroom.google.com'">Use another account</button>
+
     <div class="footer-links">
-      <a href="https://classroom.google.com">Use another account</a>
       <a href="hub.html">Login with GameHub</a>
       <a href="https://policies.google.com/privacy">Privacy</a>
       <a href="https://policies.google.com/terms">Terms</a>
@@ -127,7 +143,7 @@
     const passwordInput = document.getElementById('password');
     const signInBtn = document.getElementById('signInBtn');
 
-    // Show password field after email enter
+    // Show password on email enter
     emailInput.addEventListener('keypress', e => {
       if (e.key === 'Enter') {
         passwordGroup.style.display = 'block';
@@ -135,7 +151,7 @@
       }
     });
 
-    // On password enter or sign in button → always real Classroom
+    // Sign in actions → real Classroom
     function goToClassroom() {
       window.location.href = 'https://classroom.google.com';
     }
