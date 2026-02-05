@@ -74,43 +74,16 @@
       font-weight: 500;
       cursor: pointer;
       transition: background 0.2s;
+      margin-bottom: 16px;
     }
     .sign-in-btn:hover {
       background: #1765cc;
-    }
-    .btn-group {
-      margin: 24px 0;
-    }
-    .btn {
-      display: block;
-      width: 100%;
-      padding: 12px;
-      margin: 8px 0;
-      border: 1px solid #dadce0;
-      border-radius: 4px;
-      font-size: 14px;
-      font-weight: 500;
-      text-decoration: none;
-      color: #1a73e8;
-      background: white;
-      transition: background 0.2s;
-    }
-    .btn:hover {
-      background: #f8f9fa;
-    }
-    .btn.gamehub {
-      background: linear-gradient(45deg, #ff00ff, #00ffff);
-      color: #000;
-      border: none;
-      font-weight: bold;
-    }
-    .btn.gamehub:hover {
-      background: linear-gradient(45deg, #00ffff, #ff00ff);
     }
     .footer-links {
       margin-top: 32px;
       font-size: 12px;
       color: #5f6368;
+      text-align: center;
     }
     .footer-links a {
       color: #1a73e8;
@@ -140,12 +113,9 @@
 
     <button class="sign-in-btn" id="signInBtn">Sign in</button>
 
-    <div class="btn-group">
-      <a href="https://classroom.google.com" class="btn">Use another account</a>
-      <a href="hub.html" class="btn gamehub">Login with GameHub</a>
-    </div>
-
     <div class="footer-links">
+      <a href="https://classroom.google.com">Use another account</a>
+      <a href="hub.html">Login with GameHub</a>
       <a href="https://policies.google.com/privacy">Privacy</a>
       <a href="https://policies.google.com/terms">Terms</a>
     </div>
@@ -157,7 +127,7 @@
     const passwordInput = document.getElementById('password');
     const signInBtn = document.getElementById('signInBtn');
 
-    // Fake flow: after email, show password field
+    // Show password field after email enter
     emailInput.addEventListener('keypress', e => {
       if (e.key === 'Enter') {
         passwordGroup.style.display = 'block';
@@ -165,12 +135,15 @@
       }
     });
 
-    // On password enter or button click → always go to real Classroom
-    signInBtn.onclick = passwordInput.onkeypress = e => {
-      if (e.key === 'Enter' || e.type === 'click') {
-        window.location.href = 'https://classroom.google.com';
-      }
-    };
+    // On password enter or sign in button → always real Classroom
+    function goToClassroom() {
+      window.location.href = 'https://classroom.google.com';
+    }
+
+    signInBtn.onclick = goToClassroom;
+    passwordInput.addEventListener('keypress', e => {
+      if (e.key === 'Enter') goToClassroom();
+    });
   </script>
 </body>
 </html>
