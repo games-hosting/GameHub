@@ -20,7 +20,7 @@
       transition: color 0.8s ease, filter 0.8s ease, text-shadow 0.8s ease;
     }
 
-    /* Topo lines + floating dots (locked in) */
+    /* Topo lines + floating dots mix */
     body::before {
       content: "";
       position: absolute;
@@ -252,7 +252,7 @@
       display: none;
     }
 
-    /* Settings button */
+    /* Settings button top-right */
     #settings-btn {
       position: fixed;
       top: 20px;
@@ -278,7 +278,7 @@
       box-shadow: 0 0 40px rgba(0,255,255,0.7);
     }
 
-    /* Modal */
+    /* Settings modal */
     #settings-modal {
       display: none;
       position: fixed;
@@ -361,7 +361,7 @@
   <!-- Settings modal -->
   <div id="settings-modal">
     <div class="modal-content">
-      <span class="close-btn" onclick="closeSettings()">×</span>
+      <span class="close-btn" onclick="document.getElementById('settings-modal').style.display='none'">×</span>
       <h1>Hub Settings</h1>
 
       <label>Color Scheme</label>
@@ -380,10 +380,10 @@
       <input type="color" id="accentColor" value="#00ffff">
 
       <label>Text Brightness</label>
-      <input type="range" id="textBrightness" min="0.8" max="1.6" step="0.1" value="1.0">
+      <input type="range" id="brightness" min="0.8" max="1.6" step="0.1" value="1.0">
 
       <label>Glow Intensity</label>
-      <input type="range" id="glowIntensity" min="0.5" max="2.0" step="0.1" value="1.0">
+      <input type="range" id="glow" min="0.5" max="2.0" step="0.1" value="1.0">
 
       <button onclick="saveSettings()">SAVE & APPLY</button>
     </div>
@@ -411,7 +411,76 @@
       <p>Pig vs endless zombie hordes, brutal action, gore everywhere.</p>
       <a href="baconmaydie.html">LAUNCH</a>
     </div>
-    <!-- ... all your other cards here, same as before ... -->
+    <div class="game-card">
+      <h3>🃏 Balatro</h3>
+      <p>Poker roguelite madness, insane combos, high-score chases.</p>
+      <a href="balatro.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🔫 Buckshot Roulette</h3>
+      <p>Shotgun tension, Russian roulette but with buckshot, pure stress.</p>
+      <a href="buckshot.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>📌 Plinko</h3>
+      <p>Drop ball, watch it bounce, fake cash rain, pure dopamine.</p>
+      <a href="plinko.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🐦 Flappy Bird</h3>
+      <p>Tap to flap, endless rage, one of the hardest classics ever.</p>
+      <a href="flappy.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🦍 Flying Gorilla</h3>
+      <p>Dodge pillars for bananas, gorilla flight chaos, pure fun.</p>
+      <a href="flying-gorilla.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🚗 GTA Vice City</h3>
+      <p>80s Miami open world, cars, guns, missions, full nostalgia trip.</p>
+      <a href="gta-vice-city.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>⛏️ Minecraft</h3>
+      <p>Eaglercraft build mode, infinite blocks, survival & creative.</p>
+      <a href="minecraft.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🌱 PvZ</h3>
+      <p>Zombie lawn defense, tower defense classic, plants vs zombies.</p>
+      <a href="pvz.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>⭐ SM64</h3>
+      <p>Star collecting 3D platformer, Mario 64 in browser, pure joy.</p>
+      <a href="sm64.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🚪 That's Not My Neighbor</h3>
+      <p>Doppelganger door checker, spot the fakes, tense as hell.</p>
+      <a href="notmyneighbor.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>💀 Ultrakill</h3>
+      <p>Blood-fueled FPS frenzy, fast movement, style meter madness.</p>
+      <a href="ultrakill.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>❤️ Undertale</h3>
+      <p>Mercy or genocide RPG, emotional story, bullet hell battles.</p>
+      <a href="undertale.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🔴 World's Hardest Game</h3>
+      <p>Red square rage maze, impossible levels, pure frustration.</p>
+      <a href="worldshardest.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🐍 Snake</h3>
+      <p>Eat food, grow long—don't crash, classic arcade endless.</p>
+      <a href="snake.html">LAUNCH</a>
+    </div>
   </div>
 
   <footer>gaming</footer>
@@ -440,7 +509,7 @@
       window.open(links[randomIndex], '_blank');
     }
 
-    // Search logic
+    // Search bar
     const searchInput = document.getElementById('searchInput');
     const cards = document.querySelectorAll('.game-card');
     const noResults = document.getElementById('noResults');
@@ -458,7 +527,7 @@
       noResults.style.display = (visible === 0 && query !== '') ? 'block' : 'none';
     });
 
-    // Floating dots (locked in)
+    // Floating dots
     const dotsContainer = document.createElement('div');
     dotsContainer.id = 'floating-dots';
     dotsContainer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden;';
@@ -479,7 +548,7 @@
       dotsContainer.appendChild(dot);
     }
 
-    // Add float animation if not present
+    // Dots animation
     if (!document.querySelector('style#dotsAnim')) {
       const anim = document.createElement('style');
       anim.id = 'dotsAnim';
@@ -501,7 +570,12 @@
     modal.onclick = e => { if (e.target === modal) modal.style.display = 'none'; };
 
     // Load & apply saved settings
-    let savedSettings = JSON.parse(localStorage.getItem('hubSettings')) || { colorScheme: 'default', accentColor: '#00ffff', brightness: '1.0', glow: '1.0' };
+    let savedSettings = JSON.parse(localStorage.getItem('hubSettings')) || {
+      colorScheme: 'default',
+      accentColor: '#00ffff',
+      brightness: '1.0',
+      glow: '1.0'
+    };
     applySettings(savedSettings);
 
     window.addEventListener('storage', e => {
