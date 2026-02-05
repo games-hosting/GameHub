@@ -8,43 +8,6 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
     
-<script>
-  // Force Google Classroom title + favicon on this page AND any game pages that open
-  function stealthMode() {
-    document.title = "Google Classroom";
-    
-    // Remove any existing favicons first
-    document.querySelectorAll('link[rel*="icon"]').forEach(el => el.remove());
-    
-    // Add the real GC favicon
-    const link = document.createElement('link');
-    link.rel = 'icon';
-    link.href = 'https://ssl.gstatic.com/classroom/favicon.ico';
-    link.type = 'image/x-icon';
-    document.head.appendChild(link);
-    
-    // Optional: also add shortcut icon for older browsers
-    const shortcut = document.createElement('link');
-    shortcut.rel = 'shortcut icon';
-    shortcut.href = 'https://ssl.gstatic.com/classroom/favicon.ico';
-    shortcut.type = 'image/x-icon';
-    document.head.appendChild(shortcut);
-  }
-
-  // Run on this page
-  stealthMode();
-
-  // If opening a game in new tab, try to inject into it too (works on same-origin)
-  document.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', e => {
-      if (link.target === '_blank') {
-        // The new tab will run its own stealthMode if it has the script
-        // But if games don't have it yet, this won't reach them
-      }
-    });
-  });
-</script>
-    
     body {
       margin: 0;
       padding: 20px;
@@ -647,6 +610,7 @@
   </script>
 </body>
 </html>
+
 
 
 
