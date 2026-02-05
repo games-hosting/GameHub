@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Classroom</title>
+  <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: #f1f3f4;
+      font-family: 'Roboto', Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #202124;
+    }
+    .login-box {
+      background: white;
+      width: 380px;
+      padding: 40px 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .logo {
+      width: 80px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 24px;
+      margin: 0 0 8px;
+      font-weight: 400;
+    }
+    p {
+      color: #5f6368;
+      margin: 0 0 30px;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin: 12px 0;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.2s;
+      cursor: pointer;
+      border: 1px solid #dadce0;
+      background: white;
+      color: #1a73e8;
+    }
+    .btn:hover {
+      background: #f8f9fa;
+    }
+    .btn.google {
+      background: #1a73e8;
+      color: white;
+      border: none;
+    }
+    .btn.google:hover {
+      background: #1765cc;
+    }
+    .btn.gamehub {
+      background: linear-gradient(45deg, #ff00ff, #00ffff);
+      color: #000;
+      border: none;
+      font-weight: bold;
+    }
+    .btn.gamehub:hover {
+      background: linear-gradient(45deg, #00ffff, #ff00ff);
+    }
+    .footer {
+      margin-top: 40px;
+      font-size: 12px;
+      color: #5f6368;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <img class="logo" src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google">
+    <h1>Sign in</h1>
+    <p>to continue to Classroom</p>
+
+    <a href="https://classroom.google.com" class="btn google">Login with Google</a>
+    <a href="https://classroom.google.com" class="btn">Use another account</a>
+    <a href="index.html" class="btn gamehub">Login with GameHub</a>
+
+    <div class="footer">
+      <a href="https://policies.google.com/privacy">Privacy</a> • 
+      <a href="https://policies.google.com/terms">Terms</a>
+    </div>
+  </div>
+</body>
+</html>
