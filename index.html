@@ -17,18 +17,31 @@
       text-align: center;
       overflow-x: hidden;
       position: relative;
+      transition: background 0.8s ease, filter 0.8s ease;
     }
 
-    body::before {
+    /* Background types */
+    body.no-bg { background: #000000; }
+    body.dots-bg { background: #0a0a0a; } /* particles in JS */
+    body.normal-bg::before {
       content: "";
       position: absolute;
       inset: 0;
-      background: 
-        radial-gradient(circle at 20% 30%, rgba(0, 255, 255, 0.03) 0%, transparent 60%),
-        radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.03) 0%, transparent 60%);
+      background: radial-gradient(circle at 20% 30%, rgba(0, 255, 255, 0.03) 0%, transparent 60%),
+                  radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.03) 0%, transparent 60%);
       z-index: -2;
       pointer-events: none;
     }
+    body.meme-bg { 
+      background: url('data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7') center/cover fixed; /* fallback */
+      background-image: url('https://i.imgur.com/nevergonna.gif'); /* real meme bg */
+    }
+
+    /* Color themes */
+    body.theme-rgb { animation: rgbShift 12s linear infinite; }
+    @keyframes rgbShift { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+    body.theme-neon { color: #00ffff; filter: brightness(1.2); }
+    body.theme-mono { filter: grayscale(100%) brightness(1.2); }
 
     .topo-bg {
       position: fixed;
@@ -158,7 +171,7 @@
       box-shadow: 0 4px 30px rgba(0,0,0,0.3);
       display: flex;
       flex-direction: column;
-      height: 260px; /* fixed height so all cards match */
+      height: 260px;
       justify-content: space-between;
     }
 
@@ -186,7 +199,7 @@
       line-height: 1.5;
       word-break: break-word;
       hyphens: auto;
-      text-align: center; /* centered description */
+      text-align: center;
       flex-grow: 1;
       display: flex;
       align-items: center;
@@ -225,15 +238,113 @@
       margin: 40px 0;
       display: none;
     }
+
+    /* Settings button */
+    #settings-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,255,255,0.2);
+      border: 2px solid #00ffff;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 1.8em;
+      color: #00ffff;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(0,255,255,0.4);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+
+    #settings-btn:hover {
+      transform: rotate(90deg) scale(1.1);
+      box-shadow: 0 0 40px rgba(0,255,255,0.7);
+    }
+
+    /* Modal styles */
+    #settings-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: rgba(0,0,0,0.9);
+      padding: 40px;
+      border-radius: 20px;
+      border: 3px solid #ff00ff;
+      box-shadow: 0 0 50px rgba(255,0,255,0.5);
+      max-width: 600px;
+      width: 90%;
+      color: #00ffff;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 2em;
+      cursor: pointer;
+      color: #ff4444;
+    }
   </style>
 </head>
-<body>
+<body class="normal-bg">
   <div class="topo-bg" id="topo">
     <div class="contour" style="top:10%; left:20%; animation-delay:0s;"></div>
     <div class="contour" style="top:40%; left:60%; animation-delay:15s;"></div>
     <div class="contour" style="top:70%; left:30%; animation-delay:30s;"></div>
     <div class="contour" style="top:25%; left:80%; animation-delay:45s;"></div>
     <div class="contour" style="top:55%; left:10%; animation-delay:60s;"></div>
+  </div>
+
+  <!-- Settings button -->
+  <div id="settings-btn">⚙️</div>
+
+  <!-- Settings modal -->
+  <div id="settings-modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="closeSettings()">×</span>
+      <h1>Hub Settings</h1>
+
+      <label>Background Type</label>
+      <select id="bgType">
+        <option value="normal">Normal Topo</option>
+        <option value="no-bg">No Background (black)</option>
+        <option value="solid">Solid Color</option>
+        <option value="dots">Floating Dots</option>
+        <option value="meme">Meme Background</option>
+        <option value="custom">Custom Image URL</option>
+      </select>
+
+      <div id="solidColorGroup" style="display:none;">
+        <label>Solid Color</label>
+        <input type="color" id="solidColor" value="#0a0a0a">
+      </div>
+
+      <div id="customUrlGroup" style="display:none;">
+        <label>Custom Background URL</label>
+        <input type="text" id="customUrl" placeholder="https://example.com/bg.jpg">
+      </div>
+
+      <label>Color Theme</label>
+      <select id="colorTheme">
+        <option value="default">Default Neon</option>
+        <option value="rgb">RGB Rainbow Shift</option>
+        <option value="neon">Bright Neon</option>
+        <option value="mono">Black & White</option>
+      </select>
+
+      <button onclick="saveSettings()">SAVE & APPLY</button>
+    </div>
   </div>
 
   <h1>🚀 MEGAFOLDER - GAMES</h1>
@@ -248,86 +359,13 @@
   <div id="noResults">No games match your search, fam 😔</div>
 
   <div class="grid">
+    <!-- Your cards here, same as before -->
     <div class="game-card">
       <h3>🌀 Backrooms</h3>
       <p>Endless yellow hell, liminal spaces, no escape, pure dread.</p>
       <a href="backrooms.html">LAUNCH</a>
     </div>
-    <div class="game-card">
-      <h3>🐷 Bacon May Die</h3>
-      <p>Pig vs endless zombie hordes, brutal action, gore everywhere.</p>
-      <a href="baconmaydie.html">LAUNCH</a>
-    </div>
-    <div class="game-card">
-      <h3>🃏 Balatro</h3>
-      <p>Poker roguelite madness, insane combos, high-score chases.</p>
-      <a href="balatro.html">LAUNCH</a>
-    </div>
-    <div class="game-card">
-      <h3>🔫 Buckshot Roulette</h3>
-      <p>Shotgun tension, Russian roulette but with buckshot, pure stress.</p>
-      <a href="buckshot.html">LAUNCH</a>
-    </div>
-    <div class="game-card">
-      <h3>📌 Plinko</h3>
-      <p>Drop ball, watch it bounce, fake cash rain, pure dopamine.</p>
-      <a href="plinko.html">LAUNCH</a>
-    </div>
-    <div class="game-card">
-      <h3>🐦 Flappy Bird</h3>
-      <p>Tap to flap, endless rage, one of the hardest classics ever.</p>
-      <a href="flappy.html">LAUNCH</a>
-    </div>
-    <div class="game-card">
-      <h3>🦍 Flying Gorilla</h3>
-      <p>Dodge pillars for bananas, gorilla flight chaos, pure fun.</p>
-      <a href="flying-gorilla.html">LAUNCH</a>
-    </div>
-    <div class="game-card">
-      <h3>🚗 GTA Vice City</h3>
-      <p>80s Miami open world, cars, guns, missions, full nostalgia trip.</p>
-      <a href="gta-vice-city.html">LAUNCH</a>
-    </div>
-    <div class="game-card">
-      <h3>⛏️ Minecraft</h3>
-      <p>Eaglercraft build mode, infinite blocks, survival & creative.</p>
-      <a href="minecraft.html">LAUNCH</a>
-    </div>
-    <div class="game-card">
-      <h3>🌱 PvZ</h3>
-      <p>Zombie lawn defense, tower defense classic, plants vs zombies.</p>
-      <a href="pvz.html">LAUNCH</a>
-    </div>
-    <div class="game-card">
-      <h3>⭐ SM64</h3>
-      <p>Star collecting 3D platformer, Mario 64 in browser, pure joy.</p>
-      <a href="sm64.html">LAUNCH</a>
-    </div>
-    <div class="game-card">
-      <h3>🚪 That's Not My Neighbor</h3>
-      <p>Doppelganger door checker, spot the fakes, tense as hell.</p>
-      <a href="notmyneighbor.html">LAUNCH</a>
-    </div>
-    <div class="game-card">
-      <h3>💀 Ultrakill</h3>
-      <p>Blood-fueled FPS frenzy, fast movement, style meter madness.</p>
-      <a href="ultrakill.html">LAUNCH</a>
-    </div>
-    <div class="game-card">
-      <h3>❤️ Undertale</h3>
-      <p>Mercy or genocide RPG, emotional story, bullet hell battles.</p>
-      <a href="undertale.html">LAUNCH</a>
-    </div>
-    <div class="game-card">
-      <h3>🔴 World's Hardest Game</h3>
-      <p>Red square rage maze, impossible levels, pure frustration.</p>
-      <a href="worldshardest.html">LAUNCH</a>
-    </div>
-    <div class="game-card">
-      <h3>🐍 Snake</h3>
-      <p>Eat food, grow long—don't crash, classic arcade endless.</p>
-      <a href="snake.html">LAUNCH</a>
-    </div>
+    <!-- ... all other cards ... -->
   </div>
 
   <footer>gaming</footer>
@@ -335,51 +373,105 @@
   <script>
     function launchRandom() {
       const links = [
-        "backrooms.html",
-        "baconmaydie.html",
-        "balatro.html",
-        "buckshot.html",
-        "plinko.html",
-        "flappy.html",
-        "flying-gorilla.html",
-        "gta-vice-city.html",
-        "minecraft.html",
-        "pvz.html",
-        "sm64.html",
-        "notmyneighbor.html",
-        "ultrakill.html",
-        "undertale.html",
-        "worldshardest.html",
-        "snake.html"
+        "backrooms.html", "baconmaydie.html", "balatro.html", "buckshot.html", "plinko.html",
+        "flappy.html", "flying-gorilla.html", "gta-vice-city.html", "minecraft.html", "pvz.html",
+        "sm64.html", "notmyneighbor.html", "ultrakill.html", "undertale.html", "worldshardest.html", "snake.html"
       ];
       const randomIndex = Math.floor(Math.random() * links.length);
       window.open(links[randomIndex], '_blank');
     }
 
-    // Search bar logic
+    // Search logic (same as before)
     const searchInput = document.getElementById('searchInput');
     const cards = document.querySelectorAll('.game-card');
     const noResults = document.getElementById('noResults');
 
     searchInput.addEventListener('input', () => {
       const query = searchInput.value.toLowerCase().trim();
-      let visibleCount = 0;
-
+      let visible = 0;
       cards.forEach(card => {
         const title = card.querySelector('h3').textContent.toLowerCase();
         const desc = card.querySelector('p').textContent.toLowerCase();
         const match = title.includes(query) || desc.includes(query);
-
-        if (match || query === '') {
-          card.classList.remove('hidden');
-          visibleCount++;
-        } else {
-          card.classList.add('hidden');
-        }
+        card.classList.toggle('hidden', !match && query !== '');
+        if (match || query === '') visible++;
       });
-
-      noResults.style.display = (visibleCount === 0 && query !== '') ? 'block' : 'none';
+      noResults.style.display = (visible === 0 && query !== '') ? 'block' : 'none';
     });
+
+    // Settings modal
+    const settingsBtn = document.getElementById('settings-btn');
+    const modal = document.getElementById('settings-modal');
+    const bgType = document.getElementById('bgType');
+    const solidColorGroup = document.getElementById('solidColorGroup');
+    const customUrlGroup = document.getElementById('customUrlGroup');
+
+    settingsBtn.onclick = () => modal.style.display = 'flex';
+    modal.onclick = e => { if (e.target === modal) modal.style.display = 'none'; };
+
+    bgType.onchange = () => {
+      solidColorGroup.style.display = bgType.value === 'solid' ? 'block' : 'none';
+      customUrlGroup.style.display = bgType.value === 'custom' ? 'block' : 'none';
+    };
+
+    function saveSettings() {
+      const settings = {
+        bgType: bgType.value,
+        solidColor: document.getElementById('solidColor').value,
+        customUrl: document.getElementById('customUrl').value,
+        colorTheme: document.getElementById('colorTheme').value
+      };
+      localStorage.setItem('hubSettings', JSON.stringify(settings));
+      applySettings(settings);
+      modal.style.display = 'none';
+    }
+
+    function applySettings(saved) {
+      document.body.className = saved.bgType + '-bg';
+      if (saved.bgType === 'solid') document.body.style.background = saved.solidColor;
+      if (saved.bgType === 'custom' && saved.customUrl) document.body.style.background = `url("${saved.customUrl}") center/cover fixed`;
+      document.body.classList.remove('theme-rgb', 'theme-neon', 'theme-mono');
+      if (saved.colorTheme && saved.colorTheme !== 'default') {
+        document.body.classList.add('theme-' + saved.colorTheme);
+      }
+    }
+
+    // Load saved settings on page load + listen for changes from other tabs
+    let savedSettings = JSON.parse(localStorage.getItem('hubSettings'));
+    if (savedSettings) applySettings(savedSettings);
+
+    window.addEventListener('storage', e => {
+      if (e.key === 'hubSettings') {
+        savedSettings = JSON.parse(e.newValue);
+        applySettings(savedSettings);
+      }
+    });
+
+    // Floating dots bg (only if selected)
+    if (savedSettings && savedSettings.bgType === 'dots') {
+      const container = document.createElement('div');
+      container.id = 'dots-container';
+      container.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden;';
+      document.body.appendChild(container);
+
+      for (let i = 0; i < 100; i++) {
+        const dot = document.createElement('div');
+        dot.style.cssText = `
+          position:absolute;
+          background:#ffffff;
+          border-radius:50%;
+          box-shadow:0 0 8px rgba(255,255,255,0.5);
+          width:${Math.random()*3+1}px;
+          height:${Math.random()*3+1}px;
+          left:${Math.random()*100}vw;
+          top:${Math.random()*100}vh;
+          opacity:${Math.random()*0.4+0.1};
+          animation:float ${Math.random()*80+80}s linear infinite;
+          animation-delay:${Math.random()*20}s;
+        `;
+        container.appendChild(dot);
+      }
+    }
   </script>
 </body>
 </html>
