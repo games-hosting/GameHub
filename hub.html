@@ -1,179 +1,621 @@
-<script>
-  function launchRandom() {
-    const links = [
-      "backrooms.html",
-      "baconmaydie.html",
-      "balatro.html",
-      "buckshot.html",
-      "plinko.html",
-      "flappy.html",
-      "flying-gorilla.html",
-      "gta-vice-city.html",
-      "minecraft.html",
-      "pvz.html",
-      "sm64.html",
-      "notmyneighbor.html",
-      "ultrakill.html",
-      "undertale.html",
-      "worldshardest.html",
-      "snake.html"
-    ];
-    const randomIndex = Math.floor(Math.random() * links.length);
-    window.open(links[randomIndex], '_blank');
-  }
-
-  // Search bar
-  const searchInput = document.getElementById('searchInput');
-  const cards = document.querySelectorAll('.game-card');
-  const noResults = document.getElementById('noResults');
-  searchInput.addEventListener('input', () => {
-    const query = searchInput.value.toLowerCase().trim();
-    let visible = 0;
-    cards.forEach(card => {
-      const title = card.querySelector('h3').textContent.toLowerCase();
-      const desc = card.querySelector('p').textContent.toLowerCase();
-      const match = title.includes(query) || desc.includes(query);
-      card.classList.toggle('hidden', !match && query !== '');
-      if (match || query === '') visible++;
-    });
-    noResults.style.display = (visible === 0 && query !== '') ? 'block' : 'none';
-  });
-
-  // Floating dots
-  const dotsContainer = document.createElement('div');
-  dotsContainer.id = 'floating-dots';
-  dotsContainer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden;';
-  document.body.appendChild(dotsContainer);
-  for (let i = 0; i < 80; i++) {
-    const dot = document.createElement('div');
-    dot.className = 'dot';
-    const size = Math.random() * 3 + 1;
-    dot.style.width = dot.style.height = size + 'px';
-    dot.style.left = Math.random() * 100 + 'vw';
-    dot.style.top = Math.random() * 100 + 'vh';
-    dot.style.background = 'rgba(0, 255, 255, 0.5)';
-    dot.style.boxShadow = '0 0 8px rgba(0, 255, 255, 0.6)';
-    dot.style.animation = `floatUp ${Math.random() * 80 + 80}s linear infinite`;
-    dot.style.animationDelay = Math.random() * 20 + 's';
-    dot.style.opacity = Math.random() * 0.4 + 0.1;
-    dotsContainer.appendChild(dot);
-  }
-  if (!document.querySelector('style#dotsAnim')) {
-    const anim = document.createElement('style');
-    anim.id = 'dotsAnim';
-    anim.textContent = `
-      @keyframes floatUp {
-        0% { transform: translateY(100vh) scale(0.2); opacity: 0; }
-        10% { opacity: 0.8; }
-        90% { opacity: 0.8; }
-        100% { transform: translateY(-20vh) scale(0.8); opacity: 0; }
-      }
-    `;
-    document.head.appendChild(anim);
-  }
-
-  // Settings modal
-  const settingsBtn = document.getElementById('settings-btn');
-  const modal = document.getElementById('settings-modal');
-  settingsBtn.onclick = () => modal.style.display = 'flex';
-  modal.onclick = e => { if (e.target === modal) modal.style.display = 'none'; };
-
-  // Load & apply saved settings
-  let savedSettings = JSON.parse(localStorage.getItem('hubSettings')) || {
-    colorScheme: 'default',
-    accentColor: '#00ffff',
-    brightness: '1.0',
-    glow: '1.0'
-  };
-  applySettings(savedSettings);
-  window.addEventListener('storage', e => {
-    if (e.key === 'hubSettings') {
-      savedSettings = JSON.parse(e.newValue);
-      applySettings(savedSettings);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home - Classroom</title>
+  <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+   
+    body {
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      background: #0a0a0a;
+      color: #fff;
+      font-family: 'Orbitron', monospace;
+      text-align: center;
+      overflow-x: hidden;
+      position: relative;
+      transition: color 0.8s ease, filter 0.8s ease, text-shadow 0.8s ease;
     }
-  });
-  function applySettings(s) {
-    document.body.classList.remove('theme-rgb', 'theme-neon', 'theme-mono', 'theme-purple', 'theme-cyan', 'theme-red', 'theme-green');
-    if (s.colorScheme !== 'default') document.body.classList.add('theme-' + s.colorScheme);
-    document.body.style.setProperty('--accent-color', s.accentColor || '#00ffff');
-    document.body.style.filter = `brightness(${s.brightness || 1.0})`;
-    document.querySelectorAll('h1, .random-btn, a').forEach(el => {
-      el.style.filter = `drop-shadow(0 0 ${20 * (s.glow || 1.0)}px var(--accent-color))`;
-    });
-  }
-  function saveSettings() {
-    const s = {
-      colorScheme: document.getElementById('colorScheme').value,
-      accentColor: document.getElementById('accentColor').value,
-      brightness: document.getElementById('brightness').value,
-      glow: document.getElementById('glow').value
-    };
-    localStorage.setItem('hubSettings', JSON.stringify(s));
-    applySettings(s);
-    modal.style.display = 'none';
-  }
-
-  // Easter egg sequence (fixed)
-  let tripleFooter = false;
-  let secretE = false;
-  let typedInModal = '';
-
-  // Triple-click footer
-  document.querySelector('footer').addEventListener('click', e => {
-    if (e.detail === 3) {
-      tripleFooter = true;
-      typedInModal = '';
-      secretE = false;
-      console.log('Triple footer — step 1 active');
+    /* Topo lines + floating dots mix */
+    body::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(0, 255, 255, 0.03) 0%, transparent 60%),
+        radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.03) 0%, transparent 60%);
+      z-index: -2;
+      pointer-events: none;
     }
-  });
+    .topo-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .contour {
+      position: absolute;
+      width: 200%;
+      height: 200%;
+      background: transparent;
+      border: 1px solid rgba(0, 255, 255, 0.12);
+      border-radius: 50%;
+      animation: contourMove 80s linear infinite;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.08);
+    }
+    .contour:nth-child(odd) {
+      border-color: rgba(255, 0, 255, 0.10);
+      box-shadow: 0 0 20px rgba(255, 0, 255, 0.06);
+      animation-duration: 120s;
+      animation-direction: reverse;
+    }
+    @keyframes contourMove {
+      0% { transform: translate(-50%, -50%) rotate(0deg) scale(0.8); opacity: 0.3; }
+      50% { transform: translate(0%, 0%) rotate(180deg) scale(1.2); opacity: 0.6; }
+      100% { transform: translate(50%, 50%) rotate(360deg) scale(0.8); opacity: 0.3; }
+    }
+    /* Floating dots */
+    #floating-dots {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+    .dot {
+      position: absolute;
+      background: rgba(0, 255, 255, 0.5);
+      border-radius: 50%;
+      box-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+      animation: floatUp linear infinite;
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(100vh) scale(0.2); opacity: 0; }
+      10% { opacity: 0.8; }
+      90% { opacity: 0.8; }
+      100% { transform: translateY(-20vh) scale(0.8); opacity: 0; }
+    }
+    h1 {
+      font-size: 3em;
+      background: linear-gradient(45deg, #ff00ff, #00ffff, #ffff00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px #00ffff;
+      margin-bottom: 10px;
+      animation: glow 2s ease-in-out infinite alternate;
+      position: relative;
+      z-index: 1;
+    }
+    @keyframes glow {
+      from { filter: drop-shadow(0 0 10px #00ffff); }
+      to { filter: drop-shadow(0 0 30px #ff00ff); }
+    }
+    p {
+      font-size: 1.2em;
+      color: #ccc;
+      max-width: 600px;
+      margin: 0 auto 40px;
+    }
+    .search-container {
+      margin: 0 auto 30px;
+      max-width: 600px;
+      position: relative;
+      z-index: 1;
+    }
+    #searchInput {
+      width: 100%;
+      padding: 15px 20px;
+      font-size: 1.3em;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid #00ffff;
+      border-radius: 50px;
+      color: #00ffff;
+      font-family: 'Orbitron', monospace;
+      box-shadow: 0 0 20px rgba(0,255,255,0.3);
+      transition: all 0.3s;
+    }
+    #searchInput:focus {
+      outline: none;
+      border-color: #ff00ff;
+      box-shadow: 0 0 30px rgba(255,0,255,0.5);
+    }
+    #searchInput::placeholder {
+      color: #aaa;
+    }
+    .random-btn {
+      display: inline-block;
+      background: linear-gradient(45deg, #00ffff, #ffff00, #ff00ff);
+      color: #000;
+      font-weight: 900;
+      padding: 18px 40px;
+      border-radius: 50px;
+      font-size: 1.4em;
+      text-decoration: none;
+      margin: 0 auto 40px;
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+      transition: all 0.3s;
+      cursor: pointer;
+      border: none;
+    }
+    .random-btn:hover {
+      transform: scale(1.08) translateY(-4px);
+      box-shadow: 0 0 50px rgba(255, 255, 0, 0.7);
+      background: linear-gradient(45deg, #ffff00, #ff00ff, #00ffff);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+    .game-card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(12px);
+      border-radius: 15px;
+      padding: 25px;
+      transition: all 0.4s;
+      border: 1px solid rgba(0, 255, 255, 0.15);
+      box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      height: 260px;
+      justify-content: space-between;
+    }
+    .game-card.hidden {
+      display: none;
+    }
+    .game-card:hover {
+      transform: scale(1.06) translateY(-5px);
+      box-shadow: 0 0 40px rgba(0, 255, 255, 0.4);
+      border-color: rgba(0, 255, 255, 0.5);
+    }
+    .game-card h3 {
+      font-size: 1.5em;
+      margin: 0 0 10px;
+      color: #ffff00;
+      text-shadow: 0 0 10px #ffff00aa;
+    }
+    .game-card p {
+      font-size: 0.95em;
+      color: #aaa;
+      margin: 0;
+      line-height: 1.5;
+      word-break: break-word;
+      hyphens: auto;
+      text-align: center;
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    a {
+      display: block;
+      background: linear-gradient(45deg, #ff4757, #ff6b7a);
+      color: white;
+      text-decoration: none;
+      padding: 15px 30px;
+      border-radius: 50px;
+      font-weight: bold;
+      font-size: 1.1em;
+      transition: all 0.3s;
+    }
+    a:hover {
+      background: linear-gradient(45deg, #ff6b7a, #ff4757);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 20px rgba(255,71,87,0.4);
+    }
+    footer {
+      margin-top: 50px;
+      font-size: 0.8em;
+      color: #888;
+      position: relative;
+      z-index: 1;
+      cursor: pointer;
+      user-select: none;
+    }
+    #noResults {
+      font-size: 1.8em;
+      color: #ff4444;
+      margin: 40px 0;
+      display: none;
+    }
+    /* Settings button top-right */
+    #settings-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,255,255,0.2);
+      border: 2px solid #00ffff;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 1.8em;
+      color: #00ffff;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(0,255,255,0.4);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+    #settings-btn:hover {
+      transform: rotate(90deg) scale(1.1);
+      box-shadow: 0 0 40px rgba(0,255,255,0.7);
+    }
+    /* Settings modal */
+    #settings-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: rgba(0,0,0,0.9);
+      padding: 40px;
+      border-radius: 20px;
+      border: 3px solid #ff00ff;
+      box-shadow: 0 0 50px rgba(255,0,255,0.5);
+      max-width: 600px;
+      width: 90%;
+      color: #00ffff;
+      position: relative;
+    }
+    .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 2em;
+      cursor: pointer;
+      color: #ff4444;
+    }
+    label {
+      display: block;
+      margin: 20px 0 8px;
+      font-size: 1.4em;
+      color: #ffff00;
+    }
+    select, input[type="color"], input[type="range"], button {
+      width: 100%;
+      padding: 12px;
+      font-size: 1.2em;
+      background: #111133;
+      color: #00ffff;
+      border: 2px solid #00ffff;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      box-sizing: border-box;
+    }
+    button {
+      background: linear-gradient(45deg, #ff00ff, #00ffff);
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    button:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 30px #00ffff;
+    }
+  </style>
+</head>
+<body>
+  <div class="topo-bg" id="topo">
+    <div class="contour" style="top:10%; left:20%; animation-delay:0s;"></div>
+    <div class="contour" style="top:40%; left:60%; animation-delay:15s;"></div>
+    <div class="contour" style="top:70%; left:30%; animation-delay:30s;"></div>
+    <div class="contour" style="top:25%; left:80%; animation-delay:45s;"></div>
+    <div class="contour" style="top:55%; left:10%; animation-delay:60s;"></div>
+  </div>
+  <!-- Floating dots -->
+  <div id="floating-dots"></div>
+  <!-- Settings button -->
+  <div id="settings-btn">⚙</div>
+  <!-- Settings modal -->
+  <div id="settings-modal">
+    <div class="modal-content">
+      <span class="close-btn" onclick="document.getElementById('settings-modal').style.display='none'">×</span>
+      <h1>Hub Settings</h1>
+      <label>Color Scheme</label>
+      <select id="colorScheme">
+        <option value="default">Default Neon</option>
+        <option value="rgb">RGB Rainbow Shift</option>
+        <option value="neon">Bright Neon Glow</option>
+        <option value="mono">Black & White Mono</option>
+        <option value="purple">Purple Haze</option>
+        <option value="cyan">Cyan Pulse</option>
+        <option value="red">Red Devil</option>
+        <option value="green">Green Matrix</option>
+      </select>
+      <label>Custom Accent Color</label>
+      <input type="color" id="accentColor" value="#00ffff">
+      <label>Text Brightness</label>
+      <input type="range" id="brightness" min="0.8" max="1.6" step="0.1" value="1.0">
+      <label>Glow Intensity</label>
+      <input type="range" id="glow" min="0.5" max="2.0" step="0.1" value="1.0">
+      <button onclick="saveSettings()">SAVE & APPLY</button>
+    </div>
+  </div>
+  <h1>🚀 MEGAFOLDER - GAMES</h1>
+  <p>Click any game & have fun.</p>
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Search games...">
+  </div>
+  <button class="random-btn">RANDOM GAME</button>
+  <div id="noResults">No games match your search, fam 😔</div>
+  <div class="grid">
+    <div class="game-card">
+      <h3>🌀 Backrooms</h3>
+      <p>Endless yellow hell, liminal spaces, no escape, pure dread.</p>
+      <a href="backrooms.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🐷 Bacon May Die</h3>
+      <p>Pig vs endless zombie hordes, brutal action, gore everywhere.</p>
+      <a href="baconmaydie.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🃏 Balatro</h3>
+      <p>Poker roguelite madness, insane combos, high-score chases.</p>
+      <a href="balatro.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🔫 Buckshot Roulette</h3>
+      <p>Shotgun tension, Russian roulette but with buckshot, pure stress.</p>
+      <a href="buckshot.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>📌 Plinko</h3>
+      <p>Drop ball, watch it bounce, fake cash rain, pure dopamine.</p>
+      <a href="plinko.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🐦 Flappy Bird</h3>
+      <p>Tap to flap, endless rage, one of the hardest classics ever.</p>
+      <a href="flappy.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🦍 Flying Gorilla</h3>
+      <p>Dodge pillars for bananas, gorilla flight chaos, pure fun.</p>
+      <a href="flying-gorilla.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🚗 GTA Vice City</h3>
+      <p>80s Miami open world, cars, guns, missions, full nostalgia trip.</p>
+      <a href="gta-vice-city.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>⛏️ Minecraft</h3>
+      <p>Eaglercraft build mode, infinite blocks, survival & creative.</p>
+      <a href="minecraft.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🌱 PvZ</h3>
+      <p>Zombie lawn defense, tower defense classic, plants vs zombies.</p>
+      <a href="pvz.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>⭐ SM64</h3>
+      <p>Star collecting 3D platformer, Mario 64 in browser, pure joy.</p>
+      <a href="sm64.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🚪 That's Not My Neighbor</h3>
+      <p>Doppelganger door checker, spot the fakes, tense as hell.</p>
+      <a href="notmyneighbor.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>💀 Ultrakill</h3>
+      <p>Blood-fueled FPS frenzy, fast movement, style meter madness.</p>
+      <a href="ultrakill.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>❤️ Undertale</h3>
+      <p>Mercy or genocide RPG, emotional story, bullet hell battles.</p>
+      <a href="undertale.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🔴 World's Hardest Game</h3>
+      <p>Red square rage maze, impossible levels, pure frustration.</p>
+      <a href="worldshardest.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🐍 Snake</h3>
+      <p>Eat food, grow long—don't crash, classic arcade endless.</p>
+      <a href="snake.html">LAUNCH</a>
+    </div>
+  </div>
+  <footer>gaming</footer>
 
-  // Modal keydown for single "e"
-  if (modal) {
-    modal.addEventListener('keydown', e => {
-      if (tripleFooter && !secretE) {
-        if (e.key.toLowerCase() === 'e' && typedInModal.length === 0) {
-          typedInModal = 'e';
-          secretE = true;
-          console.log('Single "e" detected — step 2 done');
-        } else {
-          typedInModal = ''; // reset on any other key
+  <script>
+    function launchRandom() {
+      const links = [
+        "backrooms.html",
+        "baconmaydie.html",
+        "balatro.html",
+        "buckshot.html",
+        "plinko.html",
+        "flappy.html",
+        "flying-gorilla.html",
+        "gta-vice-city.html",
+        "minecraft.html",
+        "pvz.html",
+        "sm64.html",
+        "notmyneighbor.html",
+        "ultrakill.html",
+        "undertale.html",
+        "worldshardest.html",
+        "snake.html"
+      ];
+      const randomIndex = Math.floor(Math.random() * links.length);
+      window.open(links[randomIndex], '_blank');
+    }
+
+    // Search bar
+    const searchInput = document.getElementById('searchInput');
+    const cards = document.querySelectorAll('.game-card');
+    const noResults = document.getElementById('noResults');
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value.toLowerCase().trim();
+      let visible = 0;
+      cards.forEach(card => {
+        const title = card.querySelector('h3').textContent.toLowerCase();
+        const desc = card.querySelector('p').textContent.toLowerCase();
+        const match = title.includes(query) || desc.includes(query);
+        card.classList.toggle('hidden', !match && query !== '');
+        if (match || query === '') visible++;
+      });
+      noResults.style.display = (visible === 0 && query !== '') ? 'block' : 'none';
+    });
+
+    // Floating dots
+    const dotsContainer = document.createElement('div');
+    dotsContainer.id = 'floating-dots';
+    dotsContainer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden;';
+    document.body.appendChild(dotsContainer);
+    for (let i = 0; i < 80; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      const size = Math.random() * 3 + 1;
+      dot.style.width = dot.style.height = size + 'px';
+      dot.style.left = Math.random() * 100 + 'vw';
+      dot.style.top = Math.random() * 100 + 'vh';
+      dot.style.background = 'rgba(0, 255, 255, 0.5)';
+      dot.style.boxShadow = '0 0 8px rgba(0, 255, 255, 0.6)';
+      dot.style.animation = `floatUp ${Math.random() * 80 + 80}s linear infinite`;
+      dot.style.animationDelay = Math.random() * 20 + 's';
+      dot.style.opacity = Math.random() * 0.4 + 0.1;
+      dotsContainer.appendChild(dot);
+    }
+    if (!document.querySelector('style#dotsAnim')) {
+      const anim = document.createElement('style');
+      anim.id = 'dotsAnim';
+      anim.textContent = `
+        @keyframes floatUp {
+          0% { transform: translateY(100vh) scale(0.2); opacity: 0; }
+          10% { opacity: 0.8; }
+          90% { opacity: 0.8; }
+          100% { transform: translateY(-20vh) scale(0.8); opacity: 0; }
         }
-      }
-    });
-  }
+      `;
+      document.head.appendChild(anim);
+    }
 
-  // Random button logic
-  const randomBtn = document.querySelector('.random-btn');
-  if (randomBtn) {
-    randomBtn.addEventListener('click', e => {
-      if (tripleFooter && secretE) {
-        e.preventDefault();
-        window.location.href = 'vault.html';
-        tripleFooter = false;
-        secretE = false;
-        typedInModal = '';
-        console.log('Easter egg triggered — vault');
-      } else {
-        // Normal random if flags not set
-        launchRandom();
-      }
-    });
-  }
+    // Settings modal
+    const settingsBtn = document.getElementById('settings-btn');
+    const modal = document.getElementById('settings-modal');
+    settingsBtn.onclick = () => modal.style.display = 'flex';
+    modal.onclick = e => { if (e.target === modal) modal.style.display = 'none'; };
 
-  // Reset on modal close or unload
-  if (modal) {
-    modal.addEventListener('click', e => {
-      if (e.target === modal) {
-        tripleFooter = false;
-        secretE = false;
-        typedInModal = '';
+    // Load & apply saved settings
+    let savedSettings = JSON.parse(localStorage.getItem('hubSettings')) || {
+      colorScheme: 'default',
+      accentColor: '#00ffff',
+      brightness: '1.0',
+      glow: '1.0'
+    };
+    applySettings(savedSettings);
+    window.addEventListener('storage', e => {
+      if (e.key === 'hubSettings') {
+        savedSettings = JSON.parse(e.newValue);
+        applySettings(savedSettings);
       }
     });
-  }
-  window.addEventListener('beforeunload', () => {
-    tripleFooter = false;
-    secretE = false;
-    typedInModal = '';
-  });
-</script>
+    function applySettings(s) {
+      document.body.classList.remove('theme-rgb', 'theme-neon', 'theme-mono', 'theme-purple', 'theme-cyan', 'theme-red', 'theme-green');
+      if (s.colorScheme !== 'default') document.body.classList.add('theme-' + s.colorScheme);
+      document.body.style.setProperty('--accent-color', s.accentColor || '#00ffff');
+      document.body.style.filter = `brightness(${s.brightness || 1.0})`;
+      document.querySelectorAll('h1, .random-btn, a').forEach(el => {
+        el.style.filter = `drop-shadow(0 0 ${20 * (s.glow || 1.0)}px var(--accent-color))`;
+      });
+    }
+    function saveSettings() {
+      const s = {
+        colorScheme: document.getElementById('colorScheme').value,
+        accentColor: document.getElementById('accentColor').value,
+        brightness: document.getElementById('brightness').value,
+        glow: document.getElementById('glow').value
+      };
+      localStorage.setItem('hubSettings', JSON.stringify(s));
+      applySettings(s);
+      modal.style.display = 'none';
+    }
+
+    // Easter egg sequence
+    let tripleFooter = false;
+    let secretE = false;
+    let typedInModal = '';
+
+    // Triple-click footer
+    document.querySelector('footer').addEventListener('click', e => {
+      if (e.detail === 3) {
+        tripleFooter = true;
+        typedInModal = '';
+        secretE = false;
+        console.log('Triple footer clicked — step 1 active');
+      }
+    });
+
+    // Modal keydown for single "e"
+    if (modal) {
+      modal.addEventListener('keydown', e => {
+        if (tripleFooter && !secretE) {
+          if (e.key.toLowerCase() === 'e' && typedInModal.length === 0) {
+            typedInModal = 'e';
+            secretE = true;
+            console.log('Single "e" detected — step 2 complete');
+          } else {
+            typedInModal = ''; // reset on any other key
+          }
+        }
+      });
+    }
+
+    // Random button logic
+    const randomBtn = document.querySelector('.random-btn');
+    if (randomBtn) {
+      randomBtn.addEventListener('click', e => {
+        if (tripleFooter && secretE) {
+          e.preventDefault();
+          window.location.href = 'vault.html';
+          tripleFooter = false;
+          secretE = false;
+          typedInModal = '';
+          console.log('Easter egg triggered — vault');
+        } else {
+          // Normal random
+          launchRandom();
+        }
+      });
+    }
+
+    // Reset on modal close or unload
+    if (modal) {
+      modal.addEventListener('click', e => {
+        if (e.target === modal) {
+          tripleFooter = false;
+          secretE = false;
+          typedInModal = '';
+        }
+      });
+    }
+    window.addEventListener('beforeunload', () => {
+      tripleFooter = false;
+      secretE = false;
+      typedInModal = '';
+    });
+  </script>
+</body>
+</html>
