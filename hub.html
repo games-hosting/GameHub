@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Home - Classroom</title>
-<link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-    
+   
     body {
       margin: 0;
       padding: 20px;
@@ -20,19 +20,17 @@
       position: relative;
       transition: color 0.8s ease, filter 0.8s ease, text-shadow 0.8s ease;
     }
-
     /* Topo lines + floating dots mix */
     body::before {
       content: "";
       position: absolute;
       inset: 0;
-      background: 
+      background:
         radial-gradient(circle at 20% 30%, rgba(0, 255, 255, 0.03) 0%, transparent 60%),
         radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.03) 0%, transparent 60%);
       z-index: -2;
       pointer-events: none;
     }
-
     .topo-bg {
       position: fixed;
       inset: 0;
@@ -40,7 +38,6 @@
       pointer-events: none;
       overflow: hidden;
     }
-
     .contour {
       position: absolute;
       width: 200%;
@@ -51,20 +48,17 @@
       animation: contourMove 80s linear infinite;
       box-shadow: 0 0 15px rgba(0, 255, 255, 0.08);
     }
-
     .contour:nth-child(odd) {
       border-color: rgba(255, 0, 255, 0.10);
       box-shadow: 0 0 20px rgba(255, 0, 255, 0.06);
       animation-duration: 120s;
       animation-direction: reverse;
     }
-
     @keyframes contourMove {
       0% { transform: translate(-50%, -50%) rotate(0deg) scale(0.8); opacity: 0.3; }
       50% { transform: translate(0%, 0%) rotate(180deg) scale(1.2); opacity: 0.6; }
       100% { transform: translate(50%, 50%) rotate(360deg) scale(0.8); opacity: 0.3; }
     }
-
     /* Floating dots */
     #floating-dots {
       position: fixed;
@@ -73,7 +67,6 @@
       z-index: -1;
       overflow: hidden;
     }
-
     .dot {
       position: absolute;
       background: rgba(0, 255, 255, 0.5);
@@ -81,14 +74,12 @@
       box-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
       animation: floatUp linear infinite;
     }
-
     @keyframes floatUp {
       0% { transform: translateY(100vh) scale(0.2); opacity: 0; }
       10% { opacity: 0.8; }
       90% { opacity: 0.8; }
       100% { transform: translateY(-20vh) scale(0.8); opacity: 0; }
     }
-
     h1 {
       font-size: 3em;
       background: linear-gradient(45deg, #ff00ff, #00ffff, #ffff00);
@@ -100,26 +91,22 @@
       position: relative;
       z-index: 1;
     }
-
     @keyframes glow {
       from { filter: drop-shadow(0 0 10px #00ffff); }
       to { filter: drop-shadow(0 0 30px #ff00ff); }
     }
-
     p {
       font-size: 1.2em;
       color: #ccc;
       max-width: 600px;
       margin: 0 auto 40px;
     }
-
     .search-container {
       margin: 0 auto 30px;
       max-width: 600px;
       position: relative;
       z-index: 1;
     }
-
     #searchInput {
       width: 100%;
       padding: 15px 20px;
@@ -132,17 +119,14 @@
       box-shadow: 0 0 20px rgba(0,255,255,0.3);
       transition: all 0.3s;
     }
-
     #searchInput:focus {
       outline: none;
       border-color: #ff00ff;
       box-shadow: 0 0 30px rgba(255,0,255,0.5);
     }
-
     #searchInput::placeholder {
       color: #aaa;
     }
-
     .random-btn {
       display: inline-block;
       background: linear-gradient(45deg, #00ffff, #ffff00, #ff00ff);
@@ -158,13 +142,11 @@
       cursor: pointer;
       border: none;
     }
-
     .random-btn:hover {
       transform: scale(1.08) translateY(-4px);
       box-shadow: 0 0 50px rgba(255, 255, 0, 0.7);
       background: linear-gradient(45deg, #ffff00, #ff00ff, #00ffff);
     }
-
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -174,7 +156,6 @@
       position: relative;
       z-index: 1;
     }
-
     .game-card {
       background: rgba(255,255,255,0.05);
       backdrop-filter: blur(12px);
@@ -188,24 +169,20 @@
       height: 260px;
       justify-content: space-between;
     }
-
     .game-card.hidden {
       display: none;
     }
-
     .game-card:hover {
       transform: scale(1.06) translateY(-5px);
       box-shadow: 0 0 40px rgba(0, 255, 255, 0.4);
       border-color: rgba(0, 255, 255, 0.5);
     }
-
     .game-card h3 {
       font-size: 1.5em;
       margin: 0 0 10px;
       color: #ffff00;
       text-shadow: 0 0 10px #ffff00aa;
     }
-
     .game-card p {
       font-size: 0.95em;
       color: #aaa;
@@ -219,7 +196,6 @@
       align-items: center;
       justify-content: center;
     }
-
     a {
       display: block;
       background: linear-gradient(45deg, #ff4757, #ff6b7a);
@@ -231,28 +207,25 @@
       font-size: 1.1em;
       transition: all 0.3s;
     }
-
     a:hover {
       background: linear-gradient(45deg, #ff6b7a, #ff4757);
       transform: translateY(-3px);
       box-shadow: 0 10px 20px rgba(255,71,87,0.4);
     }
-
     footer {
       margin-top: 50px;
       font-size: 0.8em;
       color: #888;
       position: relative;
       z-index: 1;
+      cursor: pointer;
     }
-
     #noResults {
       font-size: 1.8em;
       color: #ff4444;
       margin: 40px 0;
       display: none;
     }
-
     /* Settings button top-right */
     #settings-btn {
       position: fixed;
@@ -273,12 +246,10 @@
       justify-content: center;
       transition: all 0.3s;
     }
-
     #settings-btn:hover {
       transform: rotate(90deg) scale(1.1);
       box-shadow: 0 0 40px rgba(0,255,255,0.7);
     }
-
     /* Settings modal */
     #settings-modal {
       display: none;
@@ -289,7 +260,6 @@
       align-items: center;
       justify-content: center;
     }
-
     .modal-content {
       background: rgba(0,0,0,0.9);
       padding: 40px;
@@ -301,7 +271,6 @@
       color: #00ffff;
       position: relative;
     }
-
     .close-btn {
       position: absolute;
       top: 15px;
@@ -310,14 +279,12 @@
       cursor: pointer;
       color: #ff4444;
     }
-
     label {
       display: block;
       margin: 20px 0 8px;
       font-size: 1.4em;
       color: #ffff00;
     }
-
     select, input[type="color"], input[type="range"], button {
       width: 100%;
       padding: 12px;
@@ -329,7 +296,6 @@
       margin-bottom: 15px;
       box-sizing: border-box;
     }
-
     button {
       background: linear-gradient(45deg, #ff00ff, #00ffff);
       color: #000;
@@ -337,7 +303,6 @@
       cursor: pointer;
       transition: all 0.3s;
     }
-
     button:hover {
       transform: scale(1.03);
       box-shadow: 0 0 30px #00ffff;
@@ -352,19 +317,15 @@
     <div class="contour" style="top:25%; left:80%; animation-delay:45s;"></div>
     <div class="contour" style="top:55%; left:10%; animation-delay:60s;"></div>
   </div>
-
   <!-- Floating dots -->
   <div id="floating-dots"></div>
-
   <!-- Settings button -->
   <div id="settings-btn">⚙</div>
-
   <!-- Settings modal -->
   <div id="settings-modal">
     <div class="modal-content">
       <span class="close-btn" onclick="document.getElementById('settings-modal').style.display='none'">×</span>
       <h1>Hub Settings</h1>
-
       <label>Color Scheme</label>
       <select id="colorScheme">
         <option value="default">Default Neon</option>
@@ -376,31 +337,22 @@
         <option value="red">Red Devil</option>
         <option value="green">Green Matrix</option>
       </select>
-
       <label>Custom Accent Color</label>
       <input type="color" id="accentColor" value="#00ffff">
-
       <label>Text Brightness</label>
       <input type="range" id="brightness" min="0.8" max="1.6" step="0.1" value="1.0">
-
       <label>Glow Intensity</label>
       <input type="range" id="glow" min="0.5" max="2.0" step="0.1" value="1.0">
-
       <button onclick="saveSettings()">SAVE & APPLY</button>
     </div>
   </div>
-
   <h1>🚀 MEGAFOLDER - GAMES</h1>
   <p>Click any game & have fun.</p>
-
   <div class="search-container">
     <input type="text" id="searchInput" placeholder="Search games...">
   </div>
-
   <button class="random-btn" onclick="launchRandom()">RANDOM GAME</button>
-
   <div id="noResults">No games match your search, fam 😔</div>
-
   <div class="grid">
     <div class="game-card">
       <h3>🌀 Backrooms</h3>
@@ -483,7 +435,6 @@
       <a href="snake.html">LAUNCH</a>
     </div>
   </div>
-
   <footer>gaming</footer>
 
   <script>
@@ -514,7 +465,6 @@
     const searchInput = document.getElementById('searchInput');
     const cards = document.querySelectorAll('.game-card');
     const noResults = document.getElementById('noResults');
-
     searchInput.addEventListener('input', () => {
       const query = searchInput.value.toLowerCase().trim();
       let visible = 0;
@@ -533,7 +483,6 @@
     dotsContainer.id = 'floating-dots';
     dotsContainer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden;';
     document.body.appendChild(dotsContainer);
-
     for (let i = 0; i < 80; i++) {
       const dot = document.createElement('div');
       dot.className = 'dot';
@@ -548,7 +497,6 @@
       dot.style.opacity = Math.random() * 0.4 + 0.1;
       dotsContainer.appendChild(dot);
     }
-
     // Dots animation
     if (!document.querySelector('style#dotsAnim')) {
       const anim = document.createElement('style');
@@ -578,14 +526,12 @@
       glow: '1.0'
     };
     applySettings(savedSettings);
-
     window.addEventListener('storage', e => {
       if (e.key === 'hubSettings') {
         savedSettings = JSON.parse(e.newValue);
         applySettings(savedSettings);
       }
     });
-
     function applySettings(s) {
       document.body.classList.remove('theme-rgb', 'theme-neon', 'theme-mono', 'theme-purple', 'theme-cyan', 'theme-red', 'theme-green');
       if (s.colorScheme !== 'default') document.body.classList.add('theme-' + s.colorScheme);
@@ -595,7 +541,6 @@
         el.style.filter = `drop-shadow(0 0 ${20 * (s.glow || 1.0)}px var(--accent-color))`;
       });
     }
-
     function saveSettings() {
       const s = {
         colorScheme: document.getElementById('colorScheme').value,
@@ -607,11 +552,64 @@
       applySettings(s);
       modal.style.display = 'none';
     }
+
+    // Easter egg sequence
+    let tripleFooter = false;
+    let secretE = false;
+
+    // Triple-click footer "gaming"
+    document.querySelector('footer').addEventListener('click', e => {
+      if (e.detail === 3) {
+        tripleFooter = true;
+        console.log('Triple footer clicked — step 1 done');
+      }
+    });
+
+    // In settings modal: type exactly one "e" (nothing else)
+    if (modal) {
+      let typed = '';
+      modal.addEventListener('keydown', e => {
+        if (tripleFooter && !secretE) {
+          if (e.key === 'e' || e.key === 'E') {
+            typed += e.key;
+            if (typed.length === 1 && typed.toLowerCase() === 'e') {
+              secretE = true;
+              typed = '';
+              console.log('Secret "e" typed — step 2 done');
+            }
+          } else {
+            typed = ''; // reset if anything else typed
+          }
+        }
+      });
+    }
+
+    // Random button: check flags and redirect to vault if both active
+    const randomBtn = document.querySelector('.random-btn');
+    if (randomBtn) {
+      randomBtn.addEventListener('click', e => {
+        if (tripleFooter && secretE) {
+          e.preventDefault(); // stop normal random
+          window.location.href = 'vault.html'; // your secret page
+          tripleFooter = false;
+          secretE = false;
+        }
+      });
+    }
+
+    // Reset flags on modal close or page unload
+    if (modal) {
+      modal.addEventListener('click', e => {
+        if (e.target === modal) {
+          tripleFooter = false;
+          secretE = false;
+        }
+      });
+    }
+    window.addEventListener('beforeunload', () => {
+      tripleFooter = false;
+      secretE = false;
+    });
   </script>
 </body>
 </html>
-
-
-
-
-
