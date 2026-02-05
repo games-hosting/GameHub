@@ -152,13 +152,14 @@
       background: rgba(255,255,255,0.05);
       backdrop-filter: blur(12px);
       border-radius: 15px;
-      padding: 20px;
+      padding: 25px;
       transition: all 0.4s;
       border: 1px solid rgba(0, 255, 255, 0.15);
       box-shadow: 0 4px 30px rgba(0,0,0,0.3);
       display: flex;
       flex-direction: column;
-      min-height: 220px; /* ensures space for longer descriptions */
+      height: 260px; /* fixed height so all cards match */
+      justify-content: space-between;
     }
 
     .game-card.hidden {
@@ -181,11 +182,15 @@
     .game-card p {
       font-size: 0.95em;
       color: #aaa;
-      margin: 0 0 15px;
-      flex-grow: 1; /* lets description fill space */
+      margin: 0;
       line-height: 1.5;
-      word-break: break-word; /* prevents overflow on long words */
+      word-break: break-word;
       hyphens: auto;
+      text-align: center; /* centered description */
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     a {
@@ -198,7 +203,6 @@
       font-weight: bold;
       font-size: 1.1em;
       transition: all 0.3s;
-      margin-top: auto; /* pushes button to bottom of card */
     }
 
     a:hover {
