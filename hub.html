@@ -219,6 +219,7 @@
       position: relative;
       z-index: 1;
       cursor: pointer;
+      user-select: none;
     }
     #noResults {
       font-size: 1.8em;
@@ -351,7 +352,7 @@
   <div class="search-container">
     <input type="text" id="searchInput" placeholder="Search games...">
   </div>
-  <button class="random-btn" onclick="launchRandom()">RANDOM GAME</button>
+  <button class="random-btn">RANDOM GAME</button>
   <div id="noResults">No games match your search, fam 😔</div>
   <div class="grid">
     <div class="game-card">
@@ -561,38 +562,38 @@
     document.querySelector('footer').addEventListener('click', e => {
       if (e.detail === 3) {
         tripleFooter = true;
-        console.log('Triple footer clicked — step 1 done');
+        console.log('Triple footer clicked — step 1 active');
       }
     });
 
-    // In settings modal: type exactly one "e" (nothing else)
+    // Settings modal: detect single "e" typed
     if (modal) {
       let typed = '';
       modal.addEventListener('keydown', e => {
         if (tripleFooter && !secretE) {
-          if (e.key === 'e' || e.key === 'E') {
+          if (e.key.toLowerCase() === 'e') {
             typed += e.key;
-            if (typed.length === 1 && typed.toLowerCase() === 'e') {
+            if (typed.length === 1) {
               secretE = true;
-              typed = '';
-              console.log('Secret "e" typed — step 2 done');
+              console.log('Secret "e" typed — step 2 complete');
             }
           } else {
-            typed = ''; // reset if anything else typed
+            typed = ''; // reset if anything else
           }
         }
       });
     }
 
-    // Random button: check flags and redirect to vault if both active
+    // Random button: check flags and redirect
     const randomBtn = document.querySelector('.random-btn');
     if (randomBtn) {
       randomBtn.addEventListener('click', e => {
         if (tripleFooter && secretE) {
-          e.preventDefault(); // stop normal random
-          window.location.href = 'vault.html'; // your secret page
+          e.preventDefault();
+          window.location.href = 'vault.html';
           tripleFooter = false;
           secretE = false;
+          console.log('Easter egg hit — vault unlocked');
         }
       });
     }
