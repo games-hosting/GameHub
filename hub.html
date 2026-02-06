@@ -227,11 +227,16 @@
       margin: 40px 0;
       display: none;
     }
-    /* Settings button top-right */
-    #settings-btn {
+    /* Top-right icons row */
+    .top-icons {
       position: fixed;
       top: 20px;
       right: 20px;
+      display: flex;
+      gap: 15px;
+      z-index: 100;
+    }
+    .icon-btn {
       background: rgba(0,255,255,0.2);
       border: 2px solid #00ffff;
       border-radius: 50%;
@@ -241,15 +246,22 @@
       color: #00ffff;
       cursor: pointer;
       box-shadow: 0 0 20px rgba(0,255,255,0.4);
-      z-index: 100;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: all 0.3s;
     }
-    #settings-btn:hover {
+    .icon-btn:hover {
       transform: rotate(90deg) scale(1.1);
       box-shadow: 0 0 40px rgba(0,255,255,0.7);
+    }
+    .proxy-icon {
+      background: rgba(255,0,255,0.2);
+      border-color: #ff00ff;
+      color: #ff00ff;
+    }
+    .proxy-icon:hover {
+      box-shadow: 0 0 40px rgba(255,0,255,0.7);
     }
     /* Settings modal */
     #settings-modal {
@@ -320,8 +332,13 @@
   </div>
   <!-- Floating dots -->
   <div id="floating-dots"></div>
-  <!-- Settings button -->
-  <div id="settings-btn">⚙</div>
+
+  <!-- Top-right icons row -->
+  <div class="top-icons">
+    <div id="proxy-btn" class="icon-btn proxy-icon">🔗</div>
+    <div id="settings-btn" class="icon-btn">⚙</div>
+  </div>
+
   <!-- Settings modal -->
   <div id="settings-modal">
     <div class="modal-content">
@@ -347,6 +364,7 @@
       <button onclick="saveSettings()">SAVE & APPLY</button>
     </div>
   </div>
+
   <h1>🚀 MEGAFOLDER - GAMES</h1>
   <p>Click any game & have fun.</p>
   <div class="search-container">
@@ -553,69 +571,13 @@
       modal.style.display = 'none';
     }
 
-    // Easter egg sequence
-    let tripleFooter = false;
-    let secretE = false;
-    let typedInModal = '';
-
-    // Triple-click footer
-    document.querySelector('footer').addEventListener('click', e => {
-      if (e.detail === 3) {
-        tripleFooter = true;
-        typedInModal = '';
-        secretE = false;
-        console.log('Triple footer clicked — step 1 active');
-      }
-    });
-
-    // Modal keydown for single "e"
-    if (modal) {
-      modal.addEventListener('keydown', e => {
-        if (tripleFooter && !secretE) {
-          if (e.key.toLowerCase() === 'e' && typedInModal.length === 0) {
-            typedInModal = 'e';
-            secretE = true;
-            console.log('Single "e" detected — step 2 complete');
-          } else {
-            typedInModal = ''; // reset on any other key
-          }
-        }
-      });
+    // Proxy button next to settings
+    const proxyBtn = document.getElementById('proxy-btn');
+    if (proxyBtn) {
+      proxyBtn.onclick = () => {
+        window.open('proxy.html', '_blank');
+      };
     }
-
-    // Random button logic
-    const randomBtn = document.querySelector('.random-btn');
-    if (randomBtn) {
-      randomBtn.addEventListener('click', e => {
-        if (tripleFooter && secretE) {
-          e.preventDefault();
-          window.location.href = 'vault.html';
-          tripleFooter = false;
-          secretE = false;
-          typedInModal = '';
-          console.log('Easter egg triggered — vault');
-        } else {
-          // Normal random
-          launchRandom();
-        }
-      });
-    }
-
-    // Reset on modal close or unload
-    if (modal) {
-      modal.addEventListener('click', e => {
-        if (e.target === modal) {
-          tripleFooter = false;
-          secretE = false;
-          typedInModal = '';
-        }
-      });
-    }
-    window.addEventListener('beforeunload', () => {
-      tripleFooter = false;
-      secretE = false;
-      typedInModal = '';
-    });
   </script>
 </body>
 </html>
