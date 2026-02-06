@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quick Links</title>
+  <title>Quick Link</title>
   <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
   <style>
     body {
@@ -25,29 +25,6 @@
       -webkit-text-fill-color: transparent;
       margin-bottom: 50px;
     }
-    .buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: center;
-      margin-bottom: 40px;
-    }
-    button {
-      padding: 20px 60px;
-      font-size: 1.8em;
-      font-weight: bold;
-      background: linear-gradient(45deg, #00ffff, #ff00ff);
-      color: #000;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      transition: all 0.3s;
-      min-width: 200px;
-    }
-    button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 40px #ff00ff;
-    }
     input {
       width: 80%;
       max-width: 700px;
@@ -64,32 +41,60 @@
       border-color: #ff00ff;
       box-shadow: 0 0 30px rgba(255,0,255,0.5);
     }
+    button {
+      margin-top: 30px;
+      padding: 20px 60px;
+      background: linear-gradient(45deg, #00ffff, #ff00ff);
+      color: #000;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.6em;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 40px #ff00ff;
+    }
+    #status {
+      margin-top: 30px;
+      font-size: 1.4em;
+      color: #ffff00;
+    }
   </style>
 </head>
 <body>
-  <h1>Quick Links</h1>
-  <div class="buttons">
-    <button onclick="window.open('https://www.tiktok.com', '_blank')">TikTok</button>
-    <button onclick="window.open('https://www.youtube.com', '_blank')">YouTube</button>
-    <button onclick="window.open('https://www.instagram.com', '_blank')">Instagram</button>
-    <button onclick="window.open('https://discord.com/app', '_blank')">Discord</button>
-  </div>
-  <input type="text" id="custom" placeholder="Or type custom URL (tiktok.com)..." autofocus>
-  <button style="margin-top:30px;" onclick="openCustom()">Go</button>
+  <h1>Unblock Site</h1>
+  <input type="text" id="url" placeholder="tiktok.com or paste full link" autofocus>
+  <button onclick="openUnblocked()">Go</button>
+  <div id="status"></div>
 
   <script>
-    function openCustom() {
-      let url = document.getElementById('custom').value.trim();
-      if (!url) return;
+    function openUnblocked() {
+      let input = document.getElementById('url').value.trim();
+      const status = document.getElementById('status');
 
-      if (!url.includes('.')) url += '.com';
-      if (!url.startsWith('http')) url = 'https://' + url;
+      if (!input) {
+        status.textContent = "Type a URL fam";
+        return;
+      }
 
-      window.open(url, '_blank');
+      if (!input.includes('.')) input += '.com';
+      if (!input.startsWith('http')) input = 'https://' + input;
+
+      status.textContent = "Opening...";
+
+      // thingproxy - free, works for TikTok in most schools
+      const proxied = 'https://thingproxy.freeboard.xyz/fetch/' + input;
+
+      const win = window.open(proxied, '_blank');
+      if (!win) {
+        status.textContent = "Popup blocked - allow popups in browser settings";
+      }
     }
 
-    document.getElementById('custom').onkeypress = e => {
-      if (e.key === 'Enter') openCustom();
+    document.getElementById('url').onkeypress = e => {
+      if (e.key === 'Enter') openUnblocked();
     };
   </script>
 </body>
