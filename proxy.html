@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Proxy - Classroom Tools</title>
   <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
-  <link rel="shortcut icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
   <style>
     body {
       margin: 0;
@@ -86,7 +85,7 @@
 <body>
   <header>
     <h1>Proxy Tool</h1>
-    <p>Enter any URL (TikTok, YouTube, Discord, etc.)</p>
+    <p>Paste any URL (TikTok, YouTube, etc.)</p>
   </header>
 
   <div class="input-row">
@@ -95,39 +94,44 @@
   </div>
 
   <div id="frameContainer">
-    <div id="status">Paste URL & hit Launch</div>
+    <div id="status">Enter URL & hit Launch</div>
     <iframe id="proxyFrame" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation-by-user-activation allow-popups-to-escape-sandbox"></iframe>
   </div>
 
   <script>
     function loadProxy() {
-      const url = document.getElementById('urlInput').value.trim();
+      let url = document.getElementById('urlInput').value.trim();
       const status = document.getElementById('status');
       const frame = document.getElementById('proxyFrame');
 
       if (!url) {
-        status.textContent = "Enter a URL first fam";
+        status.textContent = "Paste a URL first fam";
         return;
       }
 
       if (!url.startsWith('http')) {
-        status.textContent = "Add https:// or http:// to the start";
-        return;
+        url = 'https://' + url;
+        document.getElementById('urlInput').value = url;
       }
 
-      status.textContent = "Loading...";
-      frame.src = url;
+      status.textContent = "Loading via proxy...";
+
+      // Use allorigins as main proxy (unblocks TikTok reliably)
+      const proxyBase = 'https://api.allorigins.win/raw?url=';
+      frame.src = proxyBase + encodeURIComponent(url);
 
       frame.onload = () => {
         status.style.display = 'none';
       };
 
       frame.onerror = () => {
-        status.textContent = "Site blocked direct load — try again or use a different URL";
+        status.textContent = "Proxy blocked — try direct (might be filtered)";
+        // Optional fallback to direct (uncomment if you want)
+        // frame.src = url;
       };
     }
 
-    // Enter key to launch
+    // Enter key support
     document.getElementById('urlInput').addEventListener('keypress', e => {
       if (e.key === 'Enter') loadProxy();
     });
