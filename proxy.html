@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Proxy - Classroom Tools</title>
+  <title>Search - Classroom Tools</title>
   <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
   <style>
     body {
@@ -14,126 +14,89 @@
       font-family: 'Orbitron', monospace;
       display: flex;
       flex-direction: column;
-    }
-    header {
-      padding: 20px;
-      background: rgba(0,0,0,0.7);
-      text-align: center;
-      border-bottom: 2px solid #ff00ff;
-    }
-    .input-row {
-      display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
+    }
+    h1 {
+      font-size: 3em;
+      background: linear-gradient(45deg, #ff00ff, #00ffff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 30px;
+    }
+    .search-box {
+      display: flex;
+      width: 80%;
+      max-width: 700px;
       gap: 10px;
-      padding: 0 20px;
-      margin: 20px 0;
     }
     input {
       flex: 1;
-      max-width: 600px;
-      padding: 12px 16px;
-      font-size: 1.2em;
+      padding: 15px 20px;
+      font-size: 1.4em;
       background: #111133;
-      color: #ff00ff;
-      border: 2px solid #ff00ff;
-      border-radius: 8px;
+      color: #00ffff;
+      border: 2px solid #00ffff;
+      border-radius: 50px;
       outline: none;
     }
     input:focus {
-      box-shadow: 0 0 15px rgba(255,0,255,0.5);
+      border-color: #ff00ff;
+      box-shadow: 0 0 20px rgba(255,0,255,0.5);
     }
     button {
-      padding: 12px 30px;
+      padding: 15px 30px;
       background: linear-gradient(45deg, #00ffff, #ff00ff);
       color: #000;
       border: none;
-      border-radius: 8px;
-      font-size: 1.2em;
+      border-radius: 50px;
+      font-size: 1.4em;
       font-weight: bold;
       cursor: pointer;
       transition: all 0.3s;
     }
     button:hover {
       transform: scale(1.05);
-      box-shadow: 0 0 20px #ff00ff;
-    }
-    #frameContainer {
-      flex: 1;
-      position: relative;
-      background: #000;
-    }
-    iframe {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      border: none;
+      box-shadow: 0 0 30px #ff00ff;
     }
     #status {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 2em;
+      margin-top: 30px;
+      font-size: 1.5em;
       color: #ffff00;
-      text-shadow: 0 0 20px #ffff00;
-      pointer-events: none;
+      text-shadow: 0 0 15px #ffff00;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Proxy Tool</h1>
-    <p>Paste any URL (TikTok, YouTube, etc.)</p>
-  </header>
-
-  <div class="input-row">
-    <input type="text" id="urlInput" placeholder="https://www.tiktok.com" autofocus>
-    <button onclick="loadProxy()">Launch</button>
+  <h1>Proxy Search</h1>
+  <div class="search-box">
+    <input type="text" id="urlInput" placeholder="Paste TikTok / YouTube / any URL" autofocus>
+    <button onclick="launchProxy()">Go</button>
   </div>
-
-  <div id="frameContainer">
-    <div id="status">Enter URL & hit Launch</div>
-    <iframe id="proxyFrame" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation-by-user-activation allow-popups-to-escape-sandbox"></iframe>
-  </div>
+  <div id="status">Type URL & hit Go — it unblocks through proxy</div>
 
   <script>
-    function loadProxy() {
-      let url = document.getElementById('urlInput').value.trim();
-      const status = document.getElementById('status');
-      const frame = document.getElementById('proxyFrame');
+    const PROXY_BASE = 'https://game-hub-proxy.theodor-rozitis.workers.dev/'; // <-- PASTE YOUR REAL WORKER LINK HERE
 
-      if (!url) {
+    function launchProxy() {
+      let input = document.getElementById('urlInput').value.trim();
+      const status = document.getElementById('status');
+
+      if (!input) {
         status.textContent = "Paste a URL first fam";
         return;
       }
 
-      if (!url.startsWith('http')) {
-        url = 'https://' + url;
-        document.getElementById('urlInput').value = url;
+      if (!input.startsWith('http')) {
+        input = 'https://' + input;
       }
 
-      status.textContent = "Loading via proxy...";
-
-      // Use allorigins as main proxy (unblocks TikTok reliably)
-      const proxyBase = 'https://api.allorigins.win/raw?url=';
-      frame.src = proxyBase + encodeURIComponent(url);
-
-      frame.onload = () => {
-        status.style.display = 'none';
-      };
-
-      frame.onerror = () => {
-        status.textContent = "Proxy blocked — try direct (might be filtered)";
-        // Optional fallback to direct (uncomment if you want)
-        // frame.src = url;
-      };
+      status.textContent = "Launching proxy...";
+      window.open(PROXY_BASE + encodeURIComponent(input), '_blank');
     }
 
-    // Enter key support
     document.getElementById('urlInput').addEventListener('keypress', e => {
-      if (e.key === 'Enter') loadProxy();
+      if (e.key === 'Enter') launchProxy();
     });
   </script>
 </body>
