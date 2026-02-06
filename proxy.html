@@ -3,22 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Search</title>
+  <title>Web Link</title>
   <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
   <style>
     body {
       margin: 0;
       height: 100vh;
       background: #0a0a0a;
+      color: #fff;
+      font-family: 'Orbitron', monospace;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-family: 'Orbitron', monospace;
-    }
-    .box {
-      width: 80%;
-      max-width: 700px;
-      text-align: center;
     }
     h1 {
       font-size: 3em;
@@ -28,46 +25,56 @@
       margin-bottom: 40px;
     }
     input {
-      width: 100%;
-      padding: 18px;
-      font-size: 1.5em;
-      background: #111;
-      color: white;
+      width: 80%;
+      max-width: 700px;
+      padding: 20px;
+      font-size: 1.6em;
+      background: #111133;
+      color: #00ffff;
       border: 2px solid #00ffff;
-      border-radius: 12px;
-      box-sizing: border-box;
+      border-radius: 50px;
+      outline: none;
+      text-align: center;
+    }
+    input:focus {
+      border-color: #ff00ff;
+      box-shadow: 0 0 30px rgba(255,0,255,0.5);
     }
     button {
-      margin-top: 20px;
-      padding: 18px 40px;
+      margin-top: 30px;
+      padding: 20px 60px;
       background: linear-gradient(45deg, #00ffff, #ff00ff);
-      color: black;
+      color: #000;
       border: none;
-      border-radius: 12px;
-      font-size: 1.5em;
+      border-radius: 50px;
+      font-size: 1.6em;
       font-weight: bold;
       cursor: pointer;
+    }
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 40px #ff00ff;
     }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h1>Search</h1>
-    <input type="text" id="q" placeholder="Type anything..." autofocus>
-    <button onclick="go()">Go</button>
-  </div>
+  <h1>Open Site</h1>
+  <input type="text" id="url" placeholder="tiktok.com" autofocus>
+  <button onclick="openSite()">Go</button>
 
   <script>
-    function go() {
-      const q = document.getElementById('q').value.trim();
-      if (!q) return;
-      const ddg = 'https://duckduckgo.com/?q=' + encodeURIComponent(q);
-      const proxied = 'https://game-hub-proxy.theodor-rozitis.workers.dev/?url=' + encodeURIComponent(ddg);
-      window.open(proxied, '_blank');
+    function openSite() {
+      let input = document.getElementById('url').value.trim();
+      if (!input) return;
+
+      if (!input.includes('.')) input += '.com';
+      if (!input.startsWith('http')) input = 'https://' + input;
+
+      window.open(input, '_blank');
     }
 
-    document.getElementById('q').onkeypress = e => {
-      if (e.key === 'Enter') go();
+    document.getElementById('url').onkeypress = e => {
+      if (e.key === 'Enter') openSite();
     };
   </script>
 </body>
