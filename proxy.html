@@ -18,61 +18,63 @@
       justify-content: center;
     }
     h1 {
-      font-size: 3em;
+      font-size: 3.5em;
       background: linear-gradient(45deg, #ff00ff, #00ffff);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 40px;
+      margin-bottom: 50px;
+      text-shadow: 0 0 20px #ff00ff;
     }
     .search-box {
       display: flex;
-      width: 80%;
-      max-width: 700px;
-      gap: 10px;
+      width: 85%;
+      max-width: 800px;
+      gap: 15px;
+      box-shadow: 0 0 30px rgba(0,255,255,0.3);
+      border-radius: 50px;
+      overflow: hidden;
     }
     input {
       flex: 1;
-      padding: 15px 20px;
-      font-size: 1.4em;
+      padding: 18px 25px;
+      font-size: 1.5em;
       background: #111133;
-      color: #ff00ff;
-      border: 2px solid #ff00ff;
-      border-radius: 50px;
+      color: #00ffff;
+      border: none;
       outline: none;
     }
-    input:focus {
-      border-color: #00ffff;
-      box-shadow: 0 0 20px rgba(0,255,255,0.5);
+    input::placeholder {
+      color: #aaa;
     }
     button {
-      padding: 15px 30px;
+      padding: 18px 40px;
       background: linear-gradient(45deg, #00ffff, #ff00ff);
       color: #000;
       border: none;
-      border-radius: 50px;
-      font-size: 1.4em;
+      font-size: 1.5em;
       font-weight: bold;
       cursor: pointer;
       transition: all 0.3s;
     }
     button:hover {
       transform: scale(1.05);
-      box-shadow: 0 0 30px #ff00ff;
+      box-shadow: 0 0 40px #ff00ff;
     }
     #status {
-      margin-top: 30px;
-      font-size: 1.5em;
+      margin-top: 40px;
+      font-size: 1.6em;
       color: #ffff00;
+      text-shadow: 0 0 15px #ffff00;
     }
   </style>
 </head>
 <body>
-  <h1>Proxy Search</h1>
+  <h1>Private Search</h1>
   <div class="search-box">
-    <input type="text" id="searchInput" placeholder="Search anything..." autofocus>
+    <input type="text" id="searchInput" placeholder="Search DuckDuckGo..." autofocus>
     <button onclick="search()">Go</button>
   </div>
-  <div id="status">Type & hit Go — searches privately</div>
+  <div id="status">Type anything & hit Go — searches privately</div>
 
   <script>
     const PROXY_BASE = 'https://game-hub-proxy.theodor-rozitis.workers.dev/?url=';
@@ -88,8 +90,8 @@
       }
 
       status.textContent = "Searching...";
-      const fullUrl = DDG_BASE + encodeURIComponent(query);
-      const proxiedUrl = PROXY_BASE + encodeURIComponent(fullUrl);
+      const ddgUrl = DDG_BASE + encodeURIComponent(query);
+      const proxiedUrl = PROXY_BASE + encodeURIComponent(ddgUrl);
       window.open(proxiedUrl, '_blank');
     }
 
