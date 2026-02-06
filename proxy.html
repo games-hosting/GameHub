@@ -27,8 +27,9 @@
     }
     .buttons {
       display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
       gap: 20px;
+      justify-content: center;
       margin-bottom: 40px;
     }
     button {
@@ -41,6 +42,7 @@
       border-radius: 50px;
       cursor: pointer;
       transition: all 0.3s;
+      min-width: 200px;
     }
     button:hover {
       transform: scale(1.05);
@@ -70,9 +72,10 @@
     <button onclick="window.open('https://www.tiktok.com', '_blank')">TikTok</button>
     <button onclick="window.open('https://www.youtube.com', '_blank')">YouTube</button>
     <button onclick="window.open('https://www.instagram.com', '_blank')">Instagram</button>
+    <button onclick="window.open('https://discord.com/app', '_blank')">Discord</button>
   </div>
-  <input type="text" id="custom" placeholder="Or type custom URL..." autofocus>
-  <button style="margin-top:20px;" onclick="openCustom()">Go</button>
+  <input type="text" id="custom" placeholder="Or type custom URL (tiktok.com)..." autofocus>
+  <button style="margin-top:30px;" onclick="openCustom()">Go</button>
 
   <script>
     function openCustom() {
