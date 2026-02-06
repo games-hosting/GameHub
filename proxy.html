@@ -59,22 +59,38 @@
       transform: scale(1.05);
       box-shadow: 0 0 30px #ff00ff;
     }
+    #status {
+      margin-top: 30px;
+      font-size: 1.5em;
+      color: #ffff00;
+    }
   </style>
 </head>
 <body>
-  <h1>Quick Search</h1>
+  <h1>Proxy Search</h1>
   <div class="search-box">
     <input type="text" id="searchInput" placeholder="Search anything..." autofocus>
     <button onclick="search()">Go</button>
   </div>
+  <div id="status">Type & hit Go — searches privately</div>
 
   <script>
+    const PROXY_BASE = 'https://game-hub-proxy.theodor-rozitis.workers.dev/?url=';
+    const DDG_BASE = 'https://duckduckgo.com/?q=';
+
     function search() {
       const query = document.getElementById('searchInput').value.trim();
-      if (query) {
-        const url = 'https://duckduckgo.com/?q=' + encodeURIComponent(query);
-        window.open(url, '_blank');
+      const status = document.getElementById('status');
+
+      if (!query) {
+        status.textContent = "Type something first fam";
+        return;
       }
+
+      status.textContent = "Searching...";
+      const fullUrl = DDG_BASE + encodeURIComponent(query);
+      const proxiedUrl = PROXY_BASE + encodeURIComponent(fullUrl);
+      window.open(proxiedUrl, '_blank');
     }
 
     document.getElementById('searchInput').addEventListener('keypress', e => {
