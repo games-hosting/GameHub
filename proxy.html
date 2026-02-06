@@ -3,101 +3,72 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Search - Classroom Tools</title>
+  <title>Search</title>
   <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
   <style>
     body {
       margin: 0;
       height: 100vh;
       background: #0a0a0a;
-      color: #fff;
-      font-family: 'Orbitron', monospace;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
+      font-family: 'Orbitron', monospace;
+    }
+    .box {
+      width: 80%;
+      max-width: 700px;
+      text-align: center;
     }
     h1 {
-      font-size: 3.5em;
+      font-size: 3em;
       background: linear-gradient(45deg, #ff00ff, #00ffff);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 50px;
-      text-shadow: 0 0 20px #ff00ff;
-    }
-    .search-box {
-      display: flex;
-      width: 85%;
-      max-width: 800px;
-      gap: 15px;
-      box-shadow: 0 0 30px rgba(0,255,255,0.3);
-      border-radius: 50px;
-      overflow: hidden;
+      margin-bottom: 40px;
     }
     input {
-      flex: 1;
-      padding: 18px 25px;
+      width: 100%;
+      padding: 18px;
       font-size: 1.5em;
-      background: #111133;
-      color: #00ffff;
-      border: none;
-      outline: none;
-    }
-    input::placeholder {
-      color: #aaa;
+      background: #111;
+      color: white;
+      border: 2px solid #00ffff;
+      border-radius: 12px;
+      box-sizing: border-box;
     }
     button {
+      margin-top: 20px;
       padding: 18px 40px;
       background: linear-gradient(45deg, #00ffff, #ff00ff);
-      color: #000;
+      color: black;
       border: none;
+      border-radius: 12px;
       font-size: 1.5em;
       font-weight: bold;
       cursor: pointer;
-      transition: all 0.3s;
-    }
-    button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 40px #ff00ff;
-    }
-    #status {
-      margin-top: 40px;
-      font-size: 1.6em;
-      color: #ffff00;
-      text-shadow: 0 0 15px #ffff00;
     }
   </style>
 </head>
 <body>
-  <h1>Private Search</h1>
-  <div class="search-box">
-    <input type="text" id="searchInput" placeholder="Search DuckDuckGo..." autofocus>
-    <button onclick="search()">Go</button>
+  <div class="box">
+    <h1>Search</h1>
+    <input type="text" id="q" placeholder="Type anything..." autofocus>
+    <button onclick="go()">Go</button>
   </div>
-  <div id="status">Type anything & hit Go — searches privately</div>
 
   <script>
-    const PROXY_BASE = 'https://game-hub-proxy.theodor-rozitis.workers.dev/?url=';
-    const DDG_BASE = 'https://duckduckgo.com/?q=';
-
-    function search() {
-      const query = document.getElementById('searchInput').value.trim();
-      const status = document.getElementById('status');
-
-      if (!query) {
-        status.textContent = "Type something first fam";
-        return;
-      }
-
-      status.textContent = "Searching...";
-      const ddgUrl = DDG_BASE + encodeURIComponent(query);
-      const proxiedUrl = PROXY_BASE + encodeURIComponent(ddgUrl);
-      window.open(proxiedUrl, '_blank');
+    function go() {
+      const q = document.getElementById('q').value.trim();
+      if (!q) return;
+      const ddg = 'https://duckduckgo.com/?q=' + encodeURIComponent(q);
+      const proxied = 'https://game-hub-proxy.theodor-rozitis.workers.dev/?url=' + encodeURIComponent(ddg);
+      window.open(proxied, '_blank');
     }
 
-    document.getElementById('searchInput').addEventListener('keypress', e => {
-      if (e.key === 'Enter') search();
-    });
+    document.getElementById('q').onkeypress = e => {
+      if (e.key === 'Enter') go();
+    };
   </script>
 </body>
 </html>
