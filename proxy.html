@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Search - Classroom Tools</title>
+  <title>Proxy - Classroom Tools</title>
   <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
   <style>
     body {
@@ -35,14 +35,14 @@
       padding: 15px 20px;
       font-size: 1.4em;
       background: #111133;
-      color: #00ffff;
-      border: 2px solid #00ffff;
+      color: #ff00ff;
+      border: 2px solid #ff00ff;
       border-radius: 50px;
       outline: none;
     }
     input:focus {
-      border-color: #ff00ff;
-      box-shadow: 0 0 20px rgba(255,0,255,0.5);
+      border-color: #00ffff;
+      box-shadow: 0 0 20px rgba(0,255,255,0.5);
     }
     button {
       padding: 15px 30px;
@@ -70,13 +70,13 @@
 <body>
   <h1>Proxy Search</h1>
   <div class="search-box">
-    <input type="text" id="urlInput" placeholder="Paste TikTok / YouTube / any URL" autofocus>
+    <input type="text" id="urlInput" placeholder="tiktok.com or full URL" autofocus>
     <button onclick="launchProxy()">Go</button>
   </div>
-  <div id="status">Type URL & hit Go — it unblocks through proxy</div>
+  <div id="status">Type URL & hit Go — unblocks through proxy</div>
 
   <script>
-    const PROXY_BASE = 'https://game-hub-proxy.theodor-rozitis.workers.dev/'; // <-- PASTE YOUR REAL WORKER LINK HERE
+    const PROXY_BASE = 'https://game-hub-proxy.theodor-rozitis.workers.dev/?url=';
 
     function launchProxy() {
       let input = document.getElementById('urlInput').value.trim();
@@ -87,7 +87,8 @@
         return;
       }
 
-      if (!input.startsWith('http')) {
+      // Auto-add https:// if it's just a domain
+      if (!input.includes('://')) {
         input = 'https://' + input;
       }
 
