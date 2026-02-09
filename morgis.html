@@ -220,15 +220,111 @@
       cursor: pointer;
       font-family: 'Orbitron', monospace;
     }
+
+    /* CHAPTER 3 - ENDLESS RUNNER */
+    #chapter3 {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+    #runnerCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, #1a0033, #0a0a0a);
+    }
+    #runnerUI {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 5;
+    }
+    #scoreDisplay {
+      font-size: 2.5em;
+      color: #00ffff;
+      text-shadow: 0 0 10px #00ffff;
+      margin-bottom: 10px;
+    }
+    #powerupDisplay {
+      font-size: 1.8em;
+      color: #ffff00;
+      text-shadow: 0 0 10px #ffff00;
+    }
+
+    /* CUTSCENES */
+    .cutscene {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 40px;
+      text-align: center;
+    }
+    .cutscene h1 {
+      font-size: 3.5em;
+      margin-bottom: 30px;
+      color: #ff00ff;
+      text-shadow: 0 0 20px #ff00ff;
+    }
+    .cutscene p {
+      font-size: 2em;
+      max-width: 800px;
+      line-height: 1.5;
+      margin-bottom: 40px;
+      color: #00ffff;
+    }
+    .cutscene button {
+      padding: 20px 60px;
+      font-size: 2em;
+      background: linear-gradient(45deg, #00ffff, #ff00ff);
+      color: #000;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-family: 'Orbitron', monospace;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
   <!-- MAIN MENU -->
   <div id="mainMenu">
     <h1>ESCAPE MORGAN</h1>
-    <button class="menuBtn" onclick="startChapter1()">CHAPTER 1</button>
-    <button class="menuBtn" onclick="startChapter2()">CHAPTER 2</button>
-    <button class="menuBtn" disabled>CHAPTER 3</button>
+    <button class="menuBtn" id="ch1Btn" onclick="startChapter1()">CHAPTER 1</button>
+    <button class="menuBtn" id="ch2Btn" onclick="startChapter2()">CHAPTER 2 🔒</button>
+    <button class="menuBtn" id="ch3Btn" onclick="startChapter3()">CHAPTER 3 🔒</button>
+  </div>
+
+  <!-- CUTSCENES -->
+  <div id="cutscene1Intro" class="cutscene">
+    <h1>🔔 SCHOOL'S OUT!</h1>
+    <p>The bell rings! You rush outside but... it's FREEZING! ❄️<br><br>You try to go back inside but Morgan blocks the door.<br><br>"You can't come back in!" he yells.</p>
+    <button onclick="startChapter1FromCutscene()">START CHAPTER 1</button>
+  </div>
+
+  <div id="cutscene1End" class="cutscene">
+    <h1>🚪 YOU MADE IT INSIDE!</h1>
+    <p>Finally warm! But wait...<br><br>Morgan is coming inside too! 😱<br><br>You need to HIDE before he finds you!</p>
+    <button onclick="startChapter2FromCutscene()">START CHAPTER 2</button>
+  </div>
+
+  <div id="cutscene2End" class="cutscene">
+    <h1>😰 MORGAN FOUND YOU!</h1>
+    <p>"There you are!" Morgan shouts!<br><br>You sprint out of the room and run outside!<br><br>The only escape now is the BUS! 🚌</p>
+    <button onclick="startChapter3FromCutscene()">START CHAPTER 3</button>
+  </div>
+
+  <div id="cutscene3End" class="cutscene">
+    <h1>🎉 FREEDOM!</h1>
+    <p>You jump onto the bus just in time! 🚌<br><br>As it drives away, you wave at angry Morgan through the window! 😂<br><br>YOU ESCAPED!</p>
+    <button onclick="goToMenu()">BACK TO MENU</button>
   </div>
 
   <!-- CHAPTER 1: RED LIGHT GREEN LIGHT -->
@@ -246,7 +342,7 @@
 
     <div id="win">
       <h1>YOU ESCAPED MORGAN!</h1>
-      <button class="restart" onclick="resetChapter1()">PLAY AGAIN</button>
+      <button class="restart" onclick="showCutscene1End()">CONTINUE</button>
       <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
     </div>
   </div>
@@ -269,7 +365,7 @@
 
     <div id="chapter2Win">
       <h1>YOU SURVIVED ALL 5 ROUNDS!</h1>
-      <button class="restart" onclick="resetChapter2()">PLAY AGAIN</button>
+      <button class="restart" onclick="showCutscene2End()">CONTINUE</button>
       <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
     </div>
 
@@ -280,25 +376,144 @@
     </div>
   </div>
 
+  <!-- CHAPTER 3: ENDLESS RUNNER -->
+  <div id="chapter3">
+    <canvas id="runnerCanvas"></canvas>
+    <div id="runnerUI">
+      <div id="scoreDisplay">SCORE: 0 / 10000</div>
+      <div id="powerupDisplay"></div>
+    </div>
+
+    <div id="chapter3Win">
+      <h1>YOU OUTRAN MORGAN!</h1>
+      <p>10,000 POINTS REACHED!</p>
+      <button class="restart" onclick="showCutscene3End()">CONTINUE</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
+
+    <div id="gameOver">
+      <h1>MORGAN CAUGHT YOU!</h1>
+      <button class="restart" onclick="resetChapter3()">TRY AGAIN</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
+  </div>
+
   <script>
+    // ========== PROGRESSION SYSTEM ==========
+    function loadProgress() {
+      const saved = localStorage.getItem('morganGameProgress');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+      return { chapter1: false, chapter2: false, chapter3: false };
+    }
+
+    function saveProgress(chapter) {
+      const progress = loadProgress();
+      progress[chapter] = true;
+      localStorage.setItem('morganGameProgress', JSON.stringify(progress));
+      updateMenuButtons();
+    }
+
+    function updateMenuButtons() {
+      const progress = loadProgress();
+      const ch2Btn = document.getElementById('ch2Btn');
+      const ch3Btn = document.getElementById('ch3Btn');
+
+      // Chapter 2 unlocks when chapter 1 is complete
+      if (progress.chapter1) {
+        ch2Btn.disabled = false;
+        ch2Btn.textContent = 'CHAPTER 2';
+      } else {
+        ch2Btn.disabled = true;
+        ch2Btn.textContent = 'CHAPTER 2 🔒';
+      }
+
+      // Chapter 3 unlocks when chapter 2 is complete
+      if (progress.chapter2) {
+        ch3Btn.disabled = false;
+        ch3Btn.textContent = 'CHAPTER 3';
+      } else {
+        ch3Btn.disabled = true;
+        ch3Btn.textContent = 'CHAPTER 3 🔒';
+      }
+    }
+
+    // Initialize menu on load
+    window.addEventListener('DOMContentLoaded', () => {
+      updateMenuButtons();
+    });
+
     // ========== NAVIGATION ==========
     function goToMenu() {
       document.getElementById('mainMenu').style.display = 'flex';
       document.getElementById('chapter1').style.display = 'none';
       document.getElementById('chapter2').style.display = 'none';
+      document.getElementById('chapter3').style.display = 'none';
+      document.getElementById('cutscene1Intro').style.display = 'none';
+      document.getElementById('cutscene1End').style.display = 'none';
+      document.getElementById('cutscene2End').style.display = 'none';
+      document.getElementById('cutscene3End').style.display = 'none';
       stopChapter1();
+      stopChapter3();
+    }
+
+    function showCutscene1End() {
+      document.getElementById('chapter1').style.display = 'none';
+      document.getElementById('cutscene1End').style.display = 'flex';
+    }
+
+    function showCutscene2End() {
+      document.getElementById('chapter2').style.display = 'none';
+      document.getElementById('cutscene2End').style.display = 'flex';
+    }
+
+    function showCutscene3End() {
+      document.getElementById('chapter3').style.display = 'none';
+      document.getElementById('cutscene3End').style.display = 'flex';
     }
 
     function startChapter1() {
       document.getElementById('mainMenu').style.display = 'none';
+      document.getElementById('cutscene1Intro').style.display = 'flex';
+    }
+
+    function startChapter1FromCutscene() {
+      document.getElementById('cutscene1Intro').style.display = 'none';
       document.getElementById('chapter1').style.display = 'block';
       resetChapter1();
     }
 
     function startChapter2() {
+      const progress = loadProgress();
+      if (!progress.chapter1) {
+        alert('🔒 Complete Chapter 1 first!');
+        return;
+      }
       document.getElementById('mainMenu').style.display = 'none';
+      document.getElementById('cutscene1End').style.display = 'flex';
+    }
+
+    function startChapter2FromCutscene() {
+      document.getElementById('cutscene1End').style.display = 'none';
       document.getElementById('chapter2').style.display = 'block';
       resetChapter2();
+    }
+
+    function startChapter3() {
+      const progress = loadProgress();
+      if (!progress.chapter2) {
+        alert('🔒 Complete Chapter 2 first!');
+        return;
+      }
+      document.getElementById('mainMenu').style.display = 'none';
+      document.getElementById('cutscene2End').style.display = 'flex';
+    }
+
+    function startChapter3FromCutscene() {
+      document.getElementById('cutscene2End').style.display = 'none';
+      document.getElementById('chapter3').style.display = 'block';
+      resetChapter3();
     }
 
     // ========== CHAPTER 1: RED LIGHT GREEN LIGHT ==========
@@ -371,6 +586,7 @@
 
       if (playerPos >= 90) {
         gameRunning = false;
+        saveProgress('chapter1'); // UNLOCK CHAPTER 2!
         winScreen.style.display = 'flex';
       }
 
@@ -475,6 +691,7 @@
       currentRound++;
       
       if (currentRound > totalRounds) {
+        saveProgress('chapter2'); // UNLOCK CHAPTER 3 (when ready)!
         hideResult.style.display = 'none';
         chapter2Win.style.display = 'flex';
       } else {
@@ -483,6 +700,275 @@
         hideSeekUI.style.display = 'flex';
       }
     }
+    // ========== CHAPTER 3: ENDLESS RUNNER ==========
+    const canvas = document.getElementById('runnerCanvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const powerupDisplay = document.getElementById('powerupDisplay');
+    const chapter3Win = document.querySelector('#chapter3 #chapter3Win');
+    const chapter3GameOver = document.querySelector('#chapter3 #gameOver');
+
+    let ch3Running = false;
+    let ch3AnimationFrame = null;
+    let score = 0;
+    const targetScore = 10000;
+    
+    // Player
+    let playerY = 0;
+    let playerVelocityY = 0;
+    const playerSpeed = 6;
+    const gravity = 0.5;
+    const jumpPower = -15; // Increased from -12 for higher jumps
+    
+    // Morgan
+    let morganX = 0;
+    const morganBaseSpeed = 2.5; // Slower base speed, but always advancing
+    let morganSpeed = morganBaseSpeed;
+    let gracePeriod = 180; // 3 seconds at 60fps
+    
+    // Powerups
+    let playerBoostActive = false;
+    let playerBoostTimer = 0;
+    let morganSlowActive = false;
+    let morganSlowTimer = 0;
+    
+    // Items
+    let items = [];
+    let itemSpawnTimer = 0;
+    
+    function resizeCanvas() {
+      if (!canvas) return;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      playerY = canvas.height - 100;
+    }
+    
+    function resetChapter3() {
+      if (!canvas) return;
+      resizeCanvas();
+      stopChapter3();
+      
+      ch3Running = true;
+      score = 0;
+      playerY = canvas.height - 100;
+      playerVelocityY = 0;
+      morganX = -150;
+      morganSpeed = morganBaseSpeed;
+      gracePeriod = 180; // Reset grace period
+      playerBoostActive = false;
+      playerBoostTimer = 0;
+      morganSlowActive = false;
+      morganSlowTimer = 0;
+      items = [];
+      itemSpawnTimer = 0;
+      
+      scoreDisplay.textContent = `SCORE: 0 / ${targetScore}`;
+      powerupDisplay.textContent = '';
+      chapter3Win.style.display = 'none';
+      chapter3GameOver.style.display = 'none';
+      
+      gameLoopChapter3();
+    }
+    
+    function stopChapter3() {
+      ch3Running = false;
+      if (ch3AnimationFrame) {
+        cancelAnimationFrame(ch3AnimationFrame);
+        ch3AnimationFrame = null;
+      }
+    }
+    
+    // Spawn items
+    function spawnItem() {
+      const types = ['energy', 'rocket', 'obstacle', 'obstacle', 'obstacle', 'obstacle'];
+      const type = types[Math.floor(Math.random() * types.length)];
+      items.push({
+        type,
+        x: canvas.width + 50,
+        y: canvas.height - 100 - Math.random() * 200,
+        collected: false
+      });
+    }
+    
+    // Game loop
+    function gameLoopChapter3() {
+      if (!ch3Running) return;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Background grid effect
+      ctx.strokeStyle = '#330066';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < canvas.width; i += 50) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
+      }
+      
+      // Spawn items
+      itemSpawnTimer++;
+      if (itemSpawnTimer > 60) { // Spawn every 1 second (60 frames)
+        spawnItem();
+        itemSpawnTimer = 0;
+      }
+      
+      // Update & draw items
+      items.forEach((item, idx) => {
+        item.x -= 8;
+        
+        if (!item.collected && item.x < -50) {
+          items.splice(idx, 1);
+        }
+        
+        if (!item.collected) {
+          // Draw item
+          ctx.font = '40px Arial';
+          if (item.type === 'energy') {
+            ctx.fillStyle = '#00ff00';
+            ctx.fillText('⚡', item.x, item.y);
+          } else if (item.type === 'rocket') {
+            ctx.fillStyle = '#ff0000';
+            ctx.fillText('🚀', item.x, item.y);
+          } else if (item.type === 'obstacle') {
+            ctx.fillStyle = '#ff9900';
+            ctx.fillText('⚠️', item.x, item.y);
+          }
+          
+          // Collision detection with player (on right side)
+          const playerX = 200;
+          const dist = Math.sqrt((item.x - playerX) ** 2 + (item.y - playerY) ** 2);
+          
+          if (dist < 40) {
+            item.collected = true;
+            
+            if (item.type === 'energy') {
+              playerBoostActive = true;
+              playerBoostTimer = 240; // 4 seconds at 60fps
+              score += 100;
+            } else if (item.type === 'rocket') {
+              morganSlowActive = true;
+              morganSlowTimer = 360; // 6 seconds
+              morganX -= 200; // PUSH MORGAN BACK!
+              score += 150;
+            } else if (item.type === 'obstacle') {
+              playerBoostActive = false;
+              playerBoostTimer = 0;
+              morganSpeed = morganBaseSpeed * 2.5; // Morgan speeds up temporarily
+              setTimeout(() => { morganSpeed = morganBaseSpeed; }, 1500);
+            }
+          }
+        }
+      });
+      
+      // Player physics & controls
+      if (keys['ArrowUp'] || keys[' '] || keys['w']) {
+        if (playerY >= canvas.height - 100) {
+          playerVelocityY = jumpPower;
+        }
+      }
+      
+      playerVelocityY += gravity;
+      playerY += playerVelocityY;
+      
+      if (playerY >= canvas.height - 100) {
+        playerY = canvas.height - 100;
+        playerVelocityY = 0;
+      }
+      
+      // Draw player (on the right side, running right)
+      const playerX = 200; // A bit more to the right
+      ctx.fillStyle = playerBoostActive ? '#ffff00' : '#00ffff';
+      ctx.font = '60px Arial';
+      ctx.fillText('🏃', playerX, playerY);
+      
+      // Update powerups
+      if (playerBoostActive) {
+        playerBoostTimer--;
+        if (playerBoostTimer <= 0) {
+          playerBoostActive = false;
+        }
+      }
+      
+      if (morganSlowActive) {
+        morganSlowTimer--;
+        if (morganSlowTimer <= 0) {
+          morganSlowActive = false;
+        }
+      }
+      
+      // Morgan movement - he always moves forward to catch you
+      let morganMoveSpeed = 0;
+      
+      if (gracePeriod > 0) {
+        gracePeriod--;
+        morganMoveSpeed = 0; // Morgan doesn't move during grace period
+      } else {
+        morganMoveSpeed = morganSlowActive ? morganSpeed * 0.3 : morganSpeed;
+        
+        // If player has boost, Morgan moves even slower
+        if (playerBoostActive) {
+          morganMoveSpeed *= 0.2; // Boost slows Morgan's advance a lot
+        }
+      }
+      
+      morganX += morganMoveSpeed;
+      
+      // Draw Morgan
+      ctx.fillStyle = '#ff00ff';
+      ctx.font = '70px Arial';
+      ctx.fillText('😈', morganX, canvas.height - 90);
+      
+      // Score over time
+      score += 1;
+      scoreDisplay.textContent = `SCORE: ${Math.floor(score)} / ${targetScore}`;
+      
+      // Powerup display
+      let powerupText = '';
+      if (gracePeriod > 0) {
+        powerupText += `🛡️ GRACE PERIOD: ${Math.ceil(gracePeriod / 60)}s `;
+      }
+      if (playerBoostActive) powerupText += '⚡ SPEED BOOST! ';
+      if (morganSlowActive) powerupText += '🚀 MORGAN SLOWED! ';
+      powerupDisplay.textContent = powerupText;
+      
+      // Win condition
+      if (score >= targetScore) {
+        ch3Running = false;
+        saveProgress('chapter3');
+        chapter3Win.style.display = 'flex';
+        return;
+      }
+      
+      // Lose condition - Morgan catches player (on the right side now)
+      if (morganX >= 150) { // Catches you around x=150
+        ch3Running = false;
+        chapter3GameOver.style.display = 'flex';
+        return;
+      }
+      
+      ch3AnimationFrame = requestAnimationFrame(gameLoopChapter3);
+    }
+    
+    // Keyboard controls for Chapter 3
+    const keys = {};
+    window.addEventListener('keydown', e => {
+      keys[e.key] = true;
+    });
+    window.addEventListener('keyup', e => {
+      keys[e.key] = false;
+    });
+    
+    // Touch controls for jumping
+    canvas.addEventListener('touchstart', () => {
+      if (ch3Running && playerY >= canvas.height - 100) {
+        playerVelocityY = jumpPower;
+      }
+    });
+    
+    window.addEventListener('resize', () => {
+      if (ch3Running) resizeCanvas();
+    });
   </script>
 </body>
 </html>
