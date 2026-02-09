@@ -9,30 +9,68 @@
     body {
       margin: 0;
       overflow: hidden;
-      background: #0a0a0a;
+      background: linear-gradient(to bottom, #0a0a0a, #1a0033);
       font-family: 'Orbitron', monospace;
       color: #00ffff;
       height: 100vh;
       touch-action: none;
+      user-select: none;
     }
-    canvas {
-      display: block;
+    #game {
+      position: relative;
+      width: 100%;
+      height: 100%;
     }
-    #ui {
+    #morgan {
       position: absolute;
-      top: 20px;
-      left: 20px;
-      right: 20px;
-      display: flex;
-      justify-content: space-between;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 180px;
+      background: #ff00ff;
+      border-radius: 20px 20px 0 0;
+      transition: transform 0.5s;
+      text-align: center;
+      line-height: 180px;
+      font-size: 3em;
+      color: #000;
+      box-shadow: 0 0 30px #ff00ff;
+    }
+    #player {
+      position: absolute;
+      bottom: 20px;
+      width: 100px;
+      height: 150px;
+      background: #00ffff;
+      border-radius: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      transition: left 0.3s;
+      box-shadow: 0 0 20px #00ffff;
+    }
+    #door {
+      position: absolute;
+      top: 20%;
+      right: 10%;
+      width: 150px;
+      height: 250px;
+      background: linear-gradient(#8b4513, #a0522d);
+      border-radius: 20px;
+      box-shadow: 0 0 30px #8b4513;
+    }
+    #status {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4em;
+      font-weight: bold;
+      text-shadow: 0 0 20px #ff00ff;
       pointer-events: none;
       z-index: 10;
     }
-    #score {
-      font-size: 2em;
-      text-shadow: 0 0 10px #00ffff;
-    }
-    #gameOver {
+    #gameOver, #win {
       position: absolute;
       inset: 0;
       background: rgba(0,0,0,0.9);
@@ -41,243 +79,145 @@
       align-items: center;
       justify-content: center;
       z-index: 20;
+      color: #ff00ff;
     }
-    #gameOver h1 {
+    #gameOver h1, #win h1 {
       font-size: 4em;
       margin: 0;
-      color: #ff00ff;
-      text-shadow: 0 0 20px #ff00ff;
-    }
-    #gameOver p {
-      font-size: 2em;
-      margin: 20px 0;
     }
     #restart {
+      margin-top: 30px;
       padding: 20px 60px;
-      font-size: 1.8em;
+      font-size: 2em;
       background: linear-gradient(45deg, #00ffff, #ff00ff);
       color: #000;
       border: none;
       border-radius: 50px;
       cursor: pointer;
-      pointer-events: auto;
     }
   </style>
 </head>
 <body>
-  <div id="ui">
-    <div id="score">0</div>
+  <div id="game">
+    <div id="morgan">👀</div>
+    <div id="player">🏃</div>
+    <div id="door">🚪</div>
+    <div id="status">RED LIGHT</div>
   </div>
-
-  <canvas id="canvas"></canvas>
 
   <div id="gameOver">
     <h1>MORGAN CAUGHT YOU</h1>
-    <p>Score: <span id="finalScore">0</span></p>
     <button id="restart">TRY AGAIN</button>
   </div>
 
+  <div id="win">
+    <h1>YOU ESCAPED MORGAN</h1>
+    <button id="restart">PLAY AGAIN</button>
+  </div>
+
   <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score');
-    const gameOverEl = document.getElementById('gameOver');
-    const finalScoreEl = document.getElementById('finalScore');
-    const restartBtn = document.getElementById('restart');
+    const status = document.getElementById('status');
+    const morgan = document.getElementById('morgan');
+    const player = document.getElementById('player');
+    const gameOver = document.getElementById('gameOver');
+    const winScreen = document.getElementById('win');
+    const restartBtns = document.querySelectorAll('#restart');
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    let gameRunning = true;
+    let isGreen = false;
+    let playerPos = 50; // % from left
+    let morganLooking = true;
+    let timer = 0;
+    let speed = 0.8;
 
-    window.addEventListener('resize', () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+    function toggleLight() {
+      if (!gameRunning) return;
+      isGreen = !isGreen;
+      morganLooking = !morganLooking;
+
+      if (isGreen) {
+        status.textContent = "GREEN LIGHT";
+        status.style.color = "#00ff00";
+        morgan.textContent = "😴";
+        morgan.style.transform = "translateX(-50%) rotate(0deg)";
+      } else {
+        status.textContent = "RED LIGHT";
+        status.style.color = "#ff0000";
+        morgan.textContent = "👀";
+        morgan.style.transform = "translateX(-50%) rotate(0deg)";
+      }
+    }
+
+    function movePlayer(dir) {
+      if (!gameRunning || !isGreen) return;
+
+      if (dir === 'left') playerPos = Math.max(0, playerPos - 5);
+      if (dir === 'right') playerPos = Math.min(100, playerPos + 5);
+
+      player.style.left = playerPos + '%';
+      player.style.transform = `translateX(-${playerPos}%)`;
+
+      // Win condition
+      if (playerPos > 80) { // near door
+        gameRunning = false;
+        winScreen.style.display = 'flex';
+      }
+    }
+
+    // Controls
+    window.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft') movePlayer('left');
+      if (e.key === 'ArrowRight') movePlayer('right');
     });
 
-    let score = 0;
-    let gameRunning = true;
-    let speed = 5;
-    let player = { x: canvas.width / 2 - 40, y: canvas.height - 100, width: 80, height: 120 };
-    let morgan = { x: canvas.width / 2 - 40, y: 100, width: 80, height: 120 };
-    let items = [];
-    let particles = [];
-    let keys = {};
-
-    // Touch controls
+    // Touch/swipe
     let touchStartX = 0;
-    canvas.addEventListener('touchstart', e => {
+    document.addEventListener('touchstart', e => {
       touchStartX = e.touches[0].clientX;
     });
-    canvas.addEventListener('touchmove', e => {
-      if (!gameRunning) return;
-      const touchX = e.touches[0].clientX;
-      const diff = touchX - touchStartX;
-      player.x += diff * 0.3;
-      touchStartX = touchX;
-      player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-    });
-    canvas.addEventListener('touchend', e => {
-      // Jump on tap
-      if (player.y === canvas.height - player.height - 20) {
-        player.y -= 200;
+    document.addEventListener('touchmove', e => {
+      if (!gameRunning || !isGreen) return;
+      const diff = e.touches[0].clientX - touchStartX;
+      if (Math.abs(diff) > 20) {
+        movePlayer(diff > 0 ? 'right' : 'left');
+        touchStartX = e.touches[0].clientX;
       }
     });
 
-    // Keyboard controls
-    window.addEventListener('keydown', e => { keys[e.key] = true; });
-    window.addEventListener('keyup', e => { keys[e.key] = false; });
+    // Timer for light changes
+    setInterval(() => {
+      if (gameRunning) toggleLight();
+    }, Math.random() * 3000 + 2000); // random 2-5 sec
 
-    function spawnItem() {
-      const x = Math.random() * (canvas.width - 60);
-      items.push({ x, y: -60, width: 60, height: 60 });
-    }
+    // Check if player moved on red light
+    setInterval(() => {
+      if (!gameRunning || isGreen) return;
 
-    function createParticles(x, y) {
-      for (let i = 0; i < 10; i++) {
-        particles.push({
-          x, y,
-          vx: Math.random() * 6 - 3,
-          vy: Math.random() * 6 - 3,
-          life: 40,
-          color: `hsl(${Math.random()*60 + 180}, 100%, 70%)`
-        });
-      }
-    }
-
-    function update() {
-      if (!gameRunning) return;
-
-      // Player movement
-      if (keys['ArrowLeft'] || keys['a']) player.x -= 8;
-      if (keys['ArrowRight'] || keys['d']) player.x += 8;
-      if ((keys['ArrowUp'] || keys['w'] || keys[' ']) && player.y === canvas.height - player.height - 20) {
-        player.y -= 200;
-      }
-
-      player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
-
-      // Gravity
-      player.y += 10;
-      if (player.y > canvas.height - player.height - 20) {
-        player.y = canvas.height - player.height - 20;
-      }
-
-      // Morgan chase
-      const dx = player.x - morgan.x;
-      morgan.x += dx * 0.05;
-      morgan.x = Math.max(0, Math.min(canvas.width - morgan.width, morgan.x));
-
-      // Collision with Morgan
-      if (
-        player.x < morgan.x + morgan.width &&
-        player.x + player.width > morgan.x &&
-        player.y < morgan.y + morgan.height &&
-        player.y + player.height > morgan.y
-      ) {
+      // If player not at start pos during red light = busted
+      if (playerPos > 55 || playerPos < 45) {
         gameRunning = false;
-        finalScoreEl.textContent = score;
-        gameOverEl.style.display = 'flex';
+        gameOver.style.display = 'flex';
       }
-
-      // Items
-      items.forEach((item, i) => {
-        item.y += speed;
-        if (item.y > canvas.height) items.splice(i, 1);
-
-        // Collect
-        if (
-          player.x < item.x + item.width &&
-          player.x + player.width > item.x &&
-          player.y < item.y + item.height &&
-          player.y + player.height > item.y
-        ) {
-          items.splice(i, 1);
-          score += 10;
-          speed += 0.5;
-          createParticles(item.x + item.width/2, item.y + item.height/2);
-        }
-      });
-
-      // Score
-      score += 0.1;
-      scoreEl.textContent = Math.floor(score);
-
-      // Spawn items
-      if (Math.random() < 0.02) spawnItem();
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Background lines
-      ctx.strokeStyle = 'rgba(0,255,255,0.2)';
-      ctx.lineWidth = 2;
-      for (let i = 0; i < canvas.width; i += 80) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i + canvas.width/2, canvas.height);
-        ctx.stroke();
-      }
-
-      // Player (Ayham)
-      ctx.fillStyle = '#00ffff';
-      ctx.fillRect(player.x, player.y, player.width, player.height);
-      ctx.fillStyle = '#000';
-      ctx.fillRect(player.x + 20, player.y + 20, 40, 40); // face
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(player.x + 30, player.y + 30, 10, 10); // eyes
-
-      // Morgan (chaser)
-      ctx.fillStyle = '#ff00ff';
-      ctx.fillRect(morgan.x, morgan.y, morgan.width, morgan.height);
-      ctx.fillStyle = '#000';
-      ctx.fillRect(morgan.x + 20, morgan.y + 20, 40, 40);
-      ctx.fillStyle = '#ff0000';
-      ctx.fillRect(morgan.x + 30, morgan.y + 30, 10, 10);
-
-      // Items (coffee cups)
-      items.forEach(item => {
-        ctx.fillStyle = '#8B4513';
-        ctx.fillRect(item.x, item.y, item.width, item.height);
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(item.x + 10, item.y + 10, 40, 40);
-      });
-
-      // Particles
-      particles.forEach((p, i) => {
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.life / 40;
-        ctx.fillRect(p.x, p.y, 10, 10);
-        p.x += p.vx;
-        p.y += p.vy;
-        p.life--;
-        if (p.life <= 0) particles.splice(i, 1);
-      });
-      ctx.globalAlpha = 1;
-    }
-
-    function loop() {
-      update();
-      draw();
-      requestAnimationFrame(loop);
-    }
+    }, 100);
 
     // Restart
-    restartBtn.onclick = () => {
-      score = 0;
-      speed = 5;
-      player.x = canvas.width / 2 - 40;
-      player.y = canvas.height - 120;
-      morgan.x = canvas.width / 2 - 40;
-      items = [];
-      particles = [];
-      gameRunning = true;
-      gameOverEl.style.display = 'none';
-      scoreEl.textContent = 0;
-    };
+    restartBtns.forEach(btn => {
+      btn.onclick = () => {
+        gameRunning = true;
+        isGreen = false;
+        playerPos = 50;
+        player.style.left = '50%';
+        player.style.transform = 'translateX(-50%)';
+        morgan.textContent = '👀';
+        status.textContent = 'RED LIGHT';
+        status.style.color = '#ff0000';
+        gameOver.style.display = 'none';
+        winScreen.style.display = 'none';
+      };
+    });
 
-    // Start
-    spawnItem();
-    loop();
+    // Start with red light
+    toggleLight();
   </script>
 </body>
 </html>
