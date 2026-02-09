@@ -130,9 +130,9 @@
 
     let gameRunning = true;
     let isGreen = false; // start red
-    let playerPos = 0; // far left
+    let playerPos = 0;
     let lastMoveTime = Date.now();
-    let difficulty = 1;
+    let lastLightSwitchTime = Date.now();
     let lightTimer = null;
 
     function resetGame() {
@@ -146,13 +146,15 @@
       status.style.color = '#ff0000';
       gameOver.style.display = 'none';
       winScreen.style.display = 'none';
-      difficulty = 1;
       lastMoveTime = Date.now();
+      lastLightSwitchTime = Date.now();
       startLightTimer();
     }
 
     function toggleLight() {
+      if (!gameRunning) return;
       isGreen = !isGreen;
+      lastLightSwitchTime = Date.now();
 
       if (isGreen) {
         status.textContent = "GREEN LIGHT - RUN!";
@@ -181,13 +183,12 @@
       }
     }
 
-    // Keyboard
+    // Controls
     window.addEventListener('keydown', e => {
       if (e.key === 'ArrowLeft' || e.key === 'a') movePlayer('left');
       if (e.key === 'ArrowRight' || e.key === 'd') movePlayer('right');
     });
 
-    // Touch/swipe
     let touchStartX = 0;
     document.addEventListener('touchstart', e => {
       touchStartX = e.touches[0].clientX;
@@ -201,28 +202,23 @@
       }
     });
 
-    // Bust check - only on active move during red (1 sec grace)
+    function startLightTimer() {
+      lightTimer = setInterval(() => {
+        if (gameRunning) toggleLight();
+      }, Math.random() * 2000 + 1500); // 1.5-3.5 sec switches
+    }
+
+    // Bust only if moved after red light starts (1.5 sec grace)
     setInterval(() => {
       if (!gameRunning || isGreen) return;
 
       const timeSinceMove = Date.now() - lastMoveTime;
-      if (timeSinceMove < 1000) { // grace
+      const timeSinceSwitch = Date.now() - lastLightSwitchTime;
+      if (timeSinceMove < 1500 && timeSinceSwitch > 300) {
         gameRunning = false;
         gameOver.style.display = 'flex';
       }
     }, 100);
-
-    // Start/restart timer
-    function startLightTimer() {
-      lightTimer = setInterval(() => {
-        if (gameRunning) {
-          toggleLight();
-          difficulty = Math.min(2.5, 1 + (Date.now() - lastMoveTime) / 15000);
-          clearInterval(lightTimer);
-          startLightTimer(); // restart with new delay
-        }
-      }, Math.random() * 2000 + 1500); // 1.5-3.5 sec
-    }
 
     restartBtns.forEach(btn => {
       btn.onclick = resetGame;
