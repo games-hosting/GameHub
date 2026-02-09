@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fem Våningar</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Orbitron', monospace; 
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #2d1b69 100%); 
+            color: #fff; 
+            min-height: 100vh; 
+            overflow: hidden; 
+            position: relative;
+        }
+        body::before { 
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: radial-gradient(circle at 20% 80%, rgba(120,119,198,0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(255,119,198,0.3) 0%, transparent 50%);
+            z-index: -1; animation: pulse 8s ease-in-out infinite alternate; 
+        }
+        @keyframes pulse { 0% { opacity: 0.7; } 100% { opacity: 1; } }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; height: 100vh; display: flex; flex-direction: column; }
+        
+        .header { 
+            text-align: center; margin-bottom: 20px; 
+            font-size: clamp(2rem, 5vw, 4rem); font-weight: 900; 
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #f9ca24); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+            text-shadow: 0 0 30px rgba(255,255,255,0.5); animation: glow 2s ease-in-out infinite alternate;
+        }
+        @keyframes glow { 0% { filter: drop-shadow(0 0 20px rgba(255,107,107,0.5)); } 100% { filter: drop-shadow(0 0 30px rgba(78,205,196,0.8)); } }
+        
+        .game-board { 
+            flex: 1; display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 30px; align-items: center; 
+            padding: 20px; position: relative;
+        }
+        
+        .player-zone, .ai-zone { 
+            display: flex; flex-direction: column; align-items: center; 
+            background: rgba(255,255,255,0.1); backdrop-filter: blur(20px); border-radius: 24px; 
+            padding: 30px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            transition: all 0.4s cubic-bezier(0.25,0.46,0.45,0.94);
+        }
+        .player-zone:hover, .ai-zone:hover { transform: translateY(-5px); box-shadow: 0 30px 60px rgba(0,0,0,0.4); }
+        .ai-zone { grid-column: 3; }
+        
+        .tower { 
+            display: flex; flex-direction: column-reverse; align-items: center; gap: 8px; 
+            min-height: 300px; padding: 20px; position: relative;
+        }
+        .floor { 
+            width: 80px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; 
+            font-size: 1.8rem; font-weight: 700; background: linear-gradient(145deg, #667eea 0%, #764ba2 100%); 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.2); 
+            border: 2px solid rgba(255,255,255,0.3); transition: all 0.3s ease; cursor: pointer;
+            position: relative; overflow: hidden;
+        }
+        .floor:hover { transform: scale(1.05) translateY(-2px); box-shadow: 0 15px 30px rgba(102,126,234,0.6); }
+        .floor.stolen { animation: shake 0.5s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        .floor.win { background: linear-gradient(145deg, #f093fb 0%, #f5576c 100%); animation: victory 1s ease-in-out infinite; }
+        @keyframes victory { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        
+        .hand { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+        .card { 
+            width: 70px; height: 100px; border-radius: 12px; background: linear-gradient(145deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%); 
+            border: 2px solid rgba(255,255,255,0.4); display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            font-size: 1.6rem; font-weight: 700; cursor: pointer; transition: all 0.3s cubic-bezier(0.68,-0.55,0.265,1.55); 
+            backdrop-filter: blur(10px); box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        .card:hover { transform: translateY(-8px) scale(1.05); box-shadow: 0 20px 40px rgba(255,255,255,0.3); }
+        .card.selected { border-color: #f9ca24; box-shadow: 0 0 30px #f9ca24; }
+        .card.suit-c { color: #da2d54; } .card.suit-d { color: #ef9c00; } .card.suit-h { color: #da2d54; } .card.suit-s { color: #1a1a1a; background: rgba(255,255,255,0.9); }
+        
+        .deck { 
+            width: 100px; height: 140px; background: linear-gradient(145deg, #4a5568 0%, #2d3748 100%); 
+            border-radius: 16px; margin: 20px auto; cursor: pointer; position: relative; 
+            border: 2px solid rgba(255,255,255,0.3); transition: all 0.3s ease;
+        }
+        .deck:hover { transform: translateY(-4px); box-shadow: 0 15px 30px rgba(0,0,0,0.4); }
+        .deck::after { content: 'DRAW'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 0.9rem; font-weight: 700; color: #fff; }
+        
+        .controls { text-align: center; margin: 20px 0; }
+        .btn { 
+            background: linear-gradient(145deg, #ff6b6b, #4ecdc4); border: none; padding: 15px 40px; 
+            border-radius: 50px; font-family: inherit; font-size: 1.2rem; font-weight: 700; 
+            color: #fff; cursor: pointer; margin: 0 10px; transition: all 0.3s ease; 
+            box-shadow: 0 10px 20px rgba(255,107,107,0.4);
+        }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(255,107,107,0.6); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        .status { 
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%); 
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); padding: 15px 30px; 
+            border-radius: 50px; font-size: 1.4rem; font-weight: 700; border: 2px solid rgba(255,255,255,0.3);
+        }
+        .ai-thinking { animation: blink 1s infinite; }
+        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.3; } }
+        
+        .victory-screen { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; 
+            justify-content: center; z-index: 1000; font-size: 4rem; text-align: center;
+        }
+        .victory-screen h1 { background: linear-gradient(45deg, #f093fb, #f5576c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 20px; }
+        
+        @media (max-width: 768px) { 
+            .game-board { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; gap: 20px; }
+            .ai-zone { grid-column: 1; grid-row: 3; }
+            .hand { justify-content: center; gap: 8px; }
+            .card { width: 60px; height: 85px; font-size: 1.4rem; }
+            .floor { width: 70px; height: 50px; font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="header">FEM VÅNINGAR</h1>
+        <div class="status" id="status">Build your 5-floor tower first!</div>
+        
+        <div class="game-board">
+            <div class="player-zone">
+                <div style="font-size: 1.5rem; margin-bottom: 15px; font-weight: 700;">YOUR TOWER</div>
+                <div class="tower" id="playerTower"></div>
+                <div class="hand" id="playerHand"></div>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+                <div class="deck" id="drawDeck" onclick="drawCard()"></div>
+                <div class="controls">
+                    <button class="btn" id="buildBtn" onclick="buildFloor()">BUILD FLOOR</button>
+                    <button class="btn" id="sabotageBtn" onclick="sabotage()">SABOTAGE AI</button>
+                </div>
+            </div>
+            
+            <div class="ai-zone">
+                <div style="font-size: 1.5rem; margin-bottom: 15px; font-weight: 700;">AI TOWER</div>
+                <div class="tower" id="aiTower"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="victory-screen" id="victoryScreen" style="display: none;">
+        <h1 id="victoryText"></h1>
+        <button class="btn" onclick="restartGame()" style="font-size: 1.5rem; padding: 20px 60px;">PLAY AGAIN</button>
+    </div>
+
+    <script>
+        class FemVangar {
+            constructor() {
+                this.deck = [];
+                this.playerHand = [];
+                this.aiHand = [];
+                this.playerTower = [];
+                this.aiTower = [];
+                this.selectedCard = null;
+                this.gameState = 'player_turn'; // 'player_turn', 'ai_turn', 'ai_thinking'
+                this.initDeck();
+                this.dealHands();
+                this.render();
+                this.gameLoop();
+            }
+            
+            initDeck() {
+                const suits = ['♠','♦','♥','♣'];
+                const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+                this.deck = [];
+                for(let suit of suits) {
+                    for(let rank of ranks) {
+                        this.deck.push({rank, suit, value: ranks.indexOf(rank) + 1});
+                    }
+                }
+                this.shuffle(this.deck);
+            }
+            
+            shuffle(array) {
+                for(let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+            
+            dealHands() {
+                for(let i = 0; i < 7; i++) {
+                    this.playerHand.push(this.draw());
+                    this.aiHand.push(this.draw());
+                }
+            }
+            
+            draw() {
+                if(this.deck.length === 0) return null;
+                return this.deck.pop();
+            }
+            
+            getTopValue(tower) {
+                return tower.length > 0 ? tower[tower.length - 1].value : 0;
+            }
+            
+            canBuild(tower, card) {
+                const topValue = this.getTopValue(tower);
+                return topValue === 0 || card.value === topValue + 1;
+            }
+            
+            canSabotage(tower, card) {
+                const topValue = this.getTopValue(tower);
+                return card.value === topValue + 1;
+            }
+            
+            buildFloor(tower, hand, isAI = false) {
+                for(let i = 0; i < hand.length; i++) {
+                    if(this.canBuild(tower, hand[i])) {
+                        const card = hand.splice(i, 1)[0];
+                        tower.push(card);
+                        if(!isAI) this.selectedCard = null;
+                        return true;
+                    }
+                }
+                return false;
+            }
+            
+            sabotage(targetTower, attackerHand) {
+                for(let i = 0; i < attackerHand.length; i++) {
+                    if(this.canSabotage(targetTower, attackerHand[i])) {
+                        const card = attackerHand.splice(i, 1)[0];
+                        // Card goes to discard (not back to hand)
+                        if(targetTower.length > 0) {
+                            targetTower.pop(); // Remove top floor
+                        }
+                        setTimeout(() => this.render(), 300);
+                        return true;
+                    }
+                }
+                return false;
+            }
+            
+            aiThink() {
+                // Smart AI: 70% build if possible, 30% sabotage if possible and player is ahead
+                const playerAhead = this.playerTower.length >= this.aiTower.length;
+                const canBuild = this.canBuild(this.aiTower, this.aiHand.some(c => this.canBuild(this.aiTower, c)));
+                const canSabotage = this.canSabotage(this.playerTower, this.aiHand.some(c => this.canSabotage(this.playerTower, c)));
+                
+                if(canBuild && (Math.random() < 0.7 || !canSabotage)) {
+                    this.buildFloor(this.aiTower, this.aiHand, true);
+                } else if(canSabotage && playerAhead && Math.random() < 0.6) {
+                    this.sabotage(this.playerTower, this.aiHand);
+                } else {
+                    // Bluff pass - draw only
+                }
+            }
+            
+            checkWin() {
+                if(this.playerTower.length >= 5) {
+                    document.getElementById('victoryText').textContent = '🏆 YOU DOMINATE! 🏆';
+                    document.getElementById('victoryScreen').style.display = 'flex';
+                    return true;
+                }
+                if(this.aiTower.length >= 5) {
+                    document.getElementById('victoryText').textContent = '🤖 AI CONQUERS! 🤖';
+                    document.getElementById('victoryScreen').style.display = 'flex';
+                    return true;
+                }
+                return false;
+            }
+            
+            playerTurn() {
+                if(this.buildFloor(this.playerTower, this.playerHand)) {
+                    this.afterAction();
+                }
+            }
+            
+            playerSabotage() {
+                if(this.sabotage(this.aiTower, this.playerHand)) {
+                    this.afterAction();
+                }
+            }
+            
+            afterAction() {
+                this.drawIfPossible();
+                this.render();
+                if(!this.checkWin()) {
+                    this.gameState = 'ai_turn';
+                    setTimeout(() => this.aiTurn(), 800);
+                }
+            }
+            
+            aiTurn() {
+                this.gameState = 'ai_thinking';
+                this.render();
+                setTimeout(() => {
+                    this.aiThink();
+                    this.drawIfPossible();
+                    this.render();
+                    if(!this.checkWin()) {
+                        this.gameState = 'player_turn';
+                        this.render();
+                    }
+                }, 1200);
+            }
+            
+            drawIfPossible() {
+                const hand = this.gameState === 'player_turn' ? this.playerHand : this.aiHand;
+                if(hand.length < 10 && this.deck.length > 0) {
+                    const card = this.draw();
+                    if(card) hand.push(card);
+                }
+            }
+            
+            render() {
+                this.renderTower('playerTower', this.playerTower, false);
+                this.renderTower('aiTower', this.aiTower, true);
+                this.renderHand('playerHand', this.playerHand);
+                this.updateUI();
+            }
+            
+            renderTower(id, tower, isAI) {
+                const container = document.getElementById(id);
+                container.innerHTML = '';
+                tower.forEach((card, index) => {
+                    const floor = document.createElement('div');
+                    floor.className = `floor ${index === tower.length - 1 ? 'win' : ''}`;
+                    floor.textContent = card.rank;
+                    floor.dataset.value = card.value;
+                    container.appendChild(floor);
+                });
+            }
+            
+            renderHand(id, hand) {
+                const container = document.getElementById(id);
+                container.innerHTML = '';
+                hand.forEach((card, index) => {
+                    const cardEl = document.createElement('div');
+                    cardEl.className = `card ${card.suit === '♣' || card.suit === '♠' ? 'suit-c' : card.suit === '♦' || card.suit === '♥' ? 'suit-d' : ''}`;
+                    cardEl.innerHTML = `<div>${card.rank}</div><div style="font-size: 1.2rem;">${card.suit}</div>`;
+                    cardEl.onclick = () => this.selectCard(index);
+                    container.appendChild(cardEl);
+                });
+            }
+            
+            selectCard(index) {
+                if(this.selectedCard !== null && this.selectedCard !== index) {
+                    this.selectedCard = null;
+                    this.renderHand('playerHand', this.playerHand);
+                } else {
+                    this.selectedCard = index;
+                    this.renderHand('playerHand', this.playerHand);
+                }
+            }
+            
+            updateUI() {
+                const status = document.getElementById('status');
+                const buildBtn = document.getElementById('buildBtn');
+                const sabotageBtn = document.getElementById('sabotageBtn');
+                
+                if(this.gameState === 'player_turn') {
+                    status.textContent = `Your turn! Tower: ${this.playerTower.length}/5 | Hand: ${this.playerHand.length}`;
+                    buildBtn.disabled = false;
+                    sabotageBtn.disabled = false;
+                    status.classList.remove('ai-thinking');
+                } else {
+                    status.textContent = 'AI is plotting...';
+                    status.classList.add('ai-thinking');
+                    buildBtn.disabled = true;
+                    sabotageBtn.disabled = true;
+                }
+                
+                // Auto-enable build if possible
+                const canBuild = this.playerHand.some(c => this.canBuild(this.playerTower, c));
+                const canSab = this.playerHand.some(c => this.canSabotage(this.aiTower, c));
+                buildBtn.style.opacity = canBuild ? '1' : '0.5';
+                sabotageBtn.style.opacity = canSab ? '1' : '0.5';
+            }
+            
+            gameLoop() {
+                // Auto-advance if valid move available
+                if(this.gameState === 'player_turn') {
+                    const canBuild = this.playerHand.some(c => this.canBuild(this.playerTower, c));
+                    if(canBuild && this.selectedCard === null) {
+                        // Highlight first possible
+                        const possibleIdx = this.playerHand.findIndex(c => this.canBuild(this.playerTower, c));
+                        if(possibleIdx !== -1) this.selectedCard = possibleIdx;
+                        this.render();
+                    }
+                }
+            }
+        }
+        
+        let game;
+        
+        function initGame() {
+            game = new FemVangar();
+        }
+        
+        function buildFloor() {
+            if(game.gameState === 'player_turn') {
+                game.playerTurn();
+            }
+        }
+        
+        function sabotage() {
+            if(game.gameState === 'player_turn') {
+                game.playerSabotage();
+            }
+        }
+        
+        function drawCard() {
+            // Auto-draw handled in game logic
+        }
+        
+        function restartGame() {
+            document.getElementById('victoryScreen').style.display = 'none';
+            initGame();
+        }
+        
+        // Start game
+        window.onload = initGame;
+        
+        // Smooth auto-play hint
+        setInterval(() => {
+            if(game && game.gameState === 'player_turn') {
+                game.gameLoop();
+            }
+        }, 200);
+    </script>
+</body>
+</html>
