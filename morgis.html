@@ -43,7 +43,7 @@
       height: 200px;
       background: #00ffff;
       border-radius: 20px;
-      left: 0%; /* far left start */
+      left: 0%; /* far left */
       transition: left 0.7s ease-out;
       box-shadow: 0 0 20px #00ffff;
       font-size: 6em;
@@ -52,7 +52,7 @@
     }
     #door {
       position: absolute;
-      top: 40%; /* lowered door */
+      top: 40%; /* lowered */
       right: 10%;
       width: 180px;
       height: 300px;
@@ -200,22 +200,24 @@
       }
     });
 
-    // Light timer - more frequent switches
+    // Light timer - more frequent red
     let lightTimer = setInterval(() => {
       if (gameRunning) {
         toggleLight();
         difficulty = Math.min(2.5, 1 + (Date.now() - lastMoveTime) / 15000);
         clearInterval(lightTimer);
-        lightTimer = setInterval(arguments.callee, Math.random() * 2000 + 1500);
+        // More red overall
+        const baseDelay = Math.random() * 2000 + 1500;
+        lightTimer = setInterval(arguments.callee, isGreen ? baseDelay * 0.8 : baseDelay * 1.2);
       }
-    }, 3000); // start with green
+    }, 2500); // start green
 
-    // Bust check - only on active move during red (1 sec grace)
+    // Bust check - grace 1.2 sec
     setInterval(() => {
       if (!gameRunning || isGreen) return;
 
       const timeSinceMove = Date.now() - lastMoveTime;
-      if (timeSinceMove < 1000) { // grace period
+      if (timeSinceMove < 1200) { // grace period
         gameRunning = false;
         gameOver.style.display = 'flex';
       }
