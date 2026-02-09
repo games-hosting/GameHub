@@ -1,1 +1,283 @@
-morgan escape mentality
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>???</title>
+  <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #0a0a0a;
+      font-family: 'Orbitron', monospace;
+      color: #00ffff;
+      height: 100vh;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+    }
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 10;
+    }
+    #score {
+      font-size: 2em;
+      text-shadow: 0 0 10px #00ffff;
+    }
+    #gameOver {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+    #gameOver h1 {
+      font-size: 4em;
+      margin: 0;
+      color: #ff00ff;
+      text-shadow: 0 0 20px #ff00ff;
+    }
+    #gameOver p {
+      font-size: 2em;
+      margin: 20px 0;
+    }
+    #restart {
+      padding: 20px 60px;
+      font-size: 1.8em;
+      background: linear-gradient(45deg, #00ffff, #ff00ff);
+      color: #000;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <div id="score">0</div>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div id="gameOver">
+    <h1>MORGAN CAUGHT YOU</h1>
+    <p>Score: <span id="finalScore">0</span></p>
+    <button id="restart">TRY AGAIN</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const gameOverEl = document.getElementById('gameOver');
+    const finalScoreEl = document.getElementById('finalScore');
+    const restartBtn = document.getElementById('restart');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    let score = 0;
+    let gameRunning = true;
+    let speed = 5;
+    let player = { x: canvas.width / 2 - 40, y: canvas.height - 100, width: 80, height: 120 };
+    let morgan = { x: canvas.width / 2 - 40, y: 100, width: 80, height: 120 };
+    let items = [];
+    let particles = [];
+    let keys = {};
+
+    // Touch controls
+    let touchStartX = 0;
+    canvas.addEventListener('touchstart', e => {
+      touchStartX = e.touches[0].clientX;
+    });
+    canvas.addEventListener('touchmove', e => {
+      if (!gameRunning) return;
+      const touchX = e.touches[0].clientX;
+      const diff = touchX - touchStartX;
+      player.x += diff * 0.3;
+      touchStartX = touchX;
+      player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+    });
+    canvas.addEventListener('touchend', e => {
+      // Jump on tap
+      if (player.y === canvas.height - player.height - 20) {
+        player.y -= 200;
+      }
+    });
+
+    // Keyboard controls
+    window.addEventListener('keydown', e => { keys[e.key] = true; });
+    window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+    function spawnItem() {
+      const x = Math.random() * (canvas.width - 60);
+      items.push({ x, y: -60, width: 60, height: 60 });
+    }
+
+    function createParticles(x, y) {
+      for (let i = 0; i < 10; i++) {
+        particles.push({
+          x, y,
+          vx: Math.random() * 6 - 3,
+          vy: Math.random() * 6 - 3,
+          life: 40,
+          color: `hsl(${Math.random()*60 + 180}, 100%, 70%)`
+        });
+      }
+    }
+
+    function update() {
+      if (!gameRunning) return;
+
+      // Player movement
+      if (keys['ArrowLeft'] || keys['a']) player.x -= 8;
+      if (keys['ArrowRight'] || keys['d']) player.x += 8;
+      if ((keys['ArrowUp'] || keys['w'] || keys[' ']) && player.y === canvas.height - player.height - 20) {
+        player.y -= 200;
+      }
+
+      player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+
+      // Gravity
+      player.y += 10;
+      if (player.y > canvas.height - player.height - 20) {
+        player.y = canvas.height - player.height - 20;
+      }
+
+      // Morgan chase
+      const dx = player.x - morgan.x;
+      morgan.x += dx * 0.05;
+      morgan.x = Math.max(0, Math.min(canvas.width - morgan.width, morgan.x));
+
+      // Collision with Morgan
+      if (
+        player.x < morgan.x + morgan.width &&
+        player.x + player.width > morgan.x &&
+        player.y < morgan.y + morgan.height &&
+        player.y + player.height > morgan.y
+      ) {
+        gameRunning = false;
+        finalScoreEl.textContent = score;
+        gameOverEl.style.display = 'flex';
+      }
+
+      // Items
+      items.forEach((item, i) => {
+        item.y += speed;
+        if (item.y > canvas.height) items.splice(i, 1);
+
+        // Collect
+        if (
+          player.x < item.x + item.width &&
+          player.x + player.width > item.x &&
+          player.y < item.y + item.height &&
+          player.y + player.height > item.y
+        ) {
+          items.splice(i, 1);
+          score += 10;
+          speed += 0.5;
+          createParticles(item.x + item.width/2, item.y + item.height/2);
+        }
+      });
+
+      // Score
+      score += 0.1;
+      scoreEl.textContent = Math.floor(score);
+
+      // Spawn items
+      if (Math.random() < 0.02) spawnItem();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Background lines
+      ctx.strokeStyle = 'rgba(0,255,255,0.2)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < canvas.width; i += 80) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i + canvas.width/2, canvas.height);
+        ctx.stroke();
+      }
+
+      // Player (Ayham)
+      ctx.fillStyle = '#00ffff';
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+      ctx.fillStyle = '#000';
+      ctx.fillRect(player.x + 20, player.y + 20, 40, 40); // face
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(player.x + 30, player.y + 30, 10, 10); // eyes
+
+      // Morgan (chaser)
+      ctx.fillStyle = '#ff00ff';
+      ctx.fillRect(morgan.x, morgan.y, morgan.width, morgan.height);
+      ctx.fillStyle = '#000';
+      ctx.fillRect(morgan.x + 20, morgan.y + 20, 40, 40);
+      ctx.fillStyle = '#ff0000';
+      ctx.fillRect(morgan.x + 30, morgan.y + 30, 10, 10);
+
+      // Items (coffee cups)
+      items.forEach(item => {
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(item.x, item.y, item.width, item.height);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(item.x + 10, item.y + 10, 40, 40);
+      });
+
+      // Particles
+      particles.forEach((p, i) => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life / 40;
+        ctx.fillRect(p.x, p.y, 10, 10);
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // Restart
+    restartBtn.onclick = () => {
+      score = 0;
+      speed = 5;
+      player.x = canvas.width / 2 - 40;
+      player.y = canvas.height - 120;
+      morgan.x = canvas.width / 2 - 40;
+      items = [];
+      particles = [];
+      gameRunning = true;
+      gameOverEl.style.display = 'none';
+      scoreEl.textContent = 0;
+    };
+
+    // Start
+    spawnItem();
+    loop();
+  </script>
+</body>
+</html>
