@@ -52,8 +52,8 @@
     }
     #door {
       position: absolute;
-      top: 40%; /* lowered */
-      right: 10%;
+      bottom: 20px; /* same level as player */
+      right: 0%; /* all the way right */
       width: 180px;
       height: 300px;
       background: linear-gradient(#8b4513, #a0522d);
@@ -135,6 +135,7 @@
     let difficulty = 1;
     let lightTimer = null;
     let lastLightSwitchTime = Date.now();
+    let isMoving = false; // NEW: track if currently moving
 
     function resetGame() {
       clearInterval(lightTimer);
@@ -150,6 +151,7 @@
       difficulty = 1;
       lastMoveTime = Date.now();
       lastLightSwitchTime = Date.now();
+      isMoving = false;
       startLightTimer();
     }
 
@@ -169,13 +171,14 @@
     }
 
     function movePlayer(dir) {
-      if (!gameRunning || !isGreen) return;
+      if (!gameRunning) return;
 
+      isMoving = true; // Mark as moving
       lastMoveTime = Date.now();
 
       // Slower movement
-      if (dir === 'left') playerPos = Math.max(0, playerPos - 2);
-      if (dir === 'right') playerPos = Math.min(100, playerPos + 2);
+      if (dir === 'left') playerPos = Math.max(0, playerPos - 1);
+      if (dir === 'right') playerPos = Math.min(100, playerPos + 1);
 
       player.style.left = playerPos + '%';
 
@@ -183,6 +186,9 @@
         gameRunning = false;
         winScreen.style.display = 'flex';
       }
+
+      // Clear moving flag after a short delay
+      setTimeout(() => { isMoving = false; }, 100);
     }
 
     // Keyboard
@@ -197,7 +203,7 @@
       touchStartX = e.touches[0].clientX;
     });
     document.addEventListener('touchmove', e => {
-      if (!gameRunning || !isGreen) return;
+      if (!gameRunning) return;
       const diff = e.touches[0].clientX - touchStartX;
       if (Math.abs(diff) > 30) {
         movePlayer(diff > 0 ? 'right' : 'left');
@@ -217,13 +223,13 @@
       }, Math.random() * 2000 + 1500); // 1.5-3.5 sec
     }
 
-    // Bust check - grace 2.5 sec after light change to red
+    // Bust check - only catch if CURRENTLY moving during red light
     setInterval(() => {
       if (!gameRunning || isGreen) return;
 
-      const timeSinceMove = Date.now() - lastMoveTime;
       const timeSinceSwitch = Date.now() - lastLightSwitchTime;
-      if (timeSinceMove < 2500 && timeSinceSwitch > 250) { // 2.5 sec grace
+      // Only bust if moving AND red light has been on for at least 250ms
+      if (isMoving && timeSinceSwitch > 250) {
         gameRunning = false;
         gameOver.style.display = 'flex';
       }
