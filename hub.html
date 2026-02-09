@@ -7,7 +7,7 @@
   <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-   
+  
     body {
       margin: 0;
       padding: 20px;
@@ -314,11 +314,8 @@
     <div class="contour" style="top:25%; left:80%; animation-delay:45s;"></div>
     <div class="contour" style="top:55%; left:10%; animation-delay:60s;"></div>
   </div>
-
   <div id="floating-dots"></div>
-
   <div id="settings-btn">⚙</div>
-
   <div id="settings-modal">
     <div class="modal-content">
       <span class="close-btn" onclick="document.getElementById('settings-modal').style.display='none'">×</span>
@@ -343,17 +340,13 @@
       <button onclick="saveSettings()">SAVE & APPLY</button>
     </div>
   </div>
-
   <h1>🚀 MEGAFOLDER - GAMES</h1>
   <p>Click any game & have fun.</p>
-
   <div class="search-container">
     <input type="text" id="searchInput" placeholder="Search games...">
   </div>
-
   <button class="random-btn">RANDOM GAME</button>
   <div id="noResults">No games match your search, fam 😔</div>
-
   <div class="grid">
     <div class="game-card">
       <h3>🌀 Backrooms</h3>
@@ -369,6 +362,11 @@
       <h3>🃏 Balatro</h3>
       <p>Poker roguelite madness, insane combos, high-score chases.</p>
       <a href="balatro.html">LAUNCH</a>
+    </div>
+    <div class="game-card">
+      <h3>🧱 Five Flights</h3>
+      <p>Fem Våningar tower climb. Stack 5 ascending floors before the AI snipes your progress. Pure card-game tension.</p>
+      <a href="fiveflights/index.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🔫 Buckshot Roulette</h3>
@@ -435,7 +433,6 @@
       <p>Eat food, grow long—don't crash, classic arcade endless.</p>
       <a href="snake.html">LAUNCH</a>
     </div>
-
     <!-- Secret game card - only shows when "ZYXBA" is searched -->
     <div class="game-card hidden" id="secret-card">
       <h3>???</h3>
@@ -443,15 +440,14 @@
       <a href="morgis.html">LAUNCH</a>
     </div>
   </div>
-
   <footer>gaming</footer>
-
   <script>
     function launchRandom() {
       const links = [
         "backrooms.html",
         "baconmaydie.html",
         "balatro.html",
+        "fiveflights/index.html",  // ← added here
         "buckshot.html",
         "plinko.html",
         "flappy.html",
@@ -469,17 +465,14 @@
       const randomIndex = Math.floor(Math.random() * links.length);
       window.open(links[randomIndex], '_blank');
     }
-
     // Game search + secret trigger
     const searchInput = document.getElementById('searchInput');
     const cards = document.querySelectorAll('.game-card:not(#secret-card)');
     const secretCard = document.getElementById('secret-card');
     const noResults = document.getElementById('noResults');
-
     searchInput.addEventListener('input', () => {
       const query = searchInput.value.toLowerCase().trim();
       let visible = 0;
-
       cards.forEach(card => {
         const title = card.querySelector('h3').textContent.toLowerCase();
         const desc = card.querySelector('p').textContent.toLowerCase();
@@ -487,7 +480,6 @@
         card.classList.toggle('hidden', !match && query !== '');
         if (match || query === '') visible++;
       });
-
       // Secret trigger on exact match
       if (query === 'zyxba') {
         if (secretCard) secretCard.classList.remove('hidden');
@@ -495,10 +487,8 @@
       } else {
         if (secretCard) secretCard.classList.add('hidden');
       }
-
       noResults.style.display = (visible === 0 && query !== '' && query !== 'zyxba') ? 'block' : 'none';
     });
-
     // Floating dots
     const dotsContainer = document.createElement('div');
     dotsContainer.id = 'floating-dots';
@@ -531,13 +521,11 @@
       `;
       document.head.appendChild(anim);
     }
-
     // Settings modal
     const settingsBtn = document.getElementById('settings-btn');
     const modal = document.getElementById('settings-modal');
     settingsBtn.onclick = () => modal.style.display = 'flex';
     modal.onclick = e => { if (e.target === modal) modal.style.display = 'none'; };
-
     let savedSettings = JSON.parse(localStorage.getItem('hubSettings')) || {
       colorScheme: 'default',
       accentColor: '#00ffff',
@@ -571,12 +559,10 @@
       applySettings(s);
       modal.style.display = 'none';
     }
-
     // Easter egg sequence
     let tripleFooter = false;
     let secretE = false;
     let typedInModal = '';
-
     document.querySelector('footer').addEventListener('click', e => {
       if (e.detail === 3) {
         tripleFooter = true;
@@ -584,7 +570,6 @@
         secretE = false;
       }
     });
-
     if (modal) {
       modal.addEventListener('keydown', e => {
         if (tripleFooter && !secretE) {
@@ -597,7 +582,6 @@
         }
       });
     }
-
     const randomBtn = document.querySelector('.random-btn');
     if (randomBtn) {
       randomBtn.addEventListener('click', e => {
@@ -612,7 +596,6 @@
         }
       });
     }
-
     if (modal) {
       modal.addEventListener('click', e => {
         if (e.target === modal) {
@@ -630,6 +613,3 @@
   </script>
 </body>
 </html>
-
-
-
