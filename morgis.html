@@ -104,10 +104,10 @@
 </head>
 <body>
   <div id="game">
-    <div id="morgan">😴</div>
+    <div id="morgan">👀</div>
     <div id="player">🏃</div>
     <div id="door">🚪</div>
-    <div id="status">GREEN LIGHT - RUN!</div>
+    <div id="status">RED LIGHT - FREEZE!</div>
   </div>
 
   <div id="gameOver">
@@ -129,27 +129,29 @@
     const restartBtns = document.querySelectorAll('#restart');
 
     let gameRunning = true;
-    let isGreen = true; // start green
+    let isGreen = false; // start red
     let playerPos = 0; // far left
     let lastMoveTime = Date.now();
     let difficulty = 1;
+    let lightTimer = null;
 
     function resetGame() {
+      clearInterval(lightTimer);
       gameRunning = true;
-      isGreen = true;
+      isGreen = false;
       playerPos = 0;
       player.style.left = '0%';
-      morgan.textContent = '😴';
-      status.textContent = 'GREEN LIGHT - RUN!';
-      status.style.color = '#00ff00';
+      morgan.textContent = '👀';
+      status.textContent = 'RED LIGHT - FREEZE!';
+      status.style.color = '#ff0000';
       gameOver.style.display = 'none';
       winScreen.style.display = 'none';
       difficulty = 1;
       lastMoveTime = Date.now();
+      startLightTimer();
     }
 
     function toggleLight() {
-      if (!gameRunning) return;
       isGreen = !isGreen;
 
       if (isGreen) {
@@ -164,11 +166,10 @@
     }
 
     function movePlayer(dir) {
-      if (!gameRunning || !isGreen) return;
+      if (!gameRunning) return;
 
       lastMoveTime = Date.now();
 
-      // Slower movement
       if (dir === 'left') playerPos = Math.max(0, playerPos - 2);
       if (dir === 'right') playerPos = Math.min(100, playerPos + 2);
 
@@ -192,7 +193,7 @@
       touchStartX = e.touches[0].clientX;
     });
     document.addEventListener('touchmove', e => {
-      if (!gameRunning || !isGreen) return;
+      if (!gameRunning) return;
       const diff = e.touches[0].clientX - touchStartX;
       if (Math.abs(diff) > 30) {
         movePlayer(diff > 0 ? 'right' : 'left');
@@ -200,28 +201,28 @@
       }
     });
 
-    // Light timer - more frequent red
-    let lightTimer = setInterval(() => {
-      if (gameRunning) {
-        toggleLight();
-        difficulty = Math.min(2.5, 1 + (Date.now() - lastMoveTime) / 15000);
-        clearInterval(lightTimer);
-        // More red overall
-        const baseDelay = Math.random() * 2000 + 1500;
-        lightTimer = setInterval(arguments.callee, isGreen ? baseDelay * 0.8 : baseDelay * 1.2);
-      }
-    }, 2500); // start green
-
-    // Bust check - grace 1.2 sec
+    // Bust check - only on active move during red (1 sec grace)
     setInterval(() => {
       if (!gameRunning || isGreen) return;
 
       const timeSinceMove = Date.now() - lastMoveTime;
-      if (timeSinceMove < 1200) { // grace period
+      if (timeSinceMove < 1000) { // grace
         gameRunning = false;
         gameOver.style.display = 'flex';
       }
     }, 100);
+
+    // Start/restart timer
+    function startLightTimer() {
+      lightTimer = setInterval(() => {
+        if (gameRunning) {
+          toggleLight();
+          difficulty = Math.min(2.5, 1 + (Date.now() - lastMoveTime) / 15000);
+          clearInterval(lightTimer);
+          startLightTimer(); // restart with new delay
+        }
+      }, Math.random() * 2000 + 1500); // 1.5-3.5 sec
+    }
 
     restartBtns.forEach(btn => {
       btn.onclick = resetGame;
