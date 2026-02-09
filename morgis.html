@@ -16,10 +16,50 @@
       touch-action: none;
       user-select: none;
     }
-    #game {
+
+    /* MAIN MENU */
+    #mainMenu {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    #mainMenu h1 {
+      font-size: 5em;
+      margin-bottom: 50px;
+      text-shadow: 0 0 30px #ff00ff;
+      color: #ff00ff;
+    }
+    .menuBtn {
+      margin: 15px;
+      padding: 25px 80px;
+      font-size: 2.5em;
+      background: linear-gradient(45deg, #00ffff, #ff00ff);
+      color: #000;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-family: 'Orbitron', monospace;
+      font-weight: bold;
+      transition: transform 0.2s;
+    }
+    .menuBtn:hover {
+      transform: scale(1.1);
+    }
+    .menuBtn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* CHAPTER 1 - RED LIGHT GREEN LIGHT */
+    #chapter1 {
       position: relative;
       width: 100%;
       height: 100%;
+      display: none;
     }
     #morgan {
       position: absolute;
@@ -43,7 +83,7 @@
       height: 200px;
       background: #00ffff;
       border-radius: 20px;
-      left: 0%; /* far left */
+      left: 0%;
       transition: left 0.7s ease-out;
       box-shadow: 0 0 20px #00ffff;
       font-size: 6em;
@@ -52,8 +92,8 @@
     }
     #door {
       position: absolute;
-      bottom: 20px; /* same level as player */
-      right: 0%; /* all the way right */
+      bottom: 20px;
+      right: 0%;
       width: 180px;
       height: 300px;
       background: linear-gradient(#8b4513, #a0522d);
@@ -75,7 +115,75 @@
       z-index: 10;
       opacity: 0.8;
     }
-    #gameOver, #win {
+
+    /* CHAPTER 2 - HIDE AND SEEK */
+    #chapter2 {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+    #hideSeekUI {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #hideSeekUI h2 {
+      font-size: 3em;
+      margin-bottom: 30px;
+      color: #ff00ff;
+    }
+    #roundInfo {
+      font-size: 2em;
+      margin-bottom: 40px;
+      color: #00ffff;
+    }
+    .hideBtn {
+      margin: 10px;
+      padding: 20px 60px;
+      font-size: 2em;
+      background: linear-gradient(45deg, #00ffff, #0088ff);
+      color: #000;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      font-family: 'Orbitron', monospace;
+      font-weight: bold;
+    }
+    #hideResult {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #hideResult h1 {
+      font-size: 4em;
+      margin-bottom: 20px;
+    }
+    #hideResult p {
+      font-size: 2em;
+      margin: 10px;
+    }
+    #nextRoundBtn {
+      margin-top: 30px;
+      padding: 20px 60px;
+      font-size: 2em;
+      background: linear-gradient(45deg, #00ffff, #ff00ff);
+      color: #000;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-family: 'Orbitron', monospace;
+    }
+
+    /* GAME OVER / WIN SCREENS */
+    #gameOver, #win, #chapter2Win {
       position: absolute;
       inset: 0;
       background: rgba(0,0,0,0.9);
@@ -86,11 +194,11 @@
       z-index: 20;
       color: #ff00ff;
     }
-    #gameOver h1, #win h1 {
+    #gameOver h1, #win h1, #chapter2Win h1 {
       font-size: 4em;
       margin: 0;
     }
-    #restart {
+    .restart {
       margin-top: 30px;
       padding: 20px 60px;
       font-size: 2em;
@@ -99,46 +207,119 @@
       border: none;
       border-radius: 50px;
       cursor: pointer;
+      font-family: 'Orbitron', monospace;
+    }
+    #backToMenu {
+      margin-top: 15px;
+      padding: 15px 40px;
+      font-size: 1.5em;
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      font-family: 'Orbitron', monospace;
     }
   </style>
 </head>
 <body>
-  <div id="game">
+  <!-- MAIN MENU -->
+  <div id="mainMenu">
+    <h1>ESCAPE MORGAN</h1>
+    <button class="menuBtn" onclick="startChapter1()">CHAPTER 1</button>
+    <button class="menuBtn" onclick="startChapter2()">CHAPTER 2</button>
+    <button class="menuBtn" disabled>CHAPTER 3</button>
+  </div>
+
+  <!-- CHAPTER 1: RED LIGHT GREEN LIGHT -->
+  <div id="chapter1">
     <div id="morgan">😴</div>
     <div id="player">🏃</div>
     <div id="door">🚪</div>
     <div id="status">GREEN LIGHT - RUN!</div>
+
+    <div id="gameOver">
+      <h1>MORGAN CAUGHT YOU</h1>
+      <button class="restart" onclick="resetChapter1()">TRY AGAIN</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
+
+    <div id="win">
+      <h1>YOU ESCAPED MORGAN!</h1>
+      <button class="restart" onclick="resetChapter1()">PLAY AGAIN</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
   </div>
 
-  <div id="gameOver">
-    <h1>MORGAN CAUGHT YOU</h1>
-    <button id="restart">TRY AGAIN</button>
-  </div>
+  <!-- CHAPTER 2: HIDE AND SEEK -->
+  <div id="chapter2">
+    <div id="hideSeekUI">
+      <h2>HIDE FROM MORGAN</h2>
+      <div id="roundInfo">Round 1/5</div>
+      <button class="hideBtn" onclick="chooseHiding('bathroom')">🚽 BATHROOM</button>
+      <button class="hideBtn" onclick="chooseHiding('elevator')">🛗 ELEVATOR</button>
+      <button class="hideBtn" onclick="chooseHiding('printer')">🖨️ PRINTER</button>
+    </div>
 
-  <div id="win">
-    <h1>YOU ESCAPED MORGAN!</h1>
-    <button id="restart">PLAY AGAIN</button>
+    <div id="hideResult">
+      <h1 id="resultTitle"></h1>
+      <p id="resultText"></p>
+      <button id="nextRoundBtn" onclick="nextRound()">NEXT ROUND</button>
+    </div>
+
+    <div id="chapter2Win">
+      <h1>YOU SURVIVED ALL 5 ROUNDS!</h1>
+      <button class="restart" onclick="resetChapter2()">PLAY AGAIN</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
+
+    <div id="gameOver">
+      <h1>MORGAN FOUND YOU!</h1>
+      <button class="restart" onclick="resetChapter2()">TRY AGAIN</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
   </div>
 
   <script>
+    // ========== NAVIGATION ==========
+    function goToMenu() {
+      document.getElementById('mainMenu').style.display = 'flex';
+      document.getElementById('chapter1').style.display = 'none';
+      document.getElementById('chapter2').style.display = 'none';
+      stopChapter1();
+    }
+
+    function startChapter1() {
+      document.getElementById('mainMenu').style.display = 'none';
+      document.getElementById('chapter1').style.display = 'block';
+      resetChapter1();
+    }
+
+    function startChapter2() {
+      document.getElementById('mainMenu').style.display = 'none';
+      document.getElementById('chapter2').style.display = 'block';
+      resetChapter2();
+    }
+
+    // ========== CHAPTER 1: RED LIGHT GREEN LIGHT ==========
     const status = document.getElementById('status');
     const morgan = document.getElementById('morgan');
     const player = document.getElementById('player');
-    const gameOver = document.getElementById('gameOver');
-    const winScreen = document.getElementById('win');
-    const restartBtns = document.querySelectorAll('#restart');
+    const gameOver = document.querySelector('#chapter1 #gameOver');
+    const winScreen = document.querySelector('#chapter1 #win');
 
-    let gameRunning = true;
-    let isGreen = true; // start green
-    let playerPos = 0; // far left
+    let gameRunning = false;
+    let isGreen = true;
+    let playerPos = 0;
     let lastMoveTime = Date.now();
     let difficulty = 1;
     let lightTimer = null;
     let lastLightSwitchTime = Date.now();
-    let isMoving = false; // NEW: track if currently moving
+    let isMoving = false;
+    let bustCheckInterval = null;
 
-    function resetGame() {
-      clearInterval(lightTimer);
+    function resetChapter1() {
+      stopChapter1();
       gameRunning = true;
       isGreen = true;
       playerPos = 0;
@@ -153,6 +334,13 @@
       lastLightSwitchTime = Date.now();
       isMoving = false;
       startLightTimer();
+      startBustCheck();
+    }
+
+    function stopChapter1() {
+      clearInterval(lightTimer);
+      clearInterval(bustCheckInterval);
+      gameRunning = false;
     }
 
     function toggleLight() {
@@ -173,10 +361,9 @@
     function movePlayer(dir) {
       if (!gameRunning) return;
 
-      isMoving = true; // Mark as moving
+      isMoving = true;
       lastMoveTime = Date.now();
 
-      // Slower movement
       if (dir === 'left') playerPos = Math.max(0, playerPos - 1);
       if (dir === 'right') playerPos = Math.min(100, playerPos + 1);
 
@@ -187,17 +374,14 @@
         winScreen.style.display = 'flex';
       }
 
-      // Clear moving flag after a short delay
       setTimeout(() => { isMoving = false; }, 100);
     }
 
-    // Keyboard
     window.addEventListener('keydown', e => {
       if (e.key === 'ArrowLeft' || e.key === 'a') movePlayer('left');
       if (e.key === 'ArrowRight' || e.key === 'd') movePlayer('right');
     });
 
-    // Touch/swipe
     let touchStartX = 0;
     document.addEventListener('touchstart', e => {
       touchStartX = e.touches[0].clientX;
@@ -211,7 +395,6 @@
       }
     });
 
-    // Light timer - more frequent red
     function startLightTimer() {
       lightTimer = setInterval(() => {
         if (gameRunning) {
@@ -220,26 +403,86 @@
           clearInterval(lightTimer);
           startLightTimer();
         }
-      }, Math.random() * 2000 + 1500); // 1.5-3.5 sec
+      }, Math.random() * 2000 + 1500);
     }
 
-    // Bust check - only catch if CURRENTLY moving during red light
-    setInterval(() => {
-      if (!gameRunning || isGreen) return;
+    function startBustCheck() {
+      bustCheckInterval = setInterval(() => {
+        if (!gameRunning || isGreen) return;
 
-      const timeSinceSwitch = Date.now() - lastLightSwitchTime;
-      // Only bust if moving AND red light has been on for at least 250ms
-      if (isMoving && timeSinceSwitch > 250) {
-        gameRunning = false;
-        gameOver.style.display = 'flex';
+        const timeSinceSwitch = Date.now() - lastLightSwitchTime;
+        if (isMoving && timeSinceSwitch > 250) {
+          gameRunning = false;
+          gameOver.style.display = 'flex';
+        }
+      }, 100);
+    }
+
+    // ========== CHAPTER 2: HIDE AND SEEK ==========
+    const hideSeekUI = document.getElementById('hideSeekUI');
+    const roundInfo = document.getElementById('roundInfo');
+    const hideResult = document.getElementById('hideResult');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultText = document.getElementById('resultText');
+    const chapter2Win = document.getElementById('chapter2Win');
+    const chapter2GameOver = document.querySelector('#chapter2 #gameOver');
+
+    let currentRound = 1;
+    const totalRounds = 5;
+    const hidingSpots = ['bathroom', 'elevator', 'printer'];
+    const spotEmojis = {
+      'bathroom': '🚽',
+      'elevator': '🛗',
+      'printer': '🖨️'
+    };
+
+    function resetChapter2() {
+      currentRound = 1;
+      roundInfo.textContent = `Round ${currentRound}/${totalRounds}`;
+      hideSeekUI.style.display = 'flex';
+      hideResult.style.display = 'none';
+      chapter2Win.style.display = 'none';
+      chapter2GameOver.style.display = 'none';
+    }
+
+    function chooseHiding(playerChoice) {
+      const morganChoice = hidingSpots[Math.floor(Math.random() * hidingSpots.length)];
+      
+      hideSeekUI.style.display = 'none';
+      hideResult.style.display = 'flex';
+
+      if (playerChoice === morganChoice) {
+        // CAUGHT!
+        resultTitle.textContent = 'MORGAN FOUND YOU!';
+        resultTitle.style.color = '#ff0000';
+        resultText.textContent = `You hid in the ${spotEmojis[playerChoice]} ${playerChoice.toUpperCase()}. Morgan checked the ${spotEmojis[morganChoice]} ${morganChoice.toUpperCase()}!`;
+        document.getElementById('nextRoundBtn').style.display = 'none';
+        
+        setTimeout(() => {
+          hideResult.style.display = 'none';
+          chapter2GameOver.style.display = 'flex';
+        }, 2500);
+      } else {
+        // SAFE!
+        resultTitle.textContent = 'YOU\'RE SAFE!';
+        resultTitle.style.color = '#00ff00';
+        resultText.textContent = `You hid in the ${spotEmojis[playerChoice]} ${playerChoice.toUpperCase()}. Morgan checked the ${spotEmojis[morganChoice]} ${morganChoice.toUpperCase()}!`;
+        document.getElementById('nextRoundBtn').style.display = 'block';
       }
-    }, 100);
+    }
 
-    restartBtns.forEach(btn => {
-      btn.onclick = resetGame;
-    });
-
-    resetGame();
+    function nextRound() {
+      currentRound++;
+      
+      if (currentRound > totalRounds) {
+        hideResult.style.display = 'none';
+        chapter2Win.style.display = 'flex';
+      } else {
+        roundInfo.textContent = `Round ${currentRound}/${totalRounds}`;
+        hideResult.style.display = 'none';
+        hideSeekUI.style.display = 'flex';
+      }
+    }
   </script>
 </body>
 </html>
