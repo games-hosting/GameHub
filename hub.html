@@ -20,7 +20,6 @@
       position: relative;
       transition: color 0.8s ease, filter 0.8s ease, text-shadow 0.8s ease;
     }
-    /* Topo lines + floating dots mix */
     body::before {
       content: "";
       position: absolute;
@@ -59,7 +58,6 @@
       50% { transform: translate(0%, 0%) rotate(180deg) scale(1.2); opacity: 0.6; }
       100% { transform: translate(50%, 50%) rotate(360deg) scale(0.8); opacity: 0.3; }
     }
-    /* Floating dots */
     #floating-dots {
       position: fixed;
       inset: 0;
@@ -227,7 +225,6 @@
       margin: 40px 0;
       display: none;
     }
-    /* Top-right icons row */
     .top-icons {
       position: fixed;
       top: 20px;
@@ -255,15 +252,14 @@
       transform: rotate(90deg) scale(1.1);
       box-shadow: 0 0 40px rgba(0,255,255,0.7);
     }
-    .proxy-icon {
-      background: rgba(255,0,255,0.2);
-      border-color: #ff00ff;
-      color: #ff00ff;
+    .phone-icon {
+      background: rgba(0,255,0,0.2);
+      border-color: #00ff00;
+      color: #00ff00;
     }
-    .proxy-icon:hover {
-      box-shadow: 0 0 40px rgba(255,0,255,0.7);
+    .phone-icon:hover {
+      box-shadow: 0 0 40px rgba(0,255,0,0.7);
     }
-    /* Settings modal */
     #settings-modal {
       display: none;
       position: fixed;
@@ -330,16 +326,14 @@
     <div class="contour" style="top:25%; left:80%; animation-delay:45s;"></div>
     <div class="contour" style="top:55%; left:10%; animation-delay:60s;"></div>
   </div>
-  <!-- Floating dots -->
+
   <div id="floating-dots"></div>
 
-  <!-- Top-right icons row -->
   <div class="top-icons">
-    <div id="proxy-btn" class="icon-btn proxy-icon">🔗</div>
+    <div id="phone-btn" class="icon-btn phone-icon">📱</div>
     <div id="settings-btn" class="icon-btn">⚙</div>
   </div>
 
-  <!-- Settings modal -->
   <div id="settings-modal">
     <div class="modal-content">
       <span class="close-btn" onclick="document.getElementById('settings-modal').style.display='none'">×</span>
@@ -367,11 +361,14 @@
 
   <h1>🚀 MEGAFOLDER - GAMES</h1>
   <p>Click any game & have fun.</p>
+
   <div class="search-container">
     <input type="text" id="searchInput" placeholder="Search games...">
   </div>
+
   <button class="random-btn">RANDOM GAME</button>
   <div id="noResults">No games match your search, fam 😔</div>
+
   <div class="grid">
     <div class="game-card">
       <h3>🌀 Backrooms</h3>
@@ -454,6 +451,7 @@
       <a href="snake.html">LAUNCH</a>
     </div>
   </div>
+
   <footer>gaming</footer>
 
   <script>
@@ -536,7 +534,6 @@
     settingsBtn.onclick = () => modal.style.display = 'flex';
     modal.onclick = e => { if (e.target === modal) modal.style.display = 'none'; };
 
-    // Load & apply saved settings
     let savedSettings = JSON.parse(localStorage.getItem('hubSettings')) || {
       colorScheme: 'default',
       accentColor: '#00ffff',
@@ -571,13 +568,69 @@
       modal.style.display = 'none';
     }
 
-    // Proxy button next to settings
-    const proxyBtn = document.getElementById('proxy-btn');
-    if (proxyBtn) {
-      proxyBtn.onclick = () => {
-        window.open('proxy.html', '_blank');
+    // Phone games button
+    const phoneBtn = document.getElementById('phone-btn');
+    if (phoneBtn) {
+      phoneBtn.onclick = () => {
+        window.open('phone-hub.html', '_blank');
       };
     }
+
+    // Easter egg sequence
+    let tripleFooter = false;
+    let secretE = false;
+    let typedInModal = '';
+
+    document.querySelector('footer').addEventListener('click', e => {
+      if (e.detail === 3) {
+        tripleFooter = true;
+        typedInModal = '';
+        secretE = false;
+      }
+    });
+
+    if (modal) {
+      modal.addEventListener('keydown', e => {
+        if (tripleFooter && !secretE) {
+          if (e.key.toLowerCase() === 'e' && typedInModal.length === 0) {
+            typedInModal = 'e';
+            secretE = true;
+          } else {
+            typedInModal = '';
+          }
+        }
+      });
+    }
+
+    const randomBtn = document.querySelector('.random-btn');
+    if (randomBtn) {
+      randomBtn.addEventListener('click', e => {
+        if (tripleFooter && secretE) {
+          e.preventDefault();
+          window.location.href = 'vault.html';
+          tripleFooter = false;
+          secretE = false;
+          typedInModal = '';
+        } else {
+          launchRandom();
+        }
+      });
+    }
+
+    if (modal) {
+      modal.addEventListener('click', e => {
+        if (e.target === modal) {
+          tripleFooter = false;
+          secretE = false;
+          typedInModal = '';
+        }
+      });
+    }
+    window.addEventListener('beforeunload', () => {
+      tripleFooter = false;
+      secretE = false;
+      typedInModal = '';
+    });
   </script>
 </body>
 </html>
