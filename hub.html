@@ -225,10 +225,15 @@
       margin: 40px 0;
       display: none;
     }
-    #settings-btn {
+    .top-icons {
       position: fixed;
       top: 20px;
       right: 20px;
+      display: flex;
+      gap: 15px;
+      z-index: 100;
+    }
+    .icon-btn {
       background: rgba(0,255,255,0.2);
       border: 2px solid #00ffff;
       border-radius: 50%;
@@ -238,15 +243,22 @@
       color: #00ffff;
       cursor: pointer;
       box-shadow: 0 0 20px rgba(0,255,255,0.4);
-      z-index: 100;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: all 0.3s;
     }
-    #settings-btn:hover {
+    .icon-btn:hover {
       transform: rotate(90deg) scale(1.1);
       box-shadow: 0 0 40px rgba(0,255,255,0.7);
+    }
+    .phone-icon {
+      background: rgba(0,255,0,0.2);
+      border-color: #00ff00;
+      color: #00ff00;
+    }
+    .phone-icon:hover {
+      box-shadow: 0 0 40px rgba(0,255,0,0.7);
     }
     #settings-modal {
       display: none;
@@ -317,7 +329,10 @@
 
   <div id="floating-dots"></div>
 
-  <div id="settings-btn">⚙</div>
+  <div class="top-icons">
+    <div id="phone-btn" class="icon-btn phone-icon">📱</div>
+    <div id="settings-btn" class="icon-btn">⚙</div>
+  </div>
 
   <div id="settings-modal">
     <div class="modal-content">
@@ -435,13 +450,6 @@
       <p>Eat food, grow long—don't crash, classic arcade endless.</p>
       <a href="snake.html">LAUNCH</a>
     </div>
-
-    <!-- Secret game card - hidden by default -->
-    <div class="game-card hidden" id="secret-card">
-      <h3>???</h3>
-      <p>???</p>
-      <a href="???.html">LAUNCH</a>
-    </div>
   </div>
 
   <footer>gaming</footer>
@@ -470,16 +478,12 @@
       window.open(links[randomIndex], '_blank');
     }
 
-    // Game search + secret trigger
     const searchInput = document.getElementById('searchInput');
-    const cards = document.querySelectorAll('.game-card:not(#secret-card)');
-    const secretCard = document.getElementById('secret-card');
+    const cards = document.querySelectorAll('.game-card');
     const noResults = document.getElementById('noResults');
-
     searchInput.addEventListener('input', () => {
       const query = searchInput.value.toLowerCase().trim();
       let visible = 0;
-
       cards.forEach(card => {
         const title = card.querySelector('h3').textContent.toLowerCase();
         const desc = card.querySelector('p').textContent.toLowerCase();
@@ -487,19 +491,9 @@
         card.classList.toggle('hidden', !match && query !== '');
         if (match || query === '') visible++;
       });
-
-      // Secret trigger
-      if (query === 'zyxba') {
-        if (secretCard) secretCard.classList.remove('hidden');
-        noResults.style.display = 'none';
-      } else {
-        if (secretCard) secretCard.classList.add('hidden');
-      }
-
-      noResults.style.display = (visible === 0 && query !== '' && query !== 'zyxba') ? 'block' : 'none';
+      noResults.style.display = (visible === 0 && query !== '') ? 'block' : 'none';
     });
 
-    // Floating dots
     const dotsContainer = document.createElement('div');
     dotsContainer.id = 'floating-dots';
     dotsContainer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden;';
@@ -532,7 +526,6 @@
       document.head.appendChild(anim);
     }
 
-    // Settings modal
     const settingsBtn = document.getElementById('settings-btn');
     const modal = document.getElementById('settings-modal');
     settingsBtn.onclick = () => modal.style.display = 'flex';
@@ -570,6 +563,14 @@
       localStorage.setItem('hubSettings', JSON.stringify(s));
       applySettings(s);
       modal.style.display = 'none';
+    }
+
+    // Phone games button
+    const phoneBtn = document.getElementById('phone-btn');
+    if (phoneBtn) {
+      phoneBtn.onclick = () => {
+        window.open('phone-hub.html', '_blank');
+      };
     }
 
     // Easter egg sequence
