@@ -104,10 +104,10 @@
 </head>
 <body>
   <div id="game">
-    <div id="morgan">👀</div>
+    <div id="morgan">😴</div>
     <div id="player">🏃</div>
     <div id="door">🚪</div>
-    <div id="status">RED LIGHT - FREEZE!</div>
+    <div id="status">GREEN LIGHT - RUN!</div>
   </div>
 
   <div id="gameOver">
@@ -129,30 +129,31 @@
     const restartBtns = document.querySelectorAll('#restart');
 
     let gameRunning = true;
-    let isGreen = false; // start red
-    let playerPos = 0;
+    let isGreen = true; // start green
+    let playerPos = 0; // far left
     let lastMoveTime = Date.now();
-    let lastLightSwitchTime = Date.now();
+    let difficulty = 1;
     let lightTimer = null;
+    let lastLightSwitchTime = Date.now();
 
     function resetGame() {
       clearInterval(lightTimer);
       gameRunning = true;
-      isGreen = false;
+      isGreen = true;
       playerPos = 0;
       player.style.left = '0%';
-      morgan.textContent = '👀';
-      status.textContent = 'RED LIGHT - FREEZE!';
-      status.style.color = '#ff0000';
+      morgan.textContent = '😴';
+      status.textContent = 'GREEN LIGHT - RUN!';
+      status.style.color = '#00ff00';
       gameOver.style.display = 'none';
       winScreen.style.display = 'none';
+      difficulty = 1;
       lastMoveTime = Date.now();
       lastLightSwitchTime = Date.now();
       startLightTimer();
     }
 
     function toggleLight() {
-      if (!gameRunning) return;
       isGreen = !isGreen;
       lastLightSwitchTime = Date.now();
 
@@ -168,10 +169,11 @@
     }
 
     function movePlayer(dir) {
-      if (!gameRunning) return;
+      if (!gameRunning || !isGreen) return;
 
       lastMoveTime = Date.now();
 
+      // Slower movement
       if (dir === 'left') playerPos = Math.max(0, playerPos - 2);
       if (dir === 'right') playerPos = Math.min(100, playerPos + 2);
 
@@ -183,18 +185,19 @@
       }
     }
 
-    // Controls
+    // Keyboard
     window.addEventListener('keydown', e => {
       if (e.key === 'ArrowLeft' || e.key === 'a') movePlayer('left');
       if (e.key === 'ArrowRight' || e.key === 'd') movePlayer('right');
     });
 
+    // Touch/swipe
     let touchStartX = 0;
     document.addEventListener('touchstart', e => {
       touchStartX = e.touches[0].clientX;
     });
     document.addEventListener('touchmove', e => {
-      if (!gameRunning) return;
+      if (!gameRunning || !isGreen) return;
       const diff = e.touches[0].clientX - touchStartX;
       if (Math.abs(diff) > 30) {
         movePlayer(diff > 0 ? 'right' : 'left');
@@ -202,19 +205,25 @@
       }
     });
 
+    // Light timer - more frequent red
     function startLightTimer() {
       lightTimer = setInterval(() => {
-        if (gameRunning) toggleLight();
-      }, Math.random() * 2000 + 1500); // 1.5-3.5 sec switches
+        if (gameRunning) {
+          toggleLight();
+          difficulty = Math.min(2.5, 1 + (Date.now() - lastMoveTime) / 15000);
+          clearInterval(lightTimer);
+          startLightTimer();
+        }
+      }, Math.random() * 2000 + 1500); // 1.5-3.5 sec
     }
 
-    // Bust only if moved after red light starts (1.5 sec grace)
+    // Bust check - grace 2.5 sec after light change to red
     setInterval(() => {
       if (!gameRunning || isGreen) return;
 
       const timeSinceMove = Date.now() - lastMoveTime;
       const timeSinceSwitch = Date.now() - lastLightSwitchTime;
-      if (timeSinceMove < 1500 && timeSinceSwitch > 300) {
+      if (timeSinceMove < 2500 && timeSinceSwitch > 250) { // 2.5 sec grace
         gameRunning = false;
         gameOver.style.display = 'flex';
       }
