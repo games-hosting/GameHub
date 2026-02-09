@@ -33,7 +33,7 @@
       transition: transform 0.5s;
       text-align: center;
       line-height: 180px;
-      font-size: 3em;
+      font-size: 4em;
       color: #000;
       box-shadow: 0 0 30px #ff00ff;
     }
@@ -46,7 +46,7 @@
       border-radius: 20px;
       left: 50%;
       transform: translateX(-50%);
-      transition: left 0.3s;
+      transition: left 0.4s;
       box-shadow: 0 0 20px #00ffff;
     }
     #door {
@@ -64,11 +64,12 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 4em;
+      font-size: 5em;
       font-weight: bold;
       text-shadow: 0 0 20px #ff00ff;
       pointer-events: none;
       z-index: 10;
+      opacity: 0.8;
     }
     #gameOver, #win {
       position: absolute;
@@ -111,7 +112,7 @@
   </div>
 
   <div id="win">
-    <h1>YOU ESCAPED MORGAN</h1>
+    <h1>YOU ESCAPED!</h1>
     <button id="restart">PLAY AGAIN</button>
   </div>
 
@@ -127,47 +128,64 @@
     let isGreen = false;
     let playerPos = 50; // % from left
     let morganLooking = true;
-    let timer = 0;
-    let speed = 0.8;
+    let lastMoveTime = 0;
+    let difficulty = 1; // increases over time
 
+    // Reset game state
+    function resetGame() {
+      gameRunning = true;
+      isGreen = false;
+      playerPos = 50;
+      player.style.left = '50%';
+      player.style.transform = 'translateX(-50%)';
+      morgan.textContent = '👀';
+      status.textContent = 'RED LIGHT';
+      status.style.color = '#ff0000';
+      gameOver.style.display = 'none';
+      winScreen.style.display = 'none';
+      difficulty = 1;
+      lastMoveTime = Date.now();
+    }
+
+    // Light change
     function toggleLight() {
       if (!gameRunning) return;
       isGreen = !isGreen;
       morganLooking = !morganLooking;
 
       if (isGreen) {
-        status.textContent = "GREEN LIGHT";
+        status.textContent = "GREEN LIGHT - RUN!";
         status.style.color = "#00ff00";
         morgan.textContent = "😴";
-        morgan.style.transform = "translateX(-50%) rotate(0deg)";
       } else {
-        status.textContent = "RED LIGHT";
+        status.textContent = "RED LIGHT - FREEZE!";
         status.style.color = "#ff0000";
         morgan.textContent = "👀";
-        morgan.style.transform = "translateX(-50%) rotate(0deg)";
       }
     }
 
+    // Move player
     function movePlayer(dir) {
       if (!gameRunning || !isGreen) return;
 
-      if (dir === 'left') playerPos = Math.max(0, playerPos - 5);
-      if (dir === 'right') playerPos = Math.min(100, playerPos + 5);
+      lastMoveTime = Date.now(); // reset timer on move
+
+      if (dir === 'left') playerPos = Math.max(0, playerPos - 8 * difficulty);
+      if (dir === 'right') playerPos = Math.min(100, playerPos + 8 * difficulty);
 
       player.style.left = playerPos + '%';
-      player.style.transform = `translateX(-${playerPos}%)`;
 
-      // Win condition
-      if (playerPos > 80) { // near door
+      // Win
+      if (playerPos >= 90) {
         gameRunning = false;
         winScreen.style.display = 'flex';
       }
     }
 
-    // Controls
+    // Keyboard
     window.addEventListener('keydown', e => {
-      if (e.key === 'ArrowLeft') movePlayer('left');
-      if (e.key === 'ArrowRight') movePlayer('right');
+      if (e.key === 'ArrowLeft' || e.key === 'a') movePlayer('left');
+      if (e.key === 'ArrowRight' || e.key === 'd') movePlayer('right');
     });
 
     // Touch/swipe
@@ -178,23 +196,27 @@
     document.addEventListener('touchmove', e => {
       if (!gameRunning || !isGreen) return;
       const diff = e.touches[0].clientX - touchStartX;
-      if (Math.abs(diff) > 20) {
+      if (Math.abs(diff) > 30) {
         movePlayer(diff > 0 ? 'right' : 'left');
         touchStartX = e.touches[0].clientX;
       }
     });
 
-    // Timer for light changes
+    // Light timer (random 1.5-4 sec base, gets faster)
     setInterval(() => {
-      if (gameRunning) toggleLight();
-    }, Math.random() * 3000 + 2000); // random 2-5 sec
+      if (gameRunning) {
+        toggleLight();
+        // Difficulty ramp
+        difficulty = Math.min(2.5, 1 + score / 2000);
+      }
+    }, Math.random() * 2500 + 1500 - (difficulty * 300)); // faster as difficulty up
 
-    // Check if player moved on red light
+    // Bust check - only if moved during red light
     setInterval(() => {
       if (!gameRunning || isGreen) return;
 
-      // If player not at start pos during red light = busted
-      if (playerPos > 55 || playerPos < 45) {
+      const timeSinceMove = Date.now() - lastMoveTime;
+      if (timeSinceMove < 500) { // moved in last 0.5 sec during red
         gameRunning = false;
         gameOver.style.display = 'flex';
       }
@@ -202,22 +224,11 @@
 
     // Restart
     restartBtns.forEach(btn => {
-      btn.onclick = () => {
-        gameRunning = true;
-        isGreen = false;
-        playerPos = 50;
-        player.style.left = '50%';
-        player.style.transform = 'translateX(-50%)';
-        morgan.textContent = '👀';
-        status.textContent = 'RED LIGHT';
-        status.style.color = '#ff0000';
-        gameOver.style.display = 'none';
-        winScreen.style.display = 'none';
-      };
+      btn.onclick = resetGame;
     });
 
-    // Start with red light
-    toggleLight();
+    // Start
+    resetGame();
   </script>
 </body>
 </html>
