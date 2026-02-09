@@ -30,7 +30,6 @@
       height: 180px;
       background: #ff00ff;
       border-radius: 20px 20px 0 0;
-      transition: transform 0.5s;
       text-align: center;
       line-height: 180px;
       font-size: 4em;
@@ -45,7 +44,7 @@
       background: #00ffff;
       border-radius: 20px;
       left: 0%; /* start all the way left */
-      transition: left 0.4s ease-out;
+      transition: left 0.6s ease-out;
       box-shadow: 0 0 20px #00ffff;
       font-size: 6em;
       text-align: center;
@@ -55,11 +54,14 @@
       position: absolute;
       top: 20%;
       right: 10%;
-      width: 150px;
-      height: 250px;
+      width: 180px;
+      height: 300px; /* WAY bigger door */
       background: linear-gradient(#8b4513, #a0522d);
       border-radius: 20px;
-      box-shadow: 0 0 30px #8b4513;
+      box-shadow: 0 0 40px #8b4513;
+      text-align: center;
+      line-height: 300px;
+      font-size: 8em;
     }
     #status {
       position: absolute;
@@ -127,7 +129,7 @@
     const restartBtns = document.querySelectorAll('#restart');
 
     let gameRunning = true;
-    let isGreen = true; // start with green so no instant bust
+    let isGreen = true; // start with green
     let playerPos = 0; // far left
     let lastMoveTime = Date.now();
     let difficulty = 1;
@@ -166,8 +168,9 @@
 
       lastMoveTime = Date.now();
 
-      if (dir === 'left') playerPos = Math.max(0, playerPos - 6);
-      if (dir === 'right') playerPos = Math.min(100, playerPos + 6);
+      // Slower movement
+      if (dir === 'left') playerPos = Math.max(0, playerPos - 3);
+      if (dir === 'right') playerPos = Math.min(100, playerPos + 3);
 
       player.style.left = playerPos + '%';
 
@@ -177,11 +180,13 @@
       }
     }
 
+    // Keyboard
     window.addEventListener('keydown', e => {
       if (e.key === 'ArrowLeft' || e.key === 'a') movePlayer('left');
       if (e.key === 'ArrowRight' || e.key === 'd') movePlayer('right');
     });
 
+    // Touch/swipe
     let touchStartX = 0;
     document.addEventListener('touchstart', e => {
       touchStartX = e.touches[0].clientX;
@@ -199,20 +204,18 @@
     let lightTimer = setInterval(() => {
       if (gameRunning) {
         toggleLight();
-        // Difficulty ramp
         difficulty = Math.min(2.5, 1 + (Date.now() - lastMoveTime) / 20000);
-        // Reset timer with random delay
         clearInterval(lightTimer);
         lightTimer = setInterval(arguments.callee, Math.random() * 4000 + 3000);
       }
-    }, 4000); // start with longer green
+    }, 5000); // start with longer green
 
-    // Bust check - only if moved during red
+    // Bust check - only if moved during red (with grace)
     setInterval(() => {
       if (!gameRunning || isGreen) return;
 
       const timeSinceMove = Date.now() - lastMoveTime;
-      if (timeSinceMove < 800) { // 0.8 sec grace after light change
+      if (timeSinceMove < 1000) { // 1 sec grace after light change
         gameRunning = false;
         gameOver.style.display = 'flex';
       }
