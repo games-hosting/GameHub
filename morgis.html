@@ -722,7 +722,7 @@
     
     // Morgan
     let morganX = 0;
-    const morganBaseSpeed = 2.5; // Slower base speed, but always advancing
+    const morganBaseSpeed = 2.2; // Slower - was 2.5
     let morganSpeed = morganBaseSpeed;
     let gracePeriod = 180; // 3 seconds at 60fps
     
@@ -780,7 +780,7 @@
     
     // Spawn items
     function spawnItem() {
-      const types = ['energy', 'rocket', 'obstacle', 'obstacle', 'obstacle', 'obstacle'];
+      const types = ['energy', 'rocket', 'rocket', 'obstacle', 'obstacle', 'obstacle'];
       const type = types[Math.floor(Math.random() * types.length)];
       items.push({
         type,
