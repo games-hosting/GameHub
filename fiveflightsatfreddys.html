@@ -412,12 +412,17 @@
         }
         
         function drawCard() {
-            // NOW ACTUALLY WORKS!
+            // NOW ACTUALLY WORKS AND ENDS YOUR TURN!
             if(game.gameState === 'player_turn' && game.playerHand.length < 10 && game.deck.length > 0) {
                 const card = game.draw();
                 if(card) {
                     game.playerHand.push(card);
                     game.render();
+                    // End turn after drawing
+                    if(!game.checkWin()) {
+                        game.gameState = 'ai_turn';
+                        setTimeout(() => game.aiTurn(), 800);
+                    }
                 }
             }
         }
