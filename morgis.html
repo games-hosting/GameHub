@@ -3,197 +3,1526 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Morgan AI Chatbot</title>
+  <title>???</title>
   <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-
     body {
       margin: 0;
-      height: 100vh;
-      background: #0a0a0a;
-      color: #00ffff;
-      font-family: 'Orbitron', monospace;
-      display: flex;
-      flex-direction: column;
       overflow: hidden;
+      background: linear-gradient(to bottom, #0a0a0a, #1a0033);
+      font-family: 'Orbitron', monospace;
+      color: #00ffff;
+      height: 100vh;
+      touch-action: none;
+      user-select: none;
     }
-    #header {
-      text-align: center;
-      padding: 20px;
-      background: rgba(0,0,0,0.5);
-      border-bottom: 2px solid #ff00ff;
-      box-shadow: 0 0 30px #ff00ff;
-    }
-    #header h1 {
-      margin: 0;
-      font-size: 2.5em;
-      background: linear-gradient(45deg, #ff00ff, #00ffff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    #chat-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
+
+    /* MAIN MENU */
+    #mainMenu {
+      position: absolute;
+      inset: 0;
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
     }
-    .message {
-      max-width: 80%;
-      padding: 15px 20px;
-      border-radius: 20px;
-      font-size: 1.1em;
-      line-height: 1.5;
+    #mainMenu h1 {
+      font-size: 5em;
+      margin-bottom: 50px;
+      text-shadow: 0 0 30px #ff00ff;
+      color: #ff00ff;
     }
-    .user {
-      align-self: flex-end;
-      background: #00ffff;
-      color: #000;
-      border-bottom-right-radius: 5px;
-    }
-    .morgan {
-      align-self: flex-start;
-      background: #ff00ff;
-      color: #000;
-      border-bottom-left-radius: 5px;
-    }
-    #input-area {
-      padding: 15px;
-      background: rgba(0,0,0,0.6);
-      border-top: 2px solid #00ffff;
-      display: flex;
-      gap: 10px;
-    }
-    #message-input {
-      flex: 1;
-      padding: 15px;
-      font-size: 1.2em;
-      background: #111133;
-      color: #00ffff;
-      border: 2px solid #00ffff;
-      border-radius: 50px;
-      outline: none;
-      font-family: 'Orbitron', monospace;
-    }
-    #send-btn {
-      padding: 15px 30px;
+    .menuBtn {
+      margin: 15px;
+      padding: 25px 80px;
+      font-size: 2.5em;
       background: linear-gradient(45deg, #00ffff, #ff00ff);
       color: #000;
       border: none;
       border-radius: 50px;
-      font-size: 1.2em;
-      font-weight: bold;
       cursor: pointer;
+      font-family: 'Orbitron', monospace;
+      font-weight: bold;
+      transition: transform 0.2s;
     }
-    #send-btn:hover {
-      transform: scale(1.05);
+    .menuBtn:hover {
+      transform: scale(1.1);
+    }
+    .menuBtn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* CHAPTER 1 - RED LIGHT GREEN LIGHT */
+    #chapter1 {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+    #morgan {
+      position: absolute;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 180px;
+      background: #ff00ff;
+      border-radius: 20px 20px 0 0;
+      text-align: center;
+      line-height: 180px;
+      font-size: 4em;
+      color: #000;
       box-shadow: 0 0 30px #ff00ff;
     }
-    .typing {
-      align-self: flex-start;
-      color: #aaa;
-      font-style: italic;
-      padding: 15px 20px;
+    #player {
+      position: absolute;
+      bottom: 20px;
+      width: 140px;
+      height: 200px;
+      background: #00ffff;
+      border-radius: 20px;
+      left: 0%;
+      transition: left 0.7s ease-out;
+      box-shadow: 0 0 20px #00ffff;
+      font-size: 6em;
+      text-align: center;
+      line-height: 200px;
+    }
+    #door {
+      position: absolute;
+      bottom: 20px;
+      right: 0%;
+      width: 180px;
+      height: 300px;
+      background: linear-gradient(#8b4513, #a0522d);
+      border-radius: 20px;
+      box-shadow: 0 0 40px #8b4513;
+      text-align: center;
+      line-height: 300px;
+      font-size: 8em;
+    }
+    #status {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 5em;
+      font-weight: bold;
+      text-shadow: 0 0 20px #ff00ff;
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0.8;
+    }
+
+    /* CHAPTER 2 - HIDE AND SEEK */
+    #chapter2 {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+    #hideSeekUI {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #hideSeekUI h2 {
+      font-size: 3em;
+      margin-bottom: 30px;
+      color: #ff00ff;
+    }
+    #roundInfo {
+      font-size: 2em;
+      margin-bottom: 40px;
+      color: #00ffff;
+    }
+    .hideBtn {
+      margin: 10px;
+      padding: 20px 60px;
+      font-size: 2em;
+      background: linear-gradient(45deg, #00ffff, #0088ff);
+      color: #000;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      font-family: 'Orbitron', monospace;
+      font-weight: bold;
+    }
+    #hideResult {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #hideResult h1 {
+      font-size: 4em;
+      margin-bottom: 20px;
+    }
+    #hideResult p {
+      font-size: 2em;
+      margin: 10px;
+    }
+    #nextRoundBtn {
+      margin-top: 30px;
+      padding: 20px 60px;
+      font-size: 2em;
+      background: linear-gradient(45deg, #00ffff, #ff00ff);
+      color: #000;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-family: 'Orbitron', monospace;
+    }
+
+    /* GAME OVER / WIN SCREENS */
+    #gameOver, #win, #chapter2Win {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+      color: #ff00ff;
+    }
+    #gameOver h1, #win h1, #chapter2Win h1 {
+      font-size: 4em;
+      margin: 0;
+    }
+    .restart {
+      margin-top: 30px;
+      padding: 20px 60px;
+      font-size: 2em;
+      background: linear-gradient(45deg, #00ffff, #ff00ff);
+      color: #000;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-family: 'Orbitron', monospace;
+    }
+    #backToMenu {
+      margin-top: 15px;
+      padding: 15px 40px;
+      font-size: 1.5em;
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      font-family: 'Orbitron', monospace;
+    }
+
+    /* CHAPTER 3 - ENDLESS RUNNER */
+    #chapter3 {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+    #runnerCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, #1a0033, #0a0a0a);
+    }
+    #runnerUI {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 5;
+    }
+    #scoreDisplay {
+      font-size: 2.5em;
+      color: #00ffff;
+      text-shadow: 0 0 10px #00ffff;
+      margin-bottom: 10px;
+    }
+    #powerupDisplay {
+      font-size: 1.8em;
+      color: #ffff00;
+      text-shadow: 0 0 10px #ffff00;
+    }
+
+    /* CHAPTER 4 - STEALTH MODE */
+    #chapter4 {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+    #stealthCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+    }
+    #stealthUI {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 5;
+    }
+    #stealthStatus {
+      font-size: 2.5em;
+      color: #00ffff;
+      text-shadow: 0 0 10px #00ffff;
+      margin-bottom: 10px;
+    }
+    #detectionMeter {
+      font-size: 1.8em;
+      color: #ff0000;
+      text-shadow: 0 0 10px #ff0000;
+    }
+
+    /* CHAPTER 5 - FINAL BOSS */
+    #chapter5 {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+    #bossCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, #2d1b69, #0f0f23);
+    }
+    #bossUI {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 5;
+    }
+    #bossStatus {
+      font-size: 2.5em;
+      color: #ff00ff;
+      text-shadow: 0 0 10px #ff00ff;
+      margin-bottom: 10px;
+    }
+    #phaseDisplay, #livesDisplay {
+      font-size: 1.8em;
+      color: #00ffff;
+      text-shadow: 0 0 10px #00ffff;
+      margin: 5px 0;
+    }
+
+    /* CUTSCENES */
+    .cutscene {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 40px;
+      text-align: center;
+    }
+    .cutscene h1 {
+      font-size: 3.5em;
+      margin-bottom: 30px;
+      color: #ff00ff;
+      text-shadow: 0 0 20px #ff00ff;
+    }
+    .cutscene p {
+      font-size: 2em;
+      max-width: 800px;
+      line-height: 1.5;
+      margin-bottom: 40px;
+      color: #00ffff;
+    }
+    .cutscene button {
+      padding: 20px 60px;
+      font-size: 2em;
+      background: linear-gradient(45deg, #00ffff, #ff00ff);
+      color: #000;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-family: 'Orbitron', monospace;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div id="header">
-    <h1>Morgan AI Chatbot</h1>
-    <p>Talk to your clingy assistant 😈 (powered by Hugging Face)</p>
+  <!-- MAIN MENU -->
+  <div id="mainMenu">
+    <h1>ESCAPE MORGAN</h1>
+    <button class="menuBtn" id="ch1Btn" onclick="startChapter1()">CHAPTER 1</button>
+    <button class="menuBtn" id="ch2Btn" onclick="startChapter2()">CHAPTER 2 🔒</button>
+    <button class="menuBtn" id="ch3Btn" onclick="startChapter3()">CHAPTER 3 🔒</button>
+    <button class="menuBtn" id="ch4Btn" onclick="startChapter4()">CHAPTER 4 🔒</button>
+    <button class="menuBtn" id="ch5Btn" onclick="startChapter5()">CHAPTER 5 🔒</button>
   </div>
 
-  <div id="chat-container"></div>
+  <!-- CUTSCENES -->
+  <div id="cutscene1Intro" class="cutscene">
+    <h1>🔔 SCHOOL'S OUT!</h1>
+    <p>The bell rings! You rush outside but... it's FREEZING! ❄️<br><br>You try to go back inside but Morgan blocks the door.<br><br>"You can't come back in!" he yells.</p>
+    <button onclick="startChapter1FromCutscene()">START CHAPTER 1</button>
+  </div>
 
-  <div id="input-area">
-    <input type="text" id="message-input" placeholder="Say something to Morgan..." autocomplete="off">
-    <button id="send-btn">SEND</button>
+  <div id="cutscene1End" class="cutscene">
+    <h1>🚪 YOU MADE IT INSIDE!</h1>
+    <p>Finally warm! But wait...<br><br>Morgan is coming inside too! 😱<br><br>You need to HIDE before he finds you!</p>
+    <button onclick="startChapter2FromCutscene()">START CHAPTER 2</button>
+  </div>
+
+  <div id="cutscene2End" class="cutscene">
+    <h1>😰 MORGAN FOUND YOU!</h1>
+    <p>"There you are!" Morgan shouts!<br><br>You sprint out of the room and run outside!<br><br>The only escape now is the BUS! 🚌</p>
+    <button onclick="startChapter3FromCutscene()">START CHAPTER 3</button>
+  </div>
+
+  <div id="cutscene3End" class="cutscene">
+    <h1>🚌 MADE IT TO THE BUS!</h1>
+    <p>You jump onto the bus just in time! 🎉<br><br>But wait... the bus driver is GONE! 😱<br><br>Morgan appears at the school entrance and starts running toward the bus!</p>
+    <button onclick="startChapter4FromCutscene()">START CHAPTER 4</button>
+  </div>
+
+  <div id="cutscene4Intro" class="cutscene">
+    <h1>🌙 LIGHTS OUT!</h1>
+    <p>The power goes out! Everything is pitch black! 💡<br><br>Morgan has a flashlight and is searching for you!<br><br>Stay in the shadows... DON'T GET CAUGHT IN THE LIGHT!</p>
+    <button onclick="startChapter4FromCutscene()">START CHAPTER 4</button>
+  </div>
+
+  <div id="cutscene4End" class="cutscene">
+    <h1>💡 YOU ESCAPED THE DARKNESS!</h1>
+    <p>You made it through! But Morgan is FURIOUS! 😡<br><br>He's calling in REINFORCEMENTS!<br><br>This is it... THE FINAL SHOWDOWN!</p>
+    <button onclick="startChapter5FromCutscene()">START CHAPTER 5</button>
+  </div>
+
+  <div id="cutscene5End" class="cutscene">
+    <h1>🎉 ULTIMATE VICTORY!</h1>
+    <p>YOU DID IT! 🏆<br><br>You've escaped Morgan through all 5 chapters!<br><br>You board the bus, wave goodbye to defeated Morgan, and drive into the sunset! 🚌☀️<br><br>FREEDOM AT LAST!</p>
+    <button onclick="goToMenu()">BACK TO MENU</button>
+  </div>
+
+  <!-- CHAPTER 1: RED LIGHT GREEN LIGHT -->
+  <div id="chapter1">
+    <div id="morgan">😴</div>
+    <div id="player">🏃</div>
+    <div id="door">🚪</div>
+    <div id="status">GREEN LIGHT - RUN!</div>
+
+    <div id="gameOver">
+      <h1>MORGAN CAUGHT YOU</h1>
+      <button class="restart" onclick="resetChapter1()">TRY AGAIN</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
+
+    <div id="win">
+      <h1>YOU ESCAPED MORGAN!</h1>
+      <button class="restart" onclick="showCutscene1End()">CONTINUE</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
+  </div>
+
+  <!-- CHAPTER 2: HIDE AND SEEK -->
+  <div id="chapter2">
+    <div id="hideSeekUI">
+      <h2>HIDE FROM MORGAN</h2>
+      <div id="roundInfo">Round 1/5</div>
+      <button class="hideBtn" onclick="chooseHiding('bathroom')">🚽 BATHROOM</button>
+      <button class="hideBtn" onclick="chooseHiding('elevator')">🛗 ELEVATOR</button>
+      <button class="hideBtn" onclick="chooseHiding('printer')">🖨️ PRINTER</button>
+    </div>
+
+    <div id="hideResult">
+      <h1 id="resultTitle"></h1>
+      <p id="resultText"></p>
+      <button id="nextRoundBtn" onclick="nextRound()">NEXT ROUND</button>
+    </div>
+
+    <div id="chapter2Win">
+      <h1>YOU SURVIVED ALL 5 ROUNDS!</h1>
+      <button class="restart" onclick="showCutscene2End()">CONTINUE</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
+
+    <div id="gameOver">
+      <h1>MORGAN FOUND YOU!</h1>
+      <button class="restart" onclick="resetChapter2()">TRY AGAIN</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
+  </div>
+
+  <!-- CHAPTER 3: ENDLESS RUNNER -->
+  <div id="chapter3">
+    <canvas id="runnerCanvas"></canvas>
+    <div id="runnerUI">
+      <div id="scoreDisplay">SCORE: 0 / 10000</div>
+      <div id="powerupDisplay"></div>
+    </div>
+
+    <div id="chapter3Win">
+      <h1>YOU OUTRAN MORGAN!</h1>
+      <p>10,000 POINTS REACHED!</p>
+      <button class="restart" onclick="showCutscene3End()">CONTINUE</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
+
+    <div id="gameOver">
+      <h1>MORGAN CAUGHT YOU!</h1>
+      <button class="restart" onclick="resetChapter3()">TRY AGAIN</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
+  </div>
+
+  <!-- CHAPTER 4: STEALTH MODE -->
+  <div id="chapter4">
+    <canvas id="stealthCanvas"></canvas>
+    <div id="stealthUI">
+      <div id="stealthStatus">STAY IN THE SHADOWS!</div>
+      <div id="detectionMeter">DETECTION: <span id="detectionValue">0%</span></div>
+    </div>
+
+    <div id="chapter4Win">
+      <h1>YOU ESCAPED THE LIGHT!</h1>
+      <button class="restart" onclick="showCutscene4End()">CONTINUE</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
+
+    <div id="gameOver">
+      <h1>MORGAN'S LIGHT CAUGHT YOU!</h1>
+      <button class="restart" onclick="resetChapter4()">TRY AGAIN</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
+  </div>
+
+  <!-- CHAPTER 5: FINAL BOSS -->
+  <div id="chapter5">
+    <canvas id="bossCanvas"></canvas>
+    <div id="bossUI">
+      <div id="bossStatus">SURVIVE ALL 3 PHASES!</div>
+      <div id="phaseDisplay">PHASE: <span id="phaseNumber">1</span>/3</div>
+      <div id="livesDisplay">LIVES: <span id="livesCount">3</span></div>
+    </div>
+
+    <div id="chapter5Win">
+      <h1>MORGAN DEFEATED!</h1>
+      <p>YOU ARE THE CHAMPION!</p>
+      <button class="restart" onclick="showCutscene5End()">CONTINUE</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
+
+    <div id="gameOver">
+      <h1>MORGAN WINS!</h1>
+      <button class="restart" onclick="resetChapter5()">TRY AGAIN</button>
+      <button id="backToMenu" onclick="goToMenu()">BACK TO MENU</button>
+    </div>
   </div>
 
   <script>
-    const chatContainer = document.getElementById('chat-container');
-    const input = document.getElementById('message-input');
-    const sendBtn = document.getElementById('send-btn');
-
-    function addMessage(text, isUser = false) {
-      const msg = document.createElement('div');
-      msg.className = `message ${isUser ? 'user' : 'morgan'}`;
-      msg.textContent = text;
-      chatContainer.appendChild(msg);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+    // ========== PROGRESSION SYSTEM ==========
+    function loadProgress() {
+      const saved = localStorage.getItem('morganGameProgress');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+      return { chapter1: false, chapter2: false, chapter3: false, chapter4: false, chapter5: false };
     }
 
-    function showTyping() {
-      const typing = document.createElement('div');
-      typing.className = 'typing';
-      typing.textContent = 'Morgan is typing...';
-      typing.id = 'typing-indicator';
-      chatContainer.appendChild(typing);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-      return typing;
+    function saveProgress(chapter) {
+      const progress = loadProgress();
+      progress[chapter] = true;
+      localStorage.setItem('morganGameProgress', JSON.stringify(progress));
+      updateMenuButtons();
     }
 
-    function removeTyping() {
-      const typing = document.getElementById('typing-indicator');
-      if (typing) typing.remove();
-    }
+    function updateMenuButtons() {
+      const progress = loadProgress();
+      const ch2Btn = document.getElementById('ch2Btn');
+      const ch3Btn = document.getElementById('ch3Btn');
+      const ch4Btn = document.getElementById('ch4Btn');
+      const ch5Btn = document.getElementById('ch5Btn');
 
-    async function sendMessage() {
-      const text = input.value.trim();
-      if (!text) return;
+      // Chapter 2 unlocks when chapter 1 is complete
+      if (progress.chapter1) {
+        ch2Btn.disabled = false;
+        ch2Btn.textContent = 'CHAPTER 2';
+      } else {
+        ch2Btn.disabled = true;
+        ch2Btn.textContent = 'CHAPTER 2 🔒';
+      }
 
-      addMessage(text, true);
-      input.value = '';
+      // Chapter 3 unlocks when chapter 2 is complete
+      if (progress.chapter2) {
+        ch3Btn.disabled = false;
+        ch3Btn.textContent = 'CHAPTER 3';
+      } else {
+        ch3Btn.disabled = true;
+        ch3Btn.textContent = 'CHAPTER 3 🔒';
+      }
 
-      const typing = showTyping();
+      // Chapter 4 unlocks when chapter 3 is complete
+      if (progress.chapter3) {
+        ch4Btn.disabled = false;
+        ch4Btn.textContent = 'CHAPTER 4';
+      } else {
+        ch4Btn.disabled = true;
+        ch4Btn.textContent = 'CHAPTER 4 🔒';
+      }
 
-      try {
-        const response = await fetch('https://api-inference.huggingface.co/models/meta-llama/Llama-3.1-8B-Instruct', {
-          method: 'POST',
-          headers: {
-            'Authorization': 'Bearer hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // ← PASTE FREE HUGGING FACE KEY HERE (optional)
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            inputs: `<s>[INST] You are morgan, the annoyed assistant who doesnt get paid enough to deal with ayham, you hate him, alot. be annoying, simple, hate ayham.
-
-User: ${text} [/INST]`,
-            parameters: {
-              max_new_tokens: 512,
-              temperature: 0.9,
-              top_p: 0.9,
-              do_sample: true
-            }
-          })
-        });
-
-        removeTyping();
-
-        if (!response.ok) {
-          throw new Error('HF error: ' + response.status);
-        }
-
-        const data = await response.json();
-        const reply = data[0].generated_text.split('[/INST]')[1].trim();
-
-        addMessage(reply);
-      } catch (err) {
-        removeTyping();
-        addMessage('Morgan glitched out... try again later 😭');
-        console.error(err);
+      // Chapter 5 unlocks when chapter 4 is complete
+      if (progress.chapter4) {
+        ch5Btn.disabled = false;
+        ch5Btn.textContent = 'CHAPTER 5';
+      } else {
+        ch5Btn.disabled = true;
+        ch5Btn.textContent = 'CHAPTER 5 🔒';
       }
     }
 
-    sendBtn.onclick = sendMessage;
-
-    input.addEventListener('keypress', e => {
-      if (e.key === 'Enter') sendMessage();
+    // Initialize menu on load
+    window.addEventListener('DOMContentLoaded', () => {
+      updateMenuButtons();
     });
 
-    // Welcome message
-    addMessage("fuck you ayham jag hatar dig");
+    // Safe stop functions that check if the actual implementation exists
+    let stopChapter3 = () => { if (window.stopChapter3Impl) window.stopChapter3Impl(); };
+    let stopChapter4 = () => { if (window.stopChapter4Impl) window.stopChapter4Impl(); };
+    let stopChapter5 = () => { if (window.stopChapter5Impl) window.stopChapter5Impl(); };
+
+    // ========== NAVIGATION ==========
+    function goToMenu() {
+      document.getElementById('mainMenu').style.display = 'flex';
+      document.getElementById('chapter1').style.display = 'none';
+      document.getElementById('chapter2').style.display = 'none';
+      document.getElementById('chapter3').style.display = 'none';
+      document.getElementById('chapter4').style.display = 'none';
+      document.getElementById('chapter5').style.display = 'none';
+      document.getElementById('cutscene1Intro').style.display = 'none';
+      document.getElementById('cutscene1End').style.display = 'none';
+      document.getElementById('cutscene2End').style.display = 'none';
+      document.getElementById('cutscene3End').style.display = 'none';
+      document.getElementById('cutscene4Intro').style.display = 'none';
+      document.getElementById('cutscene4End').style.display = 'none';
+      document.getElementById('cutscene5End').style.display = 'none';
+      stopChapter1();
+      stopChapter3();
+      stopChapter4();
+      stopChapter5();
+    }
+
+    function showCutscene1End() {
+      document.getElementById('chapter1').style.display = 'none';
+      document.getElementById('cutscene1End').style.display = 'flex';
+    }
+
+    function showCutscene2End() {
+      document.getElementById('chapter2').style.display = 'none';
+      document.getElementById('cutscene2End').style.display = 'flex';
+    }
+
+    function showCutscene3End() {
+      stopChapter3(); // STOP THE GAME LOOP!
+      document.getElementById('chapter3').style.display = 'none';
+      document.getElementById('cutscene3End').style.display = 'flex';
+    }
+
+    function startChapter4() {
+      const progress = loadProgress();
+      if (!progress.chapter3) {
+        alert('🔒 Complete Chapter 3 first!');
+        return;
+      }
+      document.getElementById('mainMenu').style.display = 'none';
+      document.getElementById('cutscene4Intro').style.display = 'flex';
+    }
+
+    function startChapter4FromCutscene() {
+      document.getElementById('cutscene3End').style.display = 'none';
+      document.getElementById('cutscene4Intro').style.display = 'none';
+      document.getElementById('chapter4').style.display = 'block';
+      resetChapter4();
+    }
+
+    function showCutscene4End() {
+      console.log('showCutscene4End called');
+      console.log('ch4Running before stop:', ch4Running);
+      stopChapter4(); // STOP THE GAME LOOP!
+      console.log('ch4Running after stop:', ch4Running);
+      document.getElementById('chapter4').style.display = 'none';
+      document.getElementById('cutscene4End').style.display = 'flex';
+      console.log('Cutscene should be showing now');
+    }
+
+    function startChapter5() {
+      const progress = loadProgress();
+      if (!progress.chapter4) {
+        alert('🔒 Complete Chapter 4 first!');
+        return;
+      }
+      document.getElementById('mainMenu').style.display = 'none';
+      document.getElementById('cutscene4End').style.display = 'flex';
+    }
+
+    function startChapter5FromCutscene() {
+      document.getElementById('cutscene4End').style.display = 'none';
+      document.getElementById('chapter5').style.display = 'block';
+      resetChapter5();
+    }
+
+    function showCutscene5End() {
+      stopChapter5(); // STOP THE GAME LOOP!
+      document.getElementById('chapter5').style.display = 'none';
+      document.getElementById('cutscene5End').style.display = 'flex';
+    }
+
+    function startChapter1() {
+      document.getElementById('mainMenu').style.display = 'none';
+      document.getElementById('cutscene1Intro').style.display = 'flex';
+    }
+
+    function startChapter1FromCutscene() {
+      document.getElementById('cutscene1Intro').style.display = 'none';
+      document.getElementById('chapter1').style.display = 'block';
+      resetChapter1();
+    }
+
+    function startChapter2() {
+      const progress = loadProgress();
+      if (!progress.chapter1) {
+        alert('🔒 Complete Chapter 1 first!');
+        return;
+      }
+      document.getElementById('mainMenu').style.display = 'none';
+      document.getElementById('cutscene1End').style.display = 'flex';
+    }
+
+    function startChapter2FromCutscene() {
+      document.getElementById('cutscene1End').style.display = 'none';
+      document.getElementById('chapter2').style.display = 'block';
+      resetChapter2();
+    }
+
+    function startChapter3() {
+      const progress = loadProgress();
+      if (!progress.chapter2) {
+        alert('🔒 Complete Chapter 2 first!');
+        return;
+      }
+      document.getElementById('mainMenu').style.display = 'none';
+      document.getElementById('cutscene2End').style.display = 'flex';
+    }
+
+    function startChapter3FromCutscene() {
+      document.getElementById('cutscene2End').style.display = 'none';
+      document.getElementById('chapter3').style.display = 'block';
+      resetChapter3();
+    }
+
+    // ========== CHAPTER 1: RED LIGHT GREEN LIGHT ==========
+    const status = document.getElementById('status');
+    const morgan = document.getElementById('morgan');
+    const player = document.getElementById('player');
+    const gameOver = document.querySelector('#chapter1 #gameOver');
+    const winScreen = document.querySelector('#chapter1 #win');
+
+    let gameRunning = false;
+    let isGreen = true;
+    let playerPos = 0;
+    let lastMoveTime = Date.now();
+    let difficulty = 1;
+    let lightTimer = null;
+    let lastLightSwitchTime = Date.now();
+    let isMoving = false;
+    let bustCheckInterval = null;
+
+    function resetChapter1() {
+      stopChapter1();
+      gameRunning = true;
+      isGreen = true;
+      playerPos = 0;
+      player.style.left = '0%';
+      morgan.textContent = '😴';
+      status.textContent = 'GREEN LIGHT - RUN!';
+      status.style.color = '#00ff00';
+      gameOver.style.display = 'none';
+      winScreen.style.display = 'none';
+      difficulty = 1;
+      lastMoveTime = Date.now();
+      lastLightSwitchTime = Date.now();
+      isMoving = false;
+      startLightTimer();
+      startBustCheck();
+    }
+
+    stopChapter3 = function() {
+      clearInterval(lightTimer);
+      clearInterval(bustCheckInterval);
+      gameRunning = false;
+    };
+
+    function toggleLight() {
+      isGreen = !isGreen;
+      lastLightSwitchTime = Date.now();
+
+      if (isGreen) {
+        status.textContent = "GREEN LIGHT - RUN!";
+        status.style.color = "#00ff00";
+        morgan.textContent = "😴";
+      } else {
+        status.textContent = "RED LIGHT - FREEZE!";
+        status.style.color = "#ff0000";
+        morgan.textContent = "👀";
+      }
+    }
+
+    function movePlayer(dir) {
+      if (!gameRunning) return;
+
+      isMoving = true;
+      lastMoveTime = Date.now();
+
+      if (dir === 'left') playerPos = Math.max(0, playerPos - 1);
+      if (dir === 'right') playerPos = Math.min(100, playerPos + 1);
+
+      player.style.left = playerPos + '%';
+
+      if (playerPos >= 90) {
+        gameRunning = false;
+        saveProgress('chapter1'); // UNLOCK CHAPTER 2!
+        winScreen.style.display = 'flex';
+      }
+
+      setTimeout(() => { isMoving = false; }, 100);
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft' || e.key === 'a') movePlayer('left');
+      if (e.key === 'ArrowRight' || e.key === 'd') movePlayer('right');
+    });
+
+    let touchStartX = 0;
+    document.addEventListener('touchstart', e => {
+      touchStartX = e.touches[0].clientX;
+    });
+    document.addEventListener('touchmove', e => {
+      if (!gameRunning) return;
+      const diff = e.touches[0].clientX - touchStartX;
+      if (Math.abs(diff) > 30) {
+        movePlayer(diff > 0 ? 'right' : 'left');
+        touchStartX = e.touches[0].clientX;
+      }
+    });
+
+    function startLightTimer() {
+      lightTimer = setInterval(() => {
+        if (gameRunning) {
+          toggleLight();
+          difficulty = Math.min(2.5, 1 + (Date.now() - lastMoveTime) / 15000);
+          clearInterval(lightTimer);
+          startLightTimer();
+        }
+      }, Math.random() * 2000 + 1500);
+    }
+
+    function startBustCheck() {
+      bustCheckInterval = setInterval(() => {
+        if (!gameRunning || isGreen) return;
+
+        const timeSinceSwitch = Date.now() - lastLightSwitchTime;
+        if (isMoving && timeSinceSwitch > 250) {
+          gameRunning = false;
+          gameOver.style.display = 'flex';
+        }
+      }, 100);
+    }
+
+    // ========== CHAPTER 2: HIDE AND SEEK ==========
+    const hideSeekUI = document.getElementById('hideSeekUI');
+    const roundInfo = document.getElementById('roundInfo');
+    const hideResult = document.getElementById('hideResult');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultText = document.getElementById('resultText');
+    const chapter2Win = document.getElementById('chapter2Win');
+    const chapter2GameOver = document.querySelector('#chapter2 #gameOver');
+
+    let currentRound = 1;
+    const totalRounds = 5;
+    const hidingSpots = ['bathroom', 'elevator', 'printer'];
+    const spotEmojis = {
+      'bathroom': '🚽',
+      'elevator': '🛗',
+      'printer': '🖨️'
+    };
+
+    function resetChapter2() {
+      currentRound = 1;
+      roundInfo.textContent = `Round ${currentRound}/${totalRounds}`;
+      hideSeekUI.style.display = 'flex';
+      hideResult.style.display = 'none';
+      chapter2Win.style.display = 'none';
+      chapter2GameOver.style.display = 'none';
+    }
+
+    function chooseHiding(playerChoice) {
+      const morganChoice = hidingSpots[Math.floor(Math.random() * hidingSpots.length)];
+      
+      hideSeekUI.style.display = 'none';
+      hideResult.style.display = 'flex';
+
+      if (playerChoice === morganChoice) {
+        // CAUGHT!
+        resultTitle.textContent = 'MORGAN FOUND YOU!';
+        resultTitle.style.color = '#ff0000';
+        resultText.textContent = `You hid in the ${spotEmojis[playerChoice]} ${playerChoice.toUpperCase()}. Morgan checked the ${spotEmojis[morganChoice]} ${morganChoice.toUpperCase()}!`;
+        document.getElementById('nextRoundBtn').style.display = 'none';
+        
+        setTimeout(() => {
+          hideResult.style.display = 'none';
+          chapter2GameOver.style.display = 'flex';
+        }, 2500);
+      } else {
+        // SAFE!
+        resultTitle.textContent = 'YOU\'RE SAFE!';
+        resultTitle.style.color = '#00ff00';
+        resultText.textContent = `You hid in the ${spotEmojis[playerChoice]} ${playerChoice.toUpperCase()}. Morgan checked the ${spotEmojis[morganChoice]} ${morganChoice.toUpperCase()}!`;
+        document.getElementById('nextRoundBtn').style.display = 'block';
+      }
+    }
+
+    function nextRound() {
+      currentRound++;
+      
+      if (currentRound > totalRounds) {
+        saveProgress('chapter2'); // UNLOCK CHAPTER 3 (when ready)!
+        hideResult.style.display = 'none';
+        chapter2Win.style.display = 'flex';
+      } else {
+        roundInfo.textContent = `Round ${currentRound}/${totalRounds}`;
+        hideResult.style.display = 'none';
+        hideSeekUI.style.display = 'flex';
+      }
+    }
+    // ========== CHAPTER 3: ENDLESS RUNNER ==========
+    const canvas = document.getElementById('runnerCanvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const powerupDisplay = document.getElementById('powerupDisplay');
+    const chapter3Win = document.querySelector('#chapter3 #chapter3Win');
+    const chapter3GameOver = document.querySelector('#chapter3 #gameOver');
+
+    let ch3Running = false;
+    let ch3AnimationFrame = null;
+    let score = 0;
+    const targetScore = 10000;
+    
+    // Player
+    let playerY = 0;
+    let playerVelocityY = 0;
+    const playerSpeed = 6;
+    const gravity = 0.5;
+    const jumpPower = -15; // Increased from -12 for higher jumps
+    
+    // Morgan
+    let morganX = 0;
+    const morganBaseSpeed = 2.2; // Slower - was 2.5
+    let morganSpeed = morganBaseSpeed;
+    let gracePeriod = 180; // 3 seconds at 60fps
+    
+    // Powerups
+    let playerBoostActive = false;
+    let playerBoostTimer = 0;
+    let morganSlowActive = false;
+    let morganSlowTimer = 0;
+    
+    // Items
+    let items = [];
+    let itemSpawnTimer = 0;
+    
+    function resizeCanvas() {
+      if (!canvas) return;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      playerY = canvas.height - 100;
+    }
+    
+    function resetChapter3() {
+      if (!canvas) return;
+      resizeCanvas();
+      stopChapter3();
+      
+      ch3Running = true;
+      score = 0;
+      playerY = canvas.height - 100;
+      playerVelocityY = 0;
+      morganX = -150;
+      morganSpeed = morganBaseSpeed;
+      gracePeriod = 180; // Reset grace period
+      playerBoostActive = false;
+      playerBoostTimer = 0;
+      morganSlowActive = false;
+      morganSlowTimer = 0;
+      items = [];
+      itemSpawnTimer = 0;
+      
+      scoreDisplay.textContent = `SCORE: 0 / ${targetScore}`;
+      powerupDisplay.textContent = '';
+      chapter3Win.style.display = 'none';
+      chapter3GameOver.style.display = 'none';
+      
+      gameLoopChapter3();
+    }
+    
+    window.stopChapter3Impl = function() {
+      ch3Running = false;
+      if (ch3AnimationFrame) {
+        cancelAnimationFrame(ch3AnimationFrame);
+        ch3AnimationFrame = null;
+      }
+    };
+    
+    // Spawn items
+    function spawnItem() {
+      const types = ['energy', 'rocket', 'rocket', 'obstacle', 'obstacle', 'obstacle'];
+      const type = types[Math.floor(Math.random() * types.length)];
+      items.push({
+        type,
+        x: canvas.width + 50,
+        y: canvas.height - 100 - Math.random() * 200,
+        collected: false
+      });
+    }
+    
+    // Game loop
+    function gameLoopChapter3() {
+      if (!ch3Running) return;
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Background grid effect
+      ctx.strokeStyle = '#330066';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < canvas.width; i += 50) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
+      }
+      
+      // Spawn items
+      itemSpawnTimer++;
+      if (itemSpawnTimer > 60) { // Spawn every 1 second (60 frames)
+        spawnItem();
+        itemSpawnTimer = 0;
+      }
+      
+      // Update & draw items
+      items.forEach((item, idx) => {
+        item.x -= 8;
+        
+        if (!item.collected && item.x < -50) {
+          items.splice(idx, 1);
+        }
+        
+        if (!item.collected) {
+          // Draw item
+          ctx.font = '40px Arial';
+          if (item.type === 'energy') {
+            ctx.fillStyle = '#00ff00';
+            ctx.fillText('⚡', item.x, item.y);
+          } else if (item.type === 'rocket') {
+            ctx.fillStyle = '#ff0000';
+            ctx.fillText('🚀', item.x, item.y);
+          } else if (item.type === 'obstacle') {
+            ctx.fillStyle = '#ff9900';
+            ctx.fillText('⚠️', item.x, item.y);
+          }
+          
+          // Collision detection with player (on right side)
+          const playerX = 200;
+          const dist = Math.sqrt((item.x - playerX) ** 2 + (item.y - playerY) ** 2);
+          
+          if (dist < 40) {
+            item.collected = true;
+            
+            if (item.type === 'energy') {
+              playerBoostActive = true;
+              playerBoostTimer = 240; // 4 seconds at 60fps
+              score += 100;
+            } else if (item.type === 'rocket') {
+              morganSlowActive = true;
+              morganSlowTimer = 360; // 6 seconds
+              morganX -= 200; // PUSH MORGAN BACK!
+              score += 150;
+            } else if (item.type === 'obstacle') {
+              playerBoostActive = false;
+              playerBoostTimer = 0;
+              morganSpeed = morganBaseSpeed * 2.5; // Morgan speeds up temporarily
+              setTimeout(() => { morganSpeed = morganBaseSpeed; }, 1500);
+            }
+          }
+        }
+      });
+      
+      // Player physics & controls
+      if (keys['ArrowUp'] || keys[' '] || keys['w']) {
+        if (playerY >= canvas.height - 100) {
+          playerVelocityY = jumpPower;
+        }
+      }
+      
+      playerVelocityY += gravity;
+      playerY += playerVelocityY;
+      
+      if (playerY >= canvas.height - 100) {
+        playerY = canvas.height - 100;
+        playerVelocityY = 0;
+      }
+      
+      // Draw player (on the right side, running right)
+      const playerX = 200; // A bit more to the right
+      ctx.fillStyle = playerBoostActive ? '#ffff00' : '#00ffff';
+      ctx.font = '60px Arial';
+      ctx.fillText('🏃', playerX, playerY);
+      
+      // Update powerups
+      if (playerBoostActive) {
+        playerBoostTimer--;
+        if (playerBoostTimer <= 0) {
+          playerBoostActive = false;
+        }
+      }
+      
+      if (morganSlowActive) {
+        morganSlowTimer--;
+        if (morganSlowTimer <= 0) {
+          morganSlowActive = false;
+        }
+      }
+      
+      // Morgan movement - he always moves forward to catch you
+      let morganMoveSpeed = 0;
+      
+      if (gracePeriod > 0) {
+        gracePeriod--;
+        morganMoveSpeed = 0; // Morgan doesn't move during grace period
+      } else {
+        morganMoveSpeed = morganSlowActive ? morganSpeed * 0.3 : morganSpeed;
+        
+        // If player has boost, Morgan moves even slower
+        if (playerBoostActive) {
+          morganMoveSpeed *= 0.2; // Boost slows Morgan's advance a lot
+        }
+      }
+      
+      morganX += morganMoveSpeed;
+      
+      // Draw Morgan
+      ctx.fillStyle = '#ff00ff';
+      ctx.font = '70px Arial';
+      ctx.fillText('😈', morganX, canvas.height - 90);
+      
+      // Score over time
+      score += 1;
+      scoreDisplay.textContent = `SCORE: ${Math.floor(score)} / ${targetScore}`;
+      
+      // Powerup display
+      let powerupText = '';
+      if (gracePeriod > 0) {
+        powerupText += `🛡️ GRACE PERIOD: ${Math.ceil(gracePeriod / 60)}s `;
+      }
+      if (playerBoostActive) powerupText += '⚡ SPEED BOOST! ';
+      if (morganSlowActive) powerupText += '🚀 MORGAN SLOWED! ';
+      powerupDisplay.textContent = powerupText;
+      
+      // Win condition
+      if (score >= targetScore) {
+        ch3Running = false;
+        saveProgress('chapter3');
+        chapter3Win.style.display = 'flex';
+        return;
+      }
+      
+      // Lose condition - Morgan catches player (on the right side now)
+      if (morganX >= 150) { // Catches you around x=150
+        ch3Running = false;
+        chapter3GameOver.style.display = 'flex';
+        return;
+      }
+      
+      ch3AnimationFrame = requestAnimationFrame(gameLoopChapter3);
+    }
+    
+    // Keyboard controls for Chapter 3
+    const keys = {};
+    window.addEventListener('keydown', e => {
+      keys[e.key] = true;
+    });
+    window.addEventListener('keyup', e => {
+      keys[e.key] = false;
+    });
+    
+    // Touch controls for jumping
+    if (canvas) {
+      canvas.addEventListener('touchstart', () => {
+        if (ch3Running && playerY >= canvas.height - 100) {
+          playerVelocityY = jumpPower;
+        }
+      });
+    }
+    
+    window.addEventListener('resize', () => {
+      if (ch3Running) resizeCanvas();
+    });
+
+    // ========== CHAPTER 4: STEALTH MODE ==========
+    const stealthCanvas = document.getElementById('stealthCanvas');
+    const stealthCtx = stealthCanvas ? stealthCanvas.getContext('2d') : null;
+    const detectionValue = document.getElementById('detectionValue');
+    const chapter4Win = document.querySelector('#chapter4 #chapter4Win');
+    const chapter4GameOver = document.querySelector('#chapter4 #gameOver');
+
+    let ch4Running = false;
+    let ch4AnimationFrame = null;
+    let ch4PlayerX = 0;
+    let ch4PlayerY = 0;
+    let flashlights = []; // Array of multiple flashlights!
+    let detection = 0;
+    let timeInDark = 0;
+    const targetTime = 30; // 30 seconds to win
+
+    function resizeStealthCanvas() {
+      if (!stealthCanvas) return;
+      stealthCanvas.width = window.innerWidth;
+      stealthCanvas.height = window.innerHeight;
+      ch4PlayerX = stealthCanvas.width / 2;
+      ch4PlayerY = stealthCanvas.height / 2;
+    }
+
+    function resetChapter4() {
+      if (!stealthCanvas) return;
+      resizeStealthCanvas();
+      stopChapter4();
+
+      ch4Running = true;
+      ch4PlayerX = stealthCanvas.width / 2;
+      ch4PlayerY = stealthCanvas.height / 2;
+      detection = 0;
+      timeInDark = 0;
+
+      // Initialize flashlights with different movement patterns!
+      flashlights = [
+        // Random wandering lights
+        { x: 100, y: 100, vx: 2, vy: 1.5, size: 100, type: 'wander' },
+        { x: stealthCanvas.width - 100, y: 100, vx: -1.8, vy: 2, size: 110, type: 'wander' },
+        { x: 200, y: stealthCanvas.height - 100, vx: 1.5, vy: -1.7, size: 95, type: 'wander' },
+        // Horizontal sweepers
+        { x: -100, y: 150, vx: 4, vy: 0, size: 120, type: 'horizontal', startY: 150 },
+        { x: stealthCanvas.width + 100, y: 300, vx: -3.5, vy: 0, size: 115, type: 'horizontal', startY: 300 },
+        { x: -100, y: stealthCanvas.height - 150, vx: 4.5, vy: 0, size: 105, type: 'horizontal', startY: stealthCanvas.height - 150 },
+        // Vertical sweepers
+        { x: 250, y: -100, vx: 0, vy: 3.5, size: 110, type: 'vertical', startX: 250 },
+        { x: stealthCanvas.width - 250, y: stealthCanvas.height + 100, vx: 0, vy: -4, size: 100, type: 'vertical', startX: stealthCanvas.width - 250 },
+        { x: stealthCanvas.width / 2, y: -100, vx: 0, vy: 3.8, size: 125, type: 'vertical', startX: stealthCanvas.width / 2 }
+      ];
+      timeInDark = 0;
+
+      chapter4Win.style.display = 'none';
+      chapter4GameOver.style.display = 'none';
+
+      gameLoopChapter4();
+    }
+
+    window.stopChapter4Impl = function() {
+      ch4Running = false;
+      if (ch4AnimationFrame) {
+        cancelAnimationFrame(ch4AnimationFrame);
+        ch4AnimationFrame = null;
+      }
+    };
+
+    function gameLoopChapter4() {
+      if (!ch4Running) return;
+
+      stealthCtx.fillStyle = '#000';
+      stealthCtx.fillRect(0, 0, stealthCanvas.width, stealthCanvas.height);
+
+      // Player movement
+      const moveSpeed = 5;
+      if (keys['ArrowLeft'] || keys['a']) ch4PlayerX -= moveSpeed;
+      if (keys['ArrowRight'] || keys['d']) ch4PlayerX += moveSpeed;
+      if (keys['ArrowUp'] || keys['w']) ch4PlayerY -= moveSpeed;
+      if (keys['ArrowDown'] || keys['s']) ch4PlayerY += moveSpeed;
+
+      ch4PlayerX = Math.max(30, Math.min(stealthCanvas.width - 30, ch4PlayerX));
+      ch4PlayerY = Math.max(30, Math.min(stealthCanvas.height - 30, ch4PlayerY));
+
+      // Update and draw ALL flashlights with different movement patterns
+      let inAnyLight = false;
+      flashlights.forEach(light => {
+        // Different movement patterns
+        if (light.type === 'wander') {
+          // Random wandering - bounce off walls
+          light.x += light.vx;
+          light.y += light.vy;
+          
+          // Bounce off walls and change direction randomly
+          if (light.x < 0 || light.x > stealthCanvas.width) {
+            light.vx *= -1;
+            light.vx += (Math.random() - 0.5) * 0.5; // Add randomness
+          }
+          if (light.y < 0 || light.y > stealthCanvas.height) {
+            light.vy *= -1;
+            light.vy += (Math.random() - 0.5) * 0.5; // Add randomness
+          }
+          
+          // Randomly change direction occasionally
+          if (Math.random() < 0.02) {
+            light.vx += (Math.random() - 0.5) * 1;
+            light.vy += (Math.random() - 0.5) * 1;
+            // Clamp speed
+            light.vx = Math.max(-3, Math.min(3, light.vx));
+            light.vy = Math.max(-3, Math.min(3, light.vy));
+          }
+        } else if (light.type === 'horizontal') {
+          // Horizontal sweeper - goes left to right, resets
+          light.x += light.vx;
+          if (light.vx > 0 && light.x > stealthCanvas.width + 100) {
+            light.x = -100;
+            light.y = light.startY + (Math.random() - 0.5) * 100; // Vary height slightly
+          } else if (light.vx < 0 && light.x < -100) {
+            light.x = stealthCanvas.width + 100;
+            light.y = light.startY + (Math.random() - 0.5) * 100;
+          }
+        } else if (light.type === 'vertical') {
+          // Vertical sweeper - goes top to bottom, resets
+          light.y += light.vy;
+          if (light.vy > 0 && light.y > stealthCanvas.height + 100) {
+            light.y = -100;
+            light.x = light.startX + (Math.random() - 0.5) * 100; // Vary position slightly
+          } else if (light.vy < 0 && light.y < -100) {
+            light.y = stealthCanvas.height + 100;
+            light.x = light.startX + (Math.random() - 0.5) * 100;
+          }
+        }
+
+        // Draw flashlight cone
+        const gradient = stealthCtx.createRadialGradient(light.x, light.y, 0, light.x, light.y, light.size);
+        gradient.addColorStop(0, 'rgba(255,255,200,0.8)');
+        gradient.addColorStop(1, 'rgba(255,255,200,0)');
+        stealthCtx.fillStyle = gradient;
+        stealthCtx.beginPath();
+        stealthCtx.arc(light.x, light.y, light.size, 0, Math.PI * 2);
+        stealthCtx.fill();
+
+        // Check if player in THIS light
+        const dist = Math.sqrt((ch4PlayerX - light.x) ** 2 + (ch4PlayerY - light.y) ** 2);
+        if (dist < light.size) {
+          inAnyLight = true;
+        }
+      });
+
+      // Update detection based on if player is in ANY light
+      if (inAnyLight) {
+        detection += 3;
+      } else {
+        detection = Math.max(0, detection - 1);
+        timeInDark += 1/60;
+      }
+
+      // Draw player
+      stealthCtx.fillStyle = detection > 50 ? '#ff0000' : '#00ffff';
+      stealthCtx.beginPath();
+      stealthCtx.arc(ch4PlayerX, ch4PlayerY, 20, 0, Math.PI * 2);
+      stealthCtx.fill();
+
+      // Update UI
+      detectionValue.textContent = Math.floor(detection) + '%';
+      document.getElementById('stealthStatus').textContent = `TIME: ${Math.floor(timeInDark)}/${targetTime}s`;
+
+      // Win condition
+      if (timeInDark >= targetTime) {
+        ch4Running = false;
+        saveProgress('chapter4');
+        chapter4Win.style.display = 'flex';
+        return;
+      }
+
+      // Lose condition
+      if (detection >= 100) {
+        ch4Running = false;
+        chapter4GameOver.style.display = 'flex';
+        return;
+      }
+
+      ch4AnimationFrame = requestAnimationFrame(gameLoopChapter4);
+    }
+
+    // ========== CHAPTER 5: FINAL BOSS ==========
+    const bossCanvas = document.getElementById('bossCanvas');
+    const bossCtx = bossCanvas ? bossCanvas.getContext('2d') : null;
+    const phaseNumber = document.getElementById('phaseNumber');
+    const livesCount = document.getElementById('livesCount');
+    const chapter5Win = document.querySelector('#chapter5 #chapter5Win');
+    const chapter5GameOver = document.querySelector('#chapter5 #gameOver');
+
+    let ch5Running = false;
+    let ch5AnimationFrame = null;
+    let ch5PlayerX = 0;
+    let ch5PlayerY = 0;
+    let phase = 1;
+    let lives = 3;
+    let projectiles = [];
+    let phaseTimer = 0;
+
+    function resizeBossCanvas() {
+      if (!bossCanvas) return;
+      bossCanvas.width = window.innerWidth;
+      bossCanvas.height = window.innerHeight;
+      ch5PlayerX = bossCanvas.width / 2;
+      ch5PlayerY = bossCanvas.height - 100;
+    }
+
+    function resetChapter5() {
+      if (!bossCanvas) return;
+      resizeBossCanvas();
+      stopChapter5();
+
+      ch5Running = true;
+      ch5PlayerX = bossCanvas.width / 2;
+      ch5PlayerY = bossCanvas.height - 100;
+      phase = 1;
+      lives = 3;
+      projectiles = [];
+      phaseTimer = 0;
+
+      chapter5Win.style.display = 'none';
+      chapter5GameOver.style.display = 'none';
+
+      gameLoopChapter5();
+    }
+
+    window.stopChapter5Impl = function() {
+      ch5Running = false;
+      if (ch5AnimationFrame) {
+        cancelAnimationFrame(ch5AnimationFrame);
+        ch5AnimationFrame = null;
+      }
+    };
+
+    function spawnProjectile() {
+      const morganX = bossCanvas.width / 2;
+      const morganY = 100;
+      const angle = Math.atan2(ch5PlayerY - morganY, ch5PlayerX - morganX) + (Math.random() - 0.5) * 0.5;
+      projectiles.push({
+        x: morganX,
+        y: morganY,
+        vx: Math.cos(angle) * (3 + phase),
+        vy: Math.sin(angle) * (3 + phase)
+      });
+    }
+
+    function gameLoopChapter5() {
+      if (!ch5Running) return;
+
+      // Background
+      bossCtx.fillStyle = phase === 1 ? '#1a0033' : phase === 2 ? '#330011' : '#110033';
+      bossCtx.fillRect(0, 0, bossCanvas.width, bossCanvas.height);
+
+      // Player movement
+      const moveSpeed = 6;
+      if (keys['ArrowLeft'] || keys['a']) ch5PlayerX -= moveSpeed;
+      if (keys['ArrowRight'] || keys['d']) ch5PlayerX += moveSpeed;
+      if (keys['ArrowUp'] || keys['w']) ch5PlayerY -= moveSpeed;
+      if (keys['ArrowDown'] || keys['s']) ch5PlayerY += moveSpeed;
+
+      ch5PlayerX = Math.max(30, Math.min(bossCanvas.width - 30, ch5PlayerX));
+      ch5PlayerY = Math.max(30, Math.min(bossCanvas.height - 30, ch5PlayerY));
+
+      // Draw Morgan (boss)
+      bossCtx.fillStyle = '#ff00ff';
+      bossCtx.font = '80px Arial';
+      bossCtx.fillText('😈', bossCanvas.width / 2 - 40, 100);
+
+      // Spawn projectiles based on phase
+      phaseTimer++;
+      if (phaseTimer % (60 - phase * 15) === 0) {
+        spawnProjectile();
+        if (phase === 3) spawnProjectile(); // Double projectiles in phase 3
+      }
+
+      // Update and draw projectiles
+      projectiles.forEach((proj, idx) => {
+        proj.x += proj.vx;
+        proj.y += proj.vy;
+
+        // Draw projectile
+        bossCtx.fillStyle = '#ff0000';
+        bossCtx.beginPath();
+        bossCtx.arc(proj.x, proj.y, 10, 0, Math.PI * 2);
+        bossCtx.fill();
+
+        // Check collision with player
+        const dist = Math.sqrt((proj.x - ch5PlayerX) ** 2 + (proj.y - ch5PlayerY) ** 2);
+        if (dist < 30) {
+          lives--;
+          projectiles.splice(idx, 1);
+        }
+
+        // Remove off-screen projectiles
+        if (proj.x < 0 || proj.x > bossCanvas.width || proj.y < 0 || proj.y > bossCanvas.height) {
+          projectiles.splice(idx, 1);
+        }
+      });
+
+      // Draw player
+      bossCtx.fillStyle = '#00ffff';
+      bossCtx.font = '50px Arial';
+      bossCtx.fillText('🏃', ch5PlayerX - 25, ch5PlayerY + 25);
+
+      // Update UI
+      phaseNumber.textContent = phase;
+      livesCount.textContent = lives;
+
+      // Phase progression
+      if (phaseTimer > 600) { // 10 seconds per phase
+        phase++;
+        phaseTimer = 0;
+        projectiles = [];
+      }
+
+      // Win condition
+      if (phase > 3) {
+        ch5Running = false;
+        saveProgress('chapter5');
+        chapter5Win.style.display = 'flex';
+        return;
+      }
+
+      // Lose condition
+      if (lives <= 0) {
+        ch5Running = false;
+        chapter5GameOver.style.display = 'flex';
+        return;
+      }
+
+      ch5AnimationFrame = requestAnimationFrame(gameLoopChapter5);
+    }
+
+    window.addEventListener('resize', () => {
+      if (ch4Running) resizeStealthCanvas();
+      if (ch5Running) resizeBossCanvas();
+    });
   </script>
 </body>
 </html>
