@@ -83,6 +83,7 @@
         }
         .deck:hover { transform: translateY(-4px); box-shadow: 0 15px 30px rgba(0,0,0,0.4); }
         .deck::after { content: 'DRAW'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 0.9rem; font-weight: 700; color: #fff; }
+        .deck.disabled { opacity: 0.5; cursor: not-allowed; }
         
         .controls { text-align: center; margin: 20px 0; }
         .btn { 
@@ -355,17 +356,20 @@
                 const status = document.getElementById('status');
                 const buildBtn = document.getElementById('buildBtn');
                 const sabotageBtn = document.getElementById('sabotageBtn');
+                const deckBtn = document.getElementById('drawDeck');
                 
                 if(this.gameState === 'player_turn') {
-                    status.textContent = `Your turn! Tower: ${this.playerTower.length}/5 | Hand: ${this.playerHand.length}`;
+                    status.textContent = `Your turn! Tower: ${this.playerTower.length}/5 | Hand: ${this.playerHand.length} | Deck: ${this.deck.length}`;
                     buildBtn.disabled = false;
                     sabotageBtn.disabled = false;
+                    deckBtn.classList.remove('disabled');
                     status.classList.remove('ai-thinking');
                 } else {
                     status.textContent = 'AI is plotting...';
                     status.classList.add('ai-thinking');
                     buildBtn.disabled = true;
                     sabotageBtn.disabled = true;
+                    deckBtn.classList.add('disabled');
                 }
                 
                 // Auto-enable build if possible
@@ -408,7 +412,14 @@
         }
         
         function drawCard() {
-            // Auto-draw handled in game logic
+            // NOW ACTUALLY WORKS!
+            if(game.gameState === 'player_turn' && game.playerHand.length < 10 && game.deck.length > 0) {
+                const card = game.draw();
+                if(card) {
+                    game.playerHand.push(card);
+                    game.render();
+                }
+            }
         }
         
         function restartGame() {
