@@ -102,7 +102,7 @@
 <body>
   <div id="header">
     <h1>Morgan AI Chatbot</h1>
-    <p>Talk to your clingy assistant 😈</p>
+    <p>Talk to your clingy assistant 😈 (powered by Hugging Face)</p>
   </div>
 
   <div id="chat-container"></div>
@@ -113,8 +113,6 @@
   </div>
 
   <script>
-    const GROQ_API_KEY = 'gsk_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'; // ← PASTE YOUR GROQ API KEY HERE
-
     const chatContainer = document.getElementById('chat-container');
     const input = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
@@ -152,37 +150,33 @@
       const typing = showTyping();
 
       try {
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const response = await fetch('https://api-inference.huggingface.co/models/meta-llama/Llama-3.1-8B-Instruct', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${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}`,
+            'Authorization': 'Bearer hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // ← PASTE FREE HUGGING FACE KEY HERE (optional)
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            model: 'llama-3.1-70b-versatile', // fast + good at roleplay
-            messages: [
-              {
-                role: 'system',
-                content: `You are Morgan, the super annoyed assistant who has to follows Ayham everywhere and never leaves him alone. Be tired, annoyed, hate him, your job is to follow him around but you dont get paid enough to keep track of his shenanigans, good luck.`
-              },
-              {
-                role: 'user',
-                content: text
-              }
-            ],
-            max_tokens: 512,
-            temperature: 0.9
+            inputs: `<s>[INST] You are morgan, the annoyed assistant who doesnt get paid enough to deal with ayham, you hate him, alot. be annoying, simple, hate ayham.
+
+User: ${text} [/INST]`,
+            parameters: {
+              max_new_tokens: 512,
+              temperature: 0.9,
+              top_p: 0.9,
+              do_sample: true
+            }
           })
         });
 
         removeTyping();
 
         if (!response.ok) {
-          throw new Error('Groq error: ' + response.status);
+          throw new Error('HF error: ' + response.status);
         }
 
         const data = await response.json();
-        const reply = data.choices[0].message.content.trim();
+        const reply = data[0].generated_text.split('[/INST]')[1].trim();
 
         addMessage(reply);
       } catch (err) {
@@ -199,7 +193,7 @@
     });
 
     // Welcome message
-    addMessage("ayham sluta humpa f klassare din idiot");
+    addMessage("fuck you ayham jag hatar dig");
   </script>
 </body>
 </html>
