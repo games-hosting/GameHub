@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GameHub Script Tester</title>
+  <style>body{background:#000;color:#0f0;font-family:monospace;padding:20px;} textarea{background:#111;color:#0f0;border:1px solid #0f0;width:100%;height:200px;} button{background:#0f0;color:#000;border:none;padding:10px;cursor:pointer;}</style>
+</head>
+<body>
+  <h2>Run JS here - preview in iframe below</h2>
+  <textarea id="code" placeholder="// example: document.body.style.filter = 'invert(1)';"></textarea><br>
+  <button onclick="runPreview()">Run in Preview Iframe</button>
+  <button onclick="runFullTab()">Open New Tab with Script</button>
+  <iframe id="preview" style="width:100%;height:400px;border:1px solid #0f0;margin-top:20px;" sandbox="allow-scripts"></iframe>
+
+  <script>
+  function runPreview() {
+    const code = document.getElementById('code').value;
+    const preview = document.getElementById('preview');
+    preview.srcdoc = `
+      <!DOCTYPE html>
+      <html><body>
+        <h3>Preview Page</h3>
+        <p>Script running...</p>
+        <script>${code}<\/script>
+      </body></html>
+    `;
+  }
+
+  function runFullTab() {
+    const code = document.getElementById('code').value.trim();
+    if (!code) return alert('Drop some code first');
+    const blob = new Blob([`
+      <script>
+        try { ${code} } catch(e) { alert('Error: ' + e); }
+      <\/script>
+      <body>Script ran - close me</body>
+    `], {type: 'text/html'});
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  }
+  </script>
+</body>
+</html>
