@@ -765,11 +765,11 @@
       startBustCheck();
     }
 
-    stopChapter3 = function() {
+    function stopChapter1() {
       clearInterval(lightTimer);
       clearInterval(bustCheckInterval);
       gameRunning = false;
-    };
+    }
 
     function toggleLight() {
       isGreen = !isGreen;
@@ -1384,6 +1384,8 @@
     let lives = 3;
     let projectiles = [];
     let phaseTimer = 0;
+    let phase2Lights = []; // Small lights for phase 2
+    let morganPositions = []; // Multiple Morgans for phase 3
 
     function resizeBossCanvas() {
       if (!bossCanvas) return;
@@ -1405,6 +1407,8 @@
       lives = 3;
       projectiles = [];
       phaseTimer = 0;
+      phase2Lights = [];
+      morganPositions = [];
 
       chapter5Win.style.display = 'none';
       chapter5GameOver.style.display = 'none';
@@ -1420,13 +1424,11 @@
       }
     };
 
-    function spawnProjectile() {
-      const morganX = bossCanvas.width / 2;
-      const morganY = 100;
-      const angle = Math.atan2(ch5PlayerY - morganY, ch5PlayerX - morganX) + (Math.random() - 0.5) * 0.5;
+    function spawnProjectile(fromX, fromY) {
+      const angle = Math.atan2(ch5PlayerY - fromY, ch5PlayerX - fromX) + (Math.random() - 0.5) * 0.5;
       projectiles.push({
-        x: morganX,
-        y: morganY,
+        x: fromX,
+        y: fromY,
         vx: Math.cos(angle) * (3 + phase),
         vy: Math.sin(angle) * (3 + phase)
       });
@@ -1449,16 +1451,83 @@
       ch5PlayerX = Math.max(30, Math.min(bossCanvas.width - 30, ch5PlayerX));
       ch5PlayerY = Math.max(30, Math.min(bossCanvas.height - 30, ch5PlayerY));
 
-      // Draw Morgan (boss)
-      bossCtx.fillStyle = '#ff00ff';
-      bossCtx.font = '80px Arial';
-      bossCtx.fillText('😈', bossCanvas.width / 2 - 40, 100);
-
-      // Spawn projectiles based on phase
-      phaseTimer++;
-      if (phaseTimer % (60 - phase * 15) === 0) {
-        spawnProjectile();
-        if (phase === 3) spawnProjectile(); // Double projectiles in phase 3
+      // PHASE-SPECIFIC MECHANICS
+      if (phase === 1) {
+        // Phase 1: Single Morgan, basic projectiles
+        bossCtx.fillStyle = '#ff00ff';
+        bossCtx.font = '80px Arial';
+        bossCtx.fillText('😈', bossCanvas.width / 2 - 40, 100);
+        
+        phaseTimer++;
+        if (phaseTimer % 45 === 0) {
+          spawnProjectile(bossCanvas.width / 2, 100);
+        }
+      } else if (phase === 2) {
+        // Phase 2: Single Morgan + Small wandering lights (harder to see!)
+        bossCtx.fillStyle = '#ff00ff';
+        bossCtx.font = '80px Arial';
+        bossCtx.fillText('😈', bossCanvas.width / 2 - 40, 100);
+        
+        // Initialize lights if not done
+        if (phase2Lights.length === 0) {
+          for (let i = 0; i < 4; i++) {
+            phase2Lights.push({
+              x: Math.random() * bossCanvas.width,
+              y: Math.random() * bossCanvas.height,
+              vx: (Math.random() - 0.5) * 2,
+              vy: (Math.random() - 0.5) * 2,
+              size: 60
+            });
+          }
+        }
+        
+        // Update and draw small lights
+        phase2Lights.forEach(light => {
+          light.x += light.vx;
+          light.y += light.vy;
+          
+          // Bounce off walls
+          if (light.x < 0 || light.x > bossCanvas.width) light.vx *= -1;
+          if (light.y < 0 || light.y > bossCanvas.height) light.vy *= -1;
+          
+          // Draw light
+          const gradient = bossCtx.createRadialGradient(light.x, light.y, 0, light.x, light.y, light.size);
+          gradient.addColorStop(0, 'rgba(255,255,150,0.6)');
+          gradient.addColorStop(1, 'rgba(255,255,150,0)');
+          bossCtx.fillStyle = gradient;
+          bossCtx.beginPath();
+          bossCtx.arc(light.x, light.y, light.size, 0, Math.PI * 2);
+          bossCtx.fill();
+        });
+        
+        phaseTimer++;
+        if (phaseTimer % 35 === 0) {
+          spawnProjectile(bossCanvas.width / 2, 100);
+        }
+      } else if (phase === 3) {
+        // Phase 3: THREE MORGANS shooting at once!
+        if (morganPositions.length === 0) {
+          morganPositions = [
+            { x: bossCanvas.width * 0.25, y: 100 },
+            { x: bossCanvas.width * 0.5, y: 100 },
+            { x: bossCanvas.width * 0.75, y: 100 }
+          ];
+        }
+        
+        // Draw all 3 Morgans
+        bossCtx.fillStyle = '#ff00ff';
+        bossCtx.font = '80px Arial';
+        morganPositions.forEach(morgan => {
+          bossCtx.fillText('😈', morgan.x - 40, morgan.y);
+        });
+        
+        phaseTimer++;
+        if (phaseTimer % 25 === 0) {
+          // Each Morgan shoots!
+          morganPositions.forEach(morgan => {
+            spawnProjectile(morgan.x, morgan.y);
+          });
+        }
       }
 
       // Update and draw projectiles
@@ -1499,6 +1568,8 @@
         phase++;
         phaseTimer = 0;
         projectiles = [];
+        phase2Lights = []; // Clear lights
+        morganPositions = []; // Clear morgans
       }
 
       // Win condition
