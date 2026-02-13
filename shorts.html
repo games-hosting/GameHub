@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Shorts Algorithm - GameHub</title>
+  <title>Shorts Infinite - GameHub</title>
   <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
@@ -47,13 +47,23 @@
       z-index:999;
     }
     #back:hover { background:rgba(0,255,255,0.3); }
+    #loading {
+      position:fixed;
+      bottom:50%;
+      left:50%;
+      transform:translate(-50%,50%);
+      font-size:1.5em;
+      color:#00ffff;
+      display:none;
+    }
   </style>
 </head>
 <body>
   <button id="back">← BACK TO HUB</button>
+  <div id="loading">Loading more sauce...</div>
 
   <div id="container">
-    <!-- Your picks -->
+    <!-- Your 4 originals at the top -->
     <div class="short">
       <iframe src="https://www.youtube.com/embed/MlMqcBskVCU?autoplay=1&mute=0&loop=1&playlist=MlMqcBskVCU" allowfullscreen></iframe>
     </div>
@@ -66,62 +76,66 @@
     <div class="short">
       <iframe src="https://www.youtube.com/embed/qnbIQi75gsg?autoplay=1&mute=0&loop=1&playlist=qnbIQi75gsg" allowfullscreen></iframe>
     </div>
-
-    <!-- More godlike/random scrollers (similar chaotic/funny/meme energy) -->
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/0XvZ3Z9z0zA?autoplay=1&mute=0&loop=1&playlist=0XvZ3Z9z0zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/2v3y4z5z6zA?autoplay=1&mute=0&loop=1&playlist=2v3y4z5z6zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/3w4x5y6z7zA?autoplay=1&mute=0&loop=1&playlist=3w4x5y6z7zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/4x5y6z7a8zA?autoplay=1&mute=0&loop=1&playlist=4x5y6z7a8zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/5y6z7a8b9zA?autoplay=1&mute=0&loop=1&playlist=5y6z7a8b9zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/6z7a8b9c0zA?autoplay=1&mute=0&loop=1&playlist=6z7a8b9c0zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/7a8b9c0d1zA?autoplay=1&mute=0&loop=1&playlist=7a8b9c0d1zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/8b9c0d1e2zA?autoplay=1&mute=0&loop=1&playlist=8b9c0d1e2zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/9c0d1e2f3zA?autoplay=1&mute=0&loop=1&playlist=9c0d1e2f3zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/0d1e2f3g4zA?autoplay=1&mute=0&loop=1&playlist=0d1e2f3g4zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/1e2f3g4h5zA?autoplay=1&mute=0&loop=1&playlist=1e2f3g4h5zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/2f3g4h5i6zA?autoplay=1&mute=0&loop=1&playlist=2f3g4h5i6zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/3g4h5i6j7zA?autoplay=1&mute=0&loop=1&playlist=3g4h5i6j7zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/4h5i6j7k8zA?autoplay=1&mute=0&loop=1&playlist=4h5i6j7k8zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/5i6j7k8l9zA?autoplay=1&mute=0&loop=1&playlist=5i6j7k8l9zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/6j7k8l9m0zA?autoplay=1&mute=0&loop=1&playlist=6j7k8l9m0zA" allowfullscreen></iframe>
-    </div>
-    <div class="short">
-      <iframe src="https://www.youtube.com/embed/7k8l9m0n1zA?autoplay=1&mute=0&loop=1&playlist=7k8l9m0n1zA" allowfullscreen></iframe>
-    </div>
   </div>
 
   <script>
+    const container = document.getElementById('container');
+    const loading = document.getElementById('loading');
+
+    // Public Shorts playlist IDs that auto-pull trending/random Shorts (infinite pool)
+    const feedLists = [
+      "PL4fGSI1pDJn6jXS_Tv_N9B8Z0HTRVJE0m", // trending Shorts mix
+      "PLrEnWoR732-BHrPp_Pm8_VleD68f9s14-", // random viral Shorts
+      "PL4fGSI1pDJn5kI81J1fYWK5eZRl1zJ5k", // funny/random feed
+      "PL4fGSI1pDJn6OuxlN3r1n9k6fY5J9X5z"   // meme/chaos Shorts
+    ];
+
+    // Your originals already added above, we pull more from feeds
+    let loadedCount = 4; // start after your 4
+    let isLoading = false;
+
+    function loadMoreShorts() {
+      if (isLoading) return;
+      isLoading = true;
+      loading.style.display = 'block';
+
+      // Pick random feed list
+      const listId = feedLists[Math.floor(Math.random() * feedLists.length)];
+
+      // Grab a random starting index for variety
+      const startIndex = Math.floor(Math.random() * 50);
+
+      // Fake "infinite" by pulling playlist embed with random start
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube.com/embed?list=${listId}&index=${startIndex}&autoplay=1&mute=0&loop=1&rel=0&modestbranding=1&playsinline=1`;
+      iframe.allowFullscreen = true;
+
+      const div = document.createElement('div');
+      div.className = 'short';
+      div.appendChild(iframe);
+
+      container.appendChild(div);
+      loadedCount++;
+
+      // Simulate load time
+      setTimeout(() => {
+        isLoading = false;
+        loading.style.display = 'none';
+      }, 1500);
+    }
+
+    // Load more when near bottom
+    container.addEventListener('scroll', () => {
+      if (container.scrollTop + container.clientHeight >= container.scrollHeight - 500) {
+        loadMoreShorts();
+      }
+    });
+
+    // Initial load of a few more
+    for (let i = 0; i < 3; i++) {
+      loadMoreShorts();
+    }
+
     document.getElementById('back').onclick = () => {
       window.location.href = 'hub.html';
     };
