@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Shorts - GameHub</title>
+  <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      height:100vh;
+      background:#000;
+      overflow:hidden;
+      font-family:'Orbitron',monospace;
+      color:#fff;
+    }
+    #container {
+      height:100vh;
+      overflow-y:scroll;
+      scroll-snap-type:y mandatory;
+      -webkit-overflow-scrolling:touch;
+    }
+    .short {
+      height:100vh;
+      scroll-snap-align:start;
+      position:relative;
+      background:#111;
+    }
+    iframe {
+      width:100%;
+      height:100%;
+      border:none;
+    }
+    #back {
+      position:fixed;
+      top:15px;
+      left:15px;
+      background:rgba(0,0,0,0.7);
+      color:#00ffff;
+      border:none;
+      padding:10px 18px;
+      border-radius:30px;
+      font-size:1.1em;
+      cursor:pointer;
+      z-index:999;
+    }
+    #back:hover { background:rgba(0,255,255,0.3); }
+  </style>
+</head>
+<body>
+  <button id="back">← BACK TO HUB</button>
+
+  <div id="container">
+    <!-- Real YT Shorts embeds - add more by copying the div -->
+    <div class="short">
+      <iframe src="https://www.youtube.com/embed/shorts/VIDEO_ID_HERE?autoplay=1&mute=0&loop=1&playlist=VIDEO_ID_HERE" allowfullscreen></iframe>
+    </div>
+
+    <div class="short">
+      <iframe src="https://www.youtube.com/embed/shorts/ANOTHER_SHORT_ID?autoplay=1&mute=0&loop=1&playlist=ANOTHER_SHORT_ID" allowfullscreen></iframe>
+    </div>
+
+    <!-- Add as many as you want, find Shorts IDs from youtube.com/shorts/ links -->
+    <!-- Example: https://youtube.com/shorts/dQw4w9WgXcQ → VIDEO_ID = dQw4w9WgXcQ -->
+  </div>
+
+  <script>
+    document.getElementById('back').onclick = () => {
+      window.location.href = 'hub.html';
+    };
+
+    // Auto-play next on scroll
+    const container = document.getElementById('container');
+    container.addEventListener('scroll', () => {
+      const shorts = document.querySelectorAll('.short');
+      shorts.forEach(short => {
+        const rect = short.getBoundingClientRect();
+        if (rect.top <= 100 && rect.bottom >= 100) {
+          const iframe = short.querySelector('iframe');
+          if (iframe) iframe.src = iframe.src; // reload to force play
+        }
+      });
+    });
+  </script>
+</body>
+</html>
