@@ -475,8 +475,8 @@
         "undertale.html",
         "worldshardest.html",
         "snake.html",
-        "morgan-chat.html"
-        "shorts.html"
+        "morgan-chat.html",
+        "shorts.html" // FIXED: Added missing comma above this line!
       ];
       const randomIndex = Math.floor(Math.random() * links.length);
       window.open(links[randomIndex], '_blank');
@@ -487,6 +487,7 @@
     const cards = document.querySelectorAll('.game-card:not(#secret-card)');
     const secretCard = document.getElementById('secret-card');
     const noResults = document.getElementById('noResults');
+    
     searchInput.addEventListener('input', () => {
       const query = searchInput.value.toLowerCase().trim();
       let visible = 0;
@@ -495,19 +496,33 @@
         const title = card.querySelector('h3').textContent.toLowerCase();
         const desc = card.querySelector('p').textContent.toLowerCase();
         const match = title.includes(query) || desc.includes(query);
-        card.classList.toggle('hidden', !match && query !== '');
-        if (match || query === '') visible++;
+        
+        if (query === '') {
+          // Show all cards when search is empty
+          card.classList.remove('hidden');
+          visible++;
+        } else {
+          // Hide/show based on match
+          if (match) {
+            card.classList.remove('hidden');
+            visible++;
+          } else {
+            card.classList.add('hidden');
+          }
+        }
       });
 
       // Secret trigger on exact match
       if (query === 'zyxba') {
         if (secretCard) secretCard.classList.remove('hidden');
+        visible++; // Count secret card as visible
         noResults.style.display = 'none';
       } else {
         if (secretCard) secretCard.classList.add('hidden');
       }
 
-      noResults.style.display = (visible === 0 && query !== '' && query !== 'zyxba') ? 'block' : 'none';
+      // Show "no results" only if nothing is visible and query is not empty
+      noResults.style.display = (visible === 0 && query !== '') ? 'block' : 'none';
     });
 
     // Floating dots
@@ -641,5 +656,3 @@
   </script>
 </body>
 </html>
-
-
