@@ -127,6 +127,34 @@
     
     let conversationHistory = [];
 
+    // Chicken counter function - checks if message contains "chicken"
+    async function updateChickenCount(message) {
+      const lowerMessage = message.toLowerCase();
+      if (lowerMessage.includes('chicken')) {
+        try {
+          // Get current count
+          const result = await window.storage.get('chicken_count', true);
+          const currentCount = result ? parseInt(result.value) : 0;
+          
+          // Increment and save
+          await window.storage.set('chicken_count', (currentCount + 1).toString(), true);
+        } catch (err) {
+          console.error('Chicken counter error:', err);
+        }
+      }
+    }
+
+    // Get chicken count for Morgan to report
+    async function getChickenCount() {
+      try {
+        const result = await window.storage.get('chicken_count', true);
+        return result ? parseInt(result.value) : 0;
+      } catch (err) {
+        console.error('Error getting chicken count:', err);
+        return 0;
+      }
+    }
+
     function addMessage(text, isUser = false) {
       const msg = document.createElement('div');
       msg.className = `message ${isUser ? 'user' : 'morgan'}`;
@@ -158,6 +186,16 @@
       input.value = '';
       sendBtn.disabled = true;
 
+      // Count chicken mentions
+      await updateChickenCount(text);
+
+      // Check if user is asking about chicken count
+      const lowerText = text.toLowerCase();
+      const isAskingAboutChickens = (
+        (lowerText.includes('how many') || lowerText.includes('how much')) && 
+        lowerText.includes('chicken')
+      ) || lowerText.includes('chicken count') || lowerText.includes('chicken counter');
+
       // Add to conversation history
       conversationHistory.push({
         role: "user",
@@ -172,6 +210,16 @@
       const typing = showTyping();
 
       try {
+        let finalMessage = text;
+        
+        // If asking about chickens, add the count to the message
+        if (isAskingAboutChickens) {
+          const count = await getChickenCount();
+          finalMessage = `${text} [SYSTEM: The total chicken count is ${count}. Include this number in your response.]`;
+          // Update the last message in history
+          conversationHistory[conversationHistory.length - 1].content = finalMessage;
+        }
+
         // Send to Cloudflare Worker (API key is hidden there!)
         const response = await fetch(WORKER_URL, {
           method: 'POST',
