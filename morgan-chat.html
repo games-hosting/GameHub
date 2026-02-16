@@ -86,10 +86,15 @@
       font-size: 1.2em;
       font-weight: bold;
       cursor: pointer;
+      transition: all 0.3s;
     }
     #send-btn:hover {
       transform: scale(1.05);
       box-shadow: 0 0 30px #ff00ff;
+    }
+    #send-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
     .typing {
       align-self: flex-start;
@@ -116,6 +121,11 @@
     const chatContainer = document.getElementById('chat-container');
     const input = document.getElementById('message-input');
     const sendBtn = document.getElementById('send-btn');
+    
+    // ⬇️ Your Cloudflare Worker URL ⬇️
+    const WORKER_URL = 'https://morganchatworker.theodor-rozitis.workers.dev/chat';
+    
+    let conversationHistory = [];
 
     function addMessage(text, isUser = false) {
       const msg = document.createElement('div');
@@ -146,50 +156,57 @@
 
       addMessage(text, true);
       input.value = '';
+      sendBtn.disabled = true;
+
+      // Add to conversation history
+      conversationHistory.push({
+        role: "user",
+        content: text
+      });
 
       const typing = showTyping();
 
       try {
-        const response = await fetch('https://api-inference.huggingface.co/models/meta-llama/Llama-3.1-8B-Instruct', {
+        // Send to Cloudflare Worker (API key is hidden there!)
+        const response = await fetch(WORKER_URL, {
           method: 'POST',
           headers: {
-            'Authorization': 'Bearer hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // ← PASTE FREE HUGGING FACE KEY HERE (optional)
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            inputs: `<s>[INST] You are morgan, the annoyed assistant who doesnt get paid enough to deal with ayham, you hate him, alot. be annoying, simple, hate ayham.
-
-User: ${text} [/INST]`,
-            parameters: {
-              max_new_tokens: 512,
-              temperature: 0.9,
-              top_p: 0.9,
-              do_sample: true
-            }
+            messages: conversationHistory
           })
         });
 
         removeTyping();
 
         if (!response.ok) {
-          throw new Error('HF error: ' + response.status);
+          throw new Error('Worker error: ' + response.status);
         }
 
         const data = await response.json();
-        const reply = data[0].generated_text.split('[/INST]')[1].trim();
+        const reply = data.reply;
+
+        // Add Morgan's response to history
+        conversationHistory.push({
+          role: "assistant",
+          content: reply
+        });
 
         addMessage(reply);
       } catch (err) {
         removeTyping();
-        addMessage('Morgan glitched out... try again later 😭');
+        addMessage('Morgan glitched out... probably your fault ayham 😭');
         console.error(err);
+      } finally {
+        sendBtn.disabled = false;
       }
     }
 
     sendBtn.onclick = sendMessage;
 
     input.addEventListener('keypress', e => {
-      if (e.key === 'Enter') sendMessage();
+      if (e.key === 'Enter' && !sendBtn.disabled) sendMessage();
     });
 
     // Welcome message
