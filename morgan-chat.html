@@ -126,33 +126,44 @@
     const WORKER_URL = 'https://morganchatworker.theodor-rozitis.workers.dev/chat';
     
     let conversationHistory = [];
+    let userName = null; // No name prompt anymore
+    let isRealTheodor = localStorage.getItem('morgan_is_theodor') === 'true'; // Track if real Theodor
+    let isFraud = localStorage.getItem('morgan_fraud') === 'true'; // Track if caught as fraud
+    let fraudMessageCount = parseInt(localStorage.getItem('morgan_fraud_count') || '0'); // Messages since fraud caught
 
-    // Chicken counter function - checks if message contains "chicken"
-    async function updateChickenCount(message) {
-      const lowerMessage = message.toLowerCase();
-      if (lowerMessage.includes('chicken')) {
-        try {
-          // Get current count
-          const result = await window.storage.get('chicken_count', true);
-          const currentCount = result ? parseInt(result.value) : 0;
-          
-          // Increment and save
-          await window.storage.set('chicken_count', (currentCount + 1).toString(), true);
-        } catch (err) {
-          console.error('Chicken counter error:', err);
-        }
+    // Secret creator code - only Theodor knows this
+    function checkCreatorCode(message) {
+      const SECRET_CODE = 'theodor2026-creator-gamehub'; // Secret code only real Theodor knows
+      
+      if (message.toLowerCase().trim() === SECRET_CODE) {
+        isRealTheodor = true;
+        isFraud = false; // Clear any fraud status
+        fraudMessageCount = 0;
+        localStorage.setItem('morgan_is_theodor', 'true');
+        localStorage.setItem('morgan_fraud', 'false');
+        localStorage.setItem('morgan_fraud_count', '0');
+        return true;
       }
+      return false;
     }
 
-    // Get chicken count for Morgan to report
-    async function getChickenCount() {
-      try {
-        const result = await window.storage.get('chicken_count', true);
-        return result ? parseInt(result.value) : 0;
-      } catch (err) {
-        console.error('Error getting chicken count:', err);
-        return 0;
+    // Check if someone is claiming to be Theodor without the code
+    function checkForFraud(message) {
+      const lowerMsg = message.toLowerCase();
+      if (!isRealTheodor && (
+        lowerMsg.includes("i'm theodor") || 
+        lowerMsg.includes("i am theodor") ||
+        lowerMsg.includes("im theodor") ||
+        lowerMsg.includes("my name is theodor") ||
+        lowerMsg.includes("this is theodor")
+      )) {
+        isFraud = true;
+        fraudMessageCount = 0;
+        localStorage.setItem('morgan_fraud', 'true');
+        localStorage.setItem('morgan_fraud_count', '0');
+        return true;
       }
+      return false;
     }
 
     function addMessage(text, isUser = false) {
@@ -182,19 +193,42 @@
       const text = input.value.trim();
       if (!text) return;
 
+      // Check for secret creator code (don't send to Morgan, just authenticate)
+      if (checkCreatorCode(text)) {
+        input.value = '';
+        addMessage('🔓 Creator authentication successful. Welcome, Theodor.', false);
+        return;
+      }
+
+      // Check if they're claiming to be Theodor without code
+      if (checkForFraud(text)) {
+        input.value = '';
+        addMessage("🚨 FRAUD DETECTED. You're not Theodor. I refuse to talk to imposters for the next 30 messages. Nice try, clown.", false);
+        return;
+      }
+
+      // If they're banned for fraud, increment counter
+      if (isFraud) {
+        fraudMessageCount++;
+        localStorage.setItem('morgan_fraud_count', fraudMessageCount.toString());
+        
+        if (fraudMessageCount < 30) {
+          input.value = '';
+          addMessage(`🚫 Still banned. ${30 - fraudMessageCount} messages left before I talk to you again, fraud.`, false);
+          return;
+        } else {
+          // Ban expired
+          isFraud = false;
+          fraudMessageCount = 0;
+          localStorage.setItem('morgan_fraud', 'false');
+          localStorage.setItem('morgan_fraud_count', '0');
+          addMessage("Fine, your ban is over. Don't pretend to be Theodor again.", false);
+        }
+      }
+
       addMessage(text, true);
       input.value = '';
       sendBtn.disabled = true;
-
-      // Count chicken mentions
-      await updateChickenCount(text);
-
-      // Check if user is asking about chicken count
-      const lowerText = text.toLowerCase();
-      const isAskingAboutChickens = (
-        (lowerText.includes('how many') || lowerText.includes('how much')) && 
-        lowerText.includes('chicken')
-      ) || lowerText.includes('chicken count') || lowerText.includes('chicken counter');
 
       // Add to conversation history
       conversationHistory.push({
@@ -212,11 +246,10 @@
       try {
         let finalMessage = text;
         
-        // If asking about chickens, add the count to the message
-        if (isAskingAboutChickens) {
-          const count = await getChickenCount();
-          finalMessage = `${text} [SYSTEM: The total chicken count is ${count}. Include this number in your response.]`;
-          // Update the last message in history
+        // Add creator status if authenticated
+        if (isRealTheodor) {
+          // Always let Morgan know this is the REAL Theodor
+          finalMessage = `${text} [SYSTEM: This is THEODOR, your creator. He has authenticated with the secret code. Show him respect and appreciation.]`;
           conversationHistory[conversationHistory.length - 1].content = finalMessage;
         }
 
