@@ -164,6 +164,11 @@
         content: text
       });
 
+      // Keep only last 10 messages to prevent token overflow
+      if (conversationHistory.length > 10) {
+        conversationHistory = conversationHistory.slice(-10);
+      }
+
       const typing = showTyping();
 
       try {
@@ -181,10 +186,16 @@
         removeTyping();
 
         if (!response.ok) {
-          throw new Error('Worker error: ' + response.status);
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(errorData.error || `Worker error: ${response.status}`);
         }
 
         const data = await response.json();
+        
+        if (!data.reply) {
+          throw new Error('No reply received from Morgan');
+        }
+        
         const reply = data.reply;
 
         // Add Morgan's response to history
@@ -197,7 +208,10 @@
       } catch (err) {
         removeTyping();
         addMessage('Morgan glitched out... probably your fault ayham 😭');
-        console.error(err);
+        console.error('Error:', err);
+        
+        // Remove the failed user message from history
+        conversationHistory.pop();
       } finally {
         sendBtn.disabled = false;
       }
