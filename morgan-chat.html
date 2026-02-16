@@ -207,7 +207,19 @@
         addMessage(reply);
       } catch (err) {
         removeTyping();
-        addMessage('Morgan glitched out... probably your fault ayham 😭');
+        
+        // Check for specific error types
+        let errorMessage = 'Morgan glitched out... probably your fault ayham 😭';
+        
+        if (err.message.includes('429') || err.message.toLowerCase().includes('rate limit')) {
+          errorMessage = "you've hit the message limit bro 💀 wait till tomorrow to fuck with morgan again";
+        } else if (err.message.includes('401') || err.message.toLowerCase().includes('unauthorized')) {
+          errorMessage = "api key broke lmao, someone needs to fix that 🔑";
+        } else if (err.message.includes('500')) {
+          errorMessage = "morgan's having a mental breakdown rn, try again in a sec 🤯";
+        }
+        
+        addMessage(errorMessage);
         console.error('Error:', err);
         
         // Remove the failed user message from history
