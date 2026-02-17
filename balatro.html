@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en-us">
 <head>
   <meta charset="utf-8">
@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, minimum-scale=1, maximum-scale=1">
   <title>Balatro</title>
   <base href="https://cdn.jsdelivr.net/gh/thirstygithub/mathamatic-notes@master/">
-  <!-- Load custom style sheet -->
   <link rel="stylesheet" type="text/css" href="theme/love.css">
   <script src="consolewrapper.js"></script>
   <script>
@@ -14,90 +13,275 @@
       console.debug = console.log.bind(console);
     }
     var __logger = (typeof console !== 'undefined') ? console : null;
-    if (typeof window !== 'undefined') {
-      if (typeof window.__getWebDB !== 'function') {
-        window.__getWebDB = function(name) {
-          try {
-            return window.localStorage ? window.localStorage.getItem(name) : null;
-          } catch (err) {
-            if (__logger && __logger.warn) {
-              __logger.warn('Unable to access localStorage for __getWebDB:', err);
-            }
-            return null;
+
+    // ====================================================
+    // FIXED SAVE SYSTEM - Uses IndexedDB with localStorage fallback
+    // IndexedDB can store way more data (250MB+) vs localStorage (5MB)
+    // ====================================================
+
+    var __db = null;
+    var __dbReady = false;
+    var __dbQueue = {}; // Queue writes while DB is loading
+    var __memCache = {}; // In-memory cache for instant reads
+
+    // Initialize IndexedDB
+    function __initDB() {
+      return new Promise(function(resolve, reject) {
+        if (!window.indexedDB) {
+          console.warn('IndexedDB not available, falling back to localStorage');
+          __dbReady = true;
+          resolve(null);
+          return;
+        }
+
+        var request = window.indexedDB.open('BalatroDB', 1);
+
+        request.onupgradeneeded = function(e) {
+          var db = e.target.result;
+          if (!db.objectStoreNames.contains('saves')) {
+            db.createObjectStore('saves', { keyPath: 'key' });
           }
         };
+
+        request.onsuccess = function(e) {
+          __db = e.target.result;
+          __dbReady = true;
+          console.log('Balatro IndexedDB ready!');
+
+          // Flush any queued writes
+          Object.keys(__dbQueue).forEach(function(key) {
+            __writeToIDB(key, __dbQueue[key]);
+          });
+          __dbQueue = {};
+
+          resolve(__db);
+        };
+
+        request.onerror = function(e) {
+          console.warn('IndexedDB failed, falling back to localStorage:', e);
+          __dbReady = true;
+          resolve(null);
+        };
+      });
+    }
+
+    // Write to IndexedDB
+    function __writeToIDB(key, value) {
+      if (!__db) return;
+      try {
+        var tx = __db.transaction(['saves'], 'readwrite');
+        var store = tx.objectStore('saves');
+        store.put({ key: key, value: value });
+        tx.onerror = function(e) {
+          console.warn('IDB write error:', e);
+        };
+      } catch (err) {
+        console.warn('IDB write failed:', err);
       }
-      if (typeof window.__setWebDB !== 'function') {
-        window.__setWebDB = function(name, value) {
+    }
+
+    // Read from IndexedDB (async - returns promise)
+    function __readFromIDB(key) {
+      return new Promise(function(resolve) {
+        if (!__db) {
+          resolve(null);
+          return;
+        }
+        try {
+          var tx = __db.transaction(['saves'], 'readonly');
+          var store = tx.objectStore('saves');
+          var request = store.get(key);
+          request.onsuccess = function() {
+            resolve(request.result ? request.result.value : null);
+          };
+          request.onerror = function() {
+            resolve(null);
+          };
+        } catch (err) {
+          resolve(null);
+        }
+      });
+    }
+
+    // ====================================================
+    // MAIN SAVE/LOAD FUNCTIONS (called by the game)
+    // ====================================================
+
+    if (typeof window !== 'undefined') {
+
+      // SAVE function - writes to both IndexedDB AND localStorage as backup
+      window.__setWebDB = function(name, value) {
+        try {
+          // Update memory cache immediately (instant access)
+          __memCache[name] = value;
+
+          // Write to localStorage as quick backup
           try {
             if (window.localStorage) {
               window.localStorage.setItem(name, value);
-              return true;
             }
-          } catch (err) {
-            if (__logger && __logger.warn) {
-              __logger.warn('Unable to access localStorage for __setWebDB:', err);
+          } catch (lsErr) {
+            console.warn('localStorage write failed (quota?):', lsErr);
+          }
+
+          // Write to IndexedDB (primary storage - no size limit issues)
+          if (__db) {
+            __writeToIDB(name, value);
+          } else if (!__dbReady) {
+            // DB not ready yet, queue the write
+            __dbQueue[name] = value;
+          }
+
+          return true;
+        } catch (err) {
+          console.warn('__setWebDB error:', err);
+          return false;
+        }
+      };
+
+      // LOAD function - checks memory cache first, then IndexedDB, then localStorage
+      window.__getWebDB = function(name) {
+        try {
+          // Check memory cache first (fastest)
+          if (__memCache.hasOwnProperty(name)) {
+            return __memCache[name];
+          }
+
+          // Try localStorage as sync fallback
+          try {
+            if (window.localStorage) {
+              var val = window.localStorage.getItem(name);
+              if (val !== null) {
+                __memCache[name] = val; // Cache it
+                return val;
+              }
+            }
+          } catch (lsErr) {
+            console.warn('localStorage read failed:', lsErr);
+          }
+
+          return null;
+        } catch (err) {
+          console.warn('__getWebDB error:', err);
+          return null;
+        }
+      };
+
+      // Async version that also checks IndexedDB (game calls this for critical saves)
+      window.__getWebDBAsync = async function(name) {
+        // Check cache first
+        if (__memCache.hasOwnProperty(name)) {
+          return __memCache[name];
+        }
+
+        // Check IndexedDB
+        var idbVal = await __readFromIDB(name);
+        if (idbVal !== null) {
+          __memCache[name] = idbVal;
+          return idbVal;
+        }
+
+        // Fallback to localStorage
+        try {
+          if (window.localStorage) {
+            var val = window.localStorage.getItem(name);
+            if (val !== null) {
+              __memCache[name] = val;
+              return val;
             }
           }
-          return false;
-        };
-      }
+        } catch (err) {}
+
+        return null;
+      };
+
+      // Preload all saves from IndexedDB into memory cache on startup
+      window.__preloadSaves = async function() {
+        if (!__db) return;
+        try {
+          var tx = __db.transaction(['saves'], 'readonly');
+          var store = tx.objectStore('saves');
+          var request = store.getAll();
+          request.onsuccess = function() {
+            if (request.result) {
+              request.result.forEach(function(item) {
+                __memCache[item.key] = item.value;
+              });
+              console.log('Balatro: Preloaded', request.result.length, 'save entries into cache');
+            }
+          };
+        } catch (err) {
+          console.warn('Preload failed:', err);
+        }
+      };
     }
+
+    // Start DB initialization immediately
+    __initDB().then(function() {
+      if (window.__preloadSaves) {
+        window.__preloadSaves();
+      }
+    });
   </script>
 </head>
 <body>
   <center>
     <div>
-      <!-- <h1>Balatro</h1> -->
       <canvas id="loadingCanvas" oncontextmenu="event.preventDefault()" width="800" height="600"></canvas>
       <canvas id="canvas" oncontextmenu="event.preventDefault()" width="100%" height="100%"></canvas>
     </div>
   </center>
   <script type='text/javascript'>
     window.callad = () => {
-      window.parent.postMessage({
-        type: 'adcall'
-      }, '*');
+      window.parent.postMessage({ type: 'adcall' }, '*');
     }
+
     var canvas = document.getElementById("loadingCanvas");
     canvas.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
     canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+
     function goFullScreen() {
       var canvas = document.getElementById("canvas");
-      if (canvas.requestFullScreen)
-        canvas.requestFullScreen();
-      else if (canvas.webkitRequestFullScreen)
-        canvas.webkitRequestFullScreen();
-      else if (canvas.mozRequestFullScreen)
-        canvas.mozRequestFullScreen();
+      if (canvas.requestFullScreen) canvas.requestFullScreen();
+      else if (canvas.webkitRequestFullScreen) canvas.webkitRequestFullScreen();
+      else if (canvas.mozRequestFullScreen) canvas.mozRequestFullScreen();
     }
+
     function FullScreenHook() {
       var canvas = document.getElementById("canvas");
       canvas.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
       canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
     }
+
     var loadingContext = document.getElementById('loadingCanvas').getContext('2d');
     function drawLoadingText(text) {
       var canvas = loadingContext.canvas;
       loadingContext.fillStyle = "rgb(142, 195, 227)";
       loadingContext.fillRect(0, 0, canvas.scrollWidth, canvas.scrollHeight);
       loadingContext.font = '2em arial';
-      loadingContext.textAlign = 'center'
-      loadingContext.fillStyle = "rgb( 11, 86, 117 )";
+      loadingContext.textAlign = 'center';
+      loadingContext.fillStyle = "rgb(11, 86, 117)";
       loadingContext.fillText(text, canvas.scrollWidth / 2, canvas.scrollHeight / 2);
     }
-    window.onload = function() {
-      window.focus();
-    };
-    window.onclick = function() {
-      window.focus();
-    };
+
+    window.onload = function() { window.focus(); };
+    window.onclick = function() { window.focus(); };
     window.addEventListener("keydown", function(e) {
-      // space and arrow keys
       if ([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
         e.preventDefault();
       }
     }, false);
+
+    // Auto-save warning on page close
+    window.addEventListener('beforeunload', function(e) {
+      // Flush any pending saves
+      if (window.__setWebDB && Object.keys(__dbQueue).length > 0) {
+        Object.keys(__dbQueue).forEach(function(key) {
+          __writeToIDB(key, __dbQueue[key]);
+        });
+      }
+    });
+
     var Module = {
       arguments: ["./data"],
       INITIAL_MEMORY: 256000000,
@@ -126,6 +310,7 @@
         Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies - left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
       }
     };
+
     Module.setStatus('Downloading...');
     window.onerror = function(event) {
       Module.setStatus('Exception thrown, see JavaScript console');
@@ -133,6 +318,7 @@
         if (text) Module.printErr('[post-exception status] ' + text);
       };
     };
+
     var applicationLoad = function(e) {
       Love(Module);
     }
