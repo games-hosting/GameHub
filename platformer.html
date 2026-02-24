@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Mutating Random Platformer (Fixed)</title>
+  <title>Mutating Random Platformer</title>
   <style>
     html, body {
       margin: 0;
@@ -344,19 +344,20 @@
     function mutationAddOrTweakEnemy() {
       const add = enemies.length === 0 || rand() < 0.7;
       if (add) {
-        const x = randInt(3, COLS - 4);
-        const y = GROUND_ROW - 1;
-        if (Math.abs(x - startX) < 3 || Math.abs(x - goalX) < 3) return;
+        const col = randInt(3, COLS - 4);
+        const surfY = findSurfaceRow(col);
+        const ex = col * TILE + TILE * 0.2;
+        const ey = (surfY - 0.5) * TILE;
+        if (Math.abs(col - startX) < 3 || Math.abs(col - goalX) < 3) return;
 
-        const ex = x * TILE + TILE * 0.2;
-        const ey = (y - 0.5) * TILE;
-        const speed = (rand() * 0.5 + 0.6) * (rand() < 0.5 ? 1 : -1);
-        const patrolWidth = randInt(2, 8) * TILE;
+        const speed = (rand() * 0.4 + 0.5) * (rand() < 0.5 ? 1 : -1); // slower enemies
+        const patrolWidth = randInt(2, 6) * TILE;
 
         enemies.push({
           x: ex,
           y: ey,
           vx: speed,
+          vy: 0,
           w: 22,
           h: 26,
           baseX: ex,
@@ -365,7 +366,7 @@
       } else if (enemies.length > 0) {
         const e = enemies[randInt(0, enemies.length - 1)];
         e.range *= rand() < 0.5 ? 0.8 : 1.2;
-        e.vx *= rand() < 0.5 ? -1 : 1.15;
+        e.vx *= rand() < 0.5 ? -1 : 1.1;
       }
     }
 
@@ -408,11 +409,14 @@
 
     // --- Physics ---
     const GRAVITY = 0.9;
-    const JUMP_VELOCITY = -15;
-    const MOVE_ACCEL = 1.3;
+    const JUMP_VELOCITY = -13;         // slightly softer
+    const MOVE_ACCEL = 0.7;            // slower accel
     const MOVE_FRICTION = 0.8;
-    const MAX_SPEED_X = 9;
-    const MAX_SPEED_Y = 25;
+    const MAX_SPEED_X = 5;             // slower max speed
+    const MAX_SPEED_Y = 20;
+
+    const ENEMY_GRAVITY = 0.7;
+    const ENEMY_MAX_VY = 18;
 
     function aabbOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
       return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
@@ -556,23 +560,83 @@
 
     function updateEnemies() {
       for (const e of enemies) {
-        e.x += e.vx;
-        const dx = e.x - e.baseX;
-        if (dx > e.range) {
-          e.x = e.baseX + e.range;
-          e.vx *= -1;
-        } else if (dx < -e.range) {
-          e.x = e.baseX - e.range;
-          e.vx *= -1;
-        }
+        // Gravity
+        e.vy += ENEMY_GRAVITY;
+        if (e.vy > ENEMY_MAX_VY) e.vy = ENEMY_MAX_VY;
 
-        const tx = Math.floor((e.x + e.w / 2) / TILE);
-        for (let y = 0; y < ROWS; y++) {
-          if (isSolidTile(tx, y)) {
-            e.y = y * TILE - e.h;
-            break;
+        // Horizontal move + simple collision (like player, but no jumping)
+        let nextX = e.x + e.vx;
+        let nextY = e.y + e.vy;
+
+        // Horizontal collision
+        if (e.vx > 0) {
+          const right = nextX + e.w;
+          const top = e.y + 2;
+          const bottom = e.y + e.h - 2;
+          if (solidAtWorld(right, top) || solidAtWorld(right, bottom)) {
+            const tileX = Math.floor(right / TILE);
+            const worldX = tileX * TILE;
+            nextX = worldX - e.w - 0.01;
+            e.vx *= -1; // turn around
+          }
+        } else if (e.vx < 0) {
+          const left = nextX;
+          const top = e.y + 2;
+          const bottom = e.y + e.h - 2;
+          if (solidAtWorld(left, top) || solidAtWorld(left, bottom)) {
+            const tileX = Math.floor(left / TILE);
+            const worldX = (tileX + 1) * TILE;
+            nextX = worldX + 0.01;
+            e.vx *= -1; // turn around
           }
         }
+
+        let onGround = false;
+        // Vertical collision
+        if (e.vy > 0) {
+          const bottom = nextY + e.h;
+          const left = nextX + 3;
+          const right = nextX + e.w - 3;
+          if (solidAtWorld(left, bottom) || solidAtWorld(right, bottom)) {
+            const tileY = Math.floor(bottom / TILE);
+            const worldY = tileY * TILE;
+            nextY = worldY - e.h - 0.01;
+            e.vy = 0;
+            onGround = true;
+          }
+        } else if (e.vy < 0) {
+          const top = nextY;
+          const left = nextX + 3;
+          const right = nextX + e.w - 3;
+          if (solidAtWorld(left, top) || solidAtWorld(right, top)) {
+            const tileY = Math.floor(top / TILE);
+            const worldY = (tileY + 1) * TILE;
+            nextY = worldY + 0.01;
+            e.vy = 0;
+          }
+        }
+
+        // Edge detection: if on ground and about to walk off, turn around
+        if (onGround) {
+          const footY = nextY + e.h + 2;
+          const frontX = e.vx > 0 ? (nextX + e.w + 2) : (nextX - 2);
+          if (!solidAtWorld(frontX, footY)) {
+            e.vx *= -1;
+          }
+        }
+
+        e.x = nextX;
+        e.y = nextY;
+
+        // Despawn if they fall too far
+        if (e.y > H + 200) {
+          e.toRemove = true;
+        }
+      }
+
+      // Remove fallen enemies
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        if (enemies[i].toRemove) enemies.splice(i, 1);
       }
     }
 
