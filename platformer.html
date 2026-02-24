@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Mutating Random Platformer (Fixed)</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #050816;
+      color: #f8f8f2;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #container {
+      position: relative;
+      box-shadow: 0 0 40px rgba(0,0,0,0.8);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      background: radial-gradient(circle at top, #1a2950 0%, #04020c 55%, #000000 100%);
+    }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      pointer-events: none;
+      text-shadow: 0 0 4px rgba(0,0,0,0.7);
+    }
+    #ui span.label {
+      opacity: 0.75;
+    }
+    #centerMsg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      font-size: 20px;
+      text-shadow: 0 0 10px rgba(0,0,0,0.9);
+      pointer-events: none;
+    }
+    #bottomHint {
+      position: absolute;
+      left: 50%;
+      bottom: 12px;
+      transform: translateX(-50%);
+      font-size: 12px;
+      opacity: 0.85;
+      pointer-events: none;
+      text-shadow: 0 0 4px rgba(0,0,0,0.7);
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <canvas id="game" width="960" height="540"></canvas>
+    <div id="ui">
+      <div>
+        <span class="label">Level:</span> <span id="levelNum">1</span>
+        &nbsp;|&nbsp;
+        <span class="label">Mutations:</span> <span id="mutationsNum">0</span>
+      </div>
+      <div>
+        <span class="label">Chaos:</span> <span id="chaosFlag">OFF</span>
+      </div>
+    </div>
+    <div id="centerMsg"></div>
+    <div id="bottomHint">
+      Move: A/D or ←/→ &nbsp;|&nbsp; Jump: W/↑/Space &nbsp;|&nbsp; Restart: R &nbsp;|&nbsp; Toggle Chaos: C
+    </div>
+  </div>
+
+  <script>
+    // --- Basic setup ---
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const W = canvas.width;
+    const H = canvas.height;
+
+    const levelNumEl = document.getElementById("levelNum");
+    const mutationsNumEl = document.getElementById("mutationsNum");
+    const chaosFlagEl = document.getElementById("chaosFlag");
+    const centerMsgEl = document.getElementById("centerMsg");
+
+    const TILE = 32;
+    const COLS = Math.floor(W / TILE);      // 30
+    const ROWS = Math.floor(H / TILE);      // 16
+    const GROUND_ROW = ROWS - 2;
+
+    const T_EMPTY  = 0;
+    const T_SOLID  = 1;
+    const T_SPIKE  = 2;
+
+    // --- RNG ---
+    function makeRNG(seed) {
+      return function() {
+        let t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+    let seed = (Date.now() ^ (Math.random() * 1e9)) | 0;
+    let rng = makeRNG(seed);
+    function rand() { return rng(); }
+    function randInt(min, max) { return min + Math.floor(rand() * (max - min + 1)); }
+
+    // --- Input ---
+    const keys = {};
+    window.addEventListener("keydown", e => {
+      keys[e.key.toLowerCase()] = true;
+      if (["ArrowLeft","ArrowRight","ArrowUp"," "].includes(e.key)) e.preventDefault();
+      if (e.key === "c" || e.key === "C") {
+        chaosMode = !chaosMode;
+        chaosFlagEl.textContent = chaosMode ? "ON" : "OFF";
+      }
+      if (e.key === "r" || e.key === "R") {
+        resetCurrentLevel();
+      }
+    });
+    window.addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
+
+    function isLeft()  { return keys["a"] || keys["arrowleft"]; }
+    function isRight() { return keys["d"] || keys["arrowright"]; }
+    function isJump()  { return keys["w"] || keys["arrowup"] || keys[" "]; }
+
+    // --- Level state ---
+    let currentLevelIndex = 1;
+    let mutationCount = 0;
+    let chaosMode = false;
+
+    let tiles = [];
+    let enemies = [];
+    let startX = 1, startY = GROUND_ROW - 1;
+    let goalX = COLS - 3, goalY = GROUND_ROW - 1;
+
+    const player = {
+      x: 0, y: 0,
+      vx: 0, vy: 0,
+      w: 20, h: 28,
+      onGround: false,
+      dead: false
+    };
+
+    function createEmptyGrid() {
+      const arr = new Array(COLS * ROWS);
+      arr.fill(T_EMPTY);
+      return arr;
+    }
+    function idx(x, y) { return y * COLS + x; }
+    function inBounds(x, y) { return x >= 0 && x < COLS && y >= 0 && y < ROWS; }
+
+    function setTile(x, y, t) {
+      if (!inBounds(x, y)) return;
+      tiles[idx(x, y)] = t;
+    }
+    function getTile(x, y) {
+      if (!inBounds(x, y)) return T_SOLID; // outside world behaves solid
+      return tiles[idx(x, y)];
+    }
+    function isSolidTile(x, y) { return getTile(x, y) === T_SOLID; }
+    function isSpikeTile(x, y) { return getTile(x, y) === T_SPIKE; }
+
+    function solidAtWorld(wx, wy) {
+      const tx = Math.floor(wx / TILE);
+      const ty = Math.floor(wy / TILE);
+      return isSolidTile(tx, ty);
+    }
+
+    // Find the row just above the first solid tile in a column
+    function findSurfaceRow(col) {
+      for (let y = 0; y < ROWS; y++) {
+        if (isSolidTile(col, y)) return Math.max(1, y - 1);
+      }
+      return GROUND_ROW - 1;
+    }
+
+    // --- Base level generation ---
+    function generateBaseLevel() {
+      tiles = createEmptyGrid();
+      enemies = [];
+
+      // Simple but noisy ground band
+      let height = GROUND_ROW;
+      for (let x = 0; x < COLS; x++) {
+        if (x > 1 && x < COLS - 2) {
+          const r = rand();
+          if (r < 0.18) height = Math.min(GROUND_ROW, height + 1);
+          else if (r < 0.36) height = Math.max(GROUND_ROW - 3, height - 1);
+        }
+        for (let y = height; y < ROWS; y++) setTile(x, y, T_SOLID);
+      }
+
+      // Ensure clear start / goal columns exist
+      startX = 1;
+      goalX = COLS - 3;
+      startY = findSurfaceRow(startX);
+      goalY = findSurfaceRow(goalX);
+
+      // Clear some space around start & goal
+      for (let x = startX - 1; x <= startX + 2; x++) {
+        for (let y = startY - 3; y <= startY + 1; y++) setTile(x, y, T_EMPTY);
+      }
+      for (let x = goalX - 1; x <= goalX + 2; x++) {
+        for (let y = goalY - 3; y <= goalY + 1; y++) setTile(x, y, T_EMPTY);
+      }
+
+      // Some floating platforms
+      const platCount = randInt(4, 8);
+      for (let i = 0; i < platCount; i++) {
+        const x = randInt(3, COLS - 4);
+        const y = randInt(3, GROUND_ROW - 3);
+        const width = randInt(2, 5);
+        for (let dx = 0; dx < width; dx++) setTile(x + dx, y, T_SOLID);
+      }
+
+      respawnPlayer();
+    }
+
+    function respawnPlayer() {
+      player.x = (startX + 0.3) * TILE;
+      player.y = (startY - 0.5) * TILE;
+      player.vx = 0;
+      player.vy = 0;
+      player.onGround = false;
+      player.dead = false;
+    }
+
+    function resetCurrentLevel() {
+      respawnPlayer();
+      centerMsgEl.textContent = "Restarted level " + currentLevelIndex;
+      setTimeout(() => {
+        if (centerMsgEl.textContent.startsWith("Restarted"))
+          centerMsgEl.textContent = "";
+      }, 800);
+    }
+
+    // --- Mutations ---
+    function mutateLevel() {
+      mutationCount++;
+      const baseMutations = chaosMode ? 18 : 8;
+      const extra = Math.min(20, Math.floor(currentLevelIndex / 2));
+      const count = baseMutations + extra;
+
+      for (let i = 0; i < count; i++) {
+        const r = rand();
+        if (r < 0.4) mutationCarveOrAddGround();
+        else if (r < 0.7) mutationAddOrRemovePlatform();
+        else if (r < 0.9) mutationAddSpikes();
+        else mutationAddOrTweakEnemy();
+      }
+
+      enforceGroundSafety();
+      clampSpikeDensity();
+      clampEnemyCount();
+
+      respawnPlayer();
+      levelNumEl.textContent = currentLevelIndex;
+      mutationsNumEl.textContent = mutationCount;
+      centerMsgEl.textContent = "Level " + currentLevelIndex + " mutated!";
+      setTimeout(() => {
+        if (centerMsgEl.textContent.includes("mutated"))
+          centerMsgEl.textContent = "";
+      }, 1000);
+    }
+
+    function mutationCarveOrAddGround() {
+      const x = randInt(2, COLS - 3);
+      if (Math.abs(x - startX) < 3 || Math.abs(x - goalX) < 3) return;
+
+      const modeCarve = rand() < 0.55;
+      const maxHoleHeight = chaosMode ? 5 : 3;
+
+      let baseY = GROUND_ROW;
+      for (let y = 0; y < ROWS; y++) {
+        if (isSolidTile(x, y)) { baseY = y; break; }
+      }
+
+      if (modeCarve) {
+        const holeHeight = randInt(1, maxHoleHeight);
+        for (let k = 0; k < holeHeight; k++) {
+          const y = baseY + k;
+          if (y >= ROWS - 1) break;
+          setTile(x, y, T_EMPTY);
+        }
+      } else {
+        const addHeight = randInt(1, 3);
+        for (let k = 0; k < addHeight; k++) {
+          const y = baseY - 1 - k;
+          if (y < 2) break;
+          setTile(x, y, T_SOLID);
+        }
+      }
+    }
+
+    function mutationAddOrRemovePlatform() {
+      const add = rand() < 0.6;
+      const x = randInt(2, COLS - 4);
+      const y = randInt(2, GROUND_ROW - 2);
+      const width = randInt(2, 6);
+
+      if (add) {
+        for (let dx = 0; dx < width; dx++) {
+          const gx = x + dx;
+          if (gx >= COLS - 1) break;
+          if (Math.abs(gx - startX) < 2 && Math.abs(y - startY) < 2) continue;
+          if (Math.abs(gx - goalX) < 2 && Math.abs(y - goalY) < 2) continue;
+          setTile(gx, y, T_SOLID);
+        }
+      } else {
+        for (let dx = 0; dx < width; dx++) {
+          const gx = x + dx;
+          if (gx >= COLS - 1) break;
+          if (y >= GROUND_ROW) continue;
+          setTile(gx, y, T_EMPTY);
+        }
+      }
+    }
+
+    function mutationAddSpikes() {
+      const count = randInt(1, chaosMode ? 8 : 4);
+      for (let i = 0; i < count; i++) {
+        const x = randInt(1, COLS - 2);
+        const y = randInt(1, ROWS - 3);
+        if (isSolidTile(x, y + 1) && getTile(x, y) === T_EMPTY) {
+          if (Math.abs(x - startX) < 2 && Math.abs(y - startY) < 2) continue;
+          if (Math.abs(x - goalX) < 2 && Math.abs(y - goalY) < 2) continue;
+          setTile(x, y, T_SPIKE);
+        }
+      }
+    }
+
+    function mutationAddOrTweakEnemy() {
+      const add = enemies.length === 0 || rand() < 0.7;
+      if (add) {
+        const x = randInt(3, COLS - 4);
+        const y = GROUND_ROW - 1;
+        if (Math.abs(x - startX) < 3 || Math.abs(x - goalX) < 3) return;
+
+        const ex = x * TILE + TILE * 0.2;
+        const ey = (y - 0.5) * TILE;
+        const speed = (rand() * 0.5 + 0.6) * (rand() < 0.5 ? 1 : -1);
+        const patrolWidth = randInt(2, 8) * TILE;
+
+        enemies.push({
+          x: ex,
+          y: ey,
+          vx: speed,
+          w: 22,
+          h: 26,
+          baseX: ex,
+          range: patrolWidth
+        });
+      } else if (enemies.length > 0) {
+        const e = enemies[randInt(0, enemies.length - 1)];
+        e.range *= rand() < 0.5 ? 0.8 : 1.2;
+        e.vx *= rand() < 0.5 ? -1 : 1.15;
+      }
+    }
+
+    function enforceGroundSafety() {
+      // Make sure each column has some solid tiles at/under GROUND_ROW
+      for (let x = 0; x < COLS; x++) {
+        let solidFound = false;
+        for (let y = GROUND_ROW; y < ROWS; y++) {
+          if (isSolidTile(x, y)) { solidFound = true; break; }
+        }
+        if (!solidFound) {
+          for (let y = GROUND_ROW; y < ROWS; y++) setTile(x, y, T_SOLID);
+        }
+      }
+    }
+
+    function clampSpikeDensity() {
+      const maxSpikes = chaosMode ? 80 : 45;
+      const spikes = [];
+      for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+          if (isSpikeTile(x, y)) spikes.push({x, y});
+        }
+      }
+      if (spikes.length > maxSpikes) {
+        const toRemove = spikes.length - maxSpikes;
+        for (let i = 0; i < toRemove; i++) {
+          const s = spikes[randInt(0, spikes.length - 1)];
+          setTile(s.x, s.y, T_EMPTY);
+        }
+      }
+    }
+
+    function clampEnemyCount() {
+      const maxEnemies = chaosMode ? 18 : 10;
+      while (enemies.length > maxEnemies) {
+        enemies.splice(randInt(0, enemies.length - 1), 1);
+      }
+    }
+
+    // --- Physics ---
+    const GRAVITY = 0.9;
+    const JUMP_VELOCITY = -15;
+    const MOVE_ACCEL = 1.3;
+    const MOVE_FRICTION = 0.8;
+    const MAX_SPEED_X = 9;
+    const MAX_SPEED_Y = 25;
+
+    function aabbOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
+      return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+    }
+
+    function updatePlayer() {
+      if (player.dead) {
+        player.vx *= 0.9;
+        player.vy += GRAVITY;
+        player.x += player.vx;
+        player.y += player.vy;
+        if (player.y > H + 200) resetCurrentLevel();
+        return;
+      }
+
+      // Input
+      if (isLeft())  player.vx -= MOVE_ACCEL;
+      if (isRight()) player.vx += MOVE_ACCEL;
+      player.vx = Math.max(-MAX_SPEED_X, Math.min(MAX_SPEED_X, player.vx));
+      if (!isLeft() && !isRight()) {
+        player.vx *= MOVE_FRICTION;
+        if (Math.abs(player.vx) < 0.05) player.vx = 0;
+      }
+
+      if (isJump() && player.onGround) {
+        player.vy = JUMP_VELOCITY;
+        player.onGround = false;
+      }
+
+      player.vy += GRAVITY;
+      if (player.vy > MAX_SPEED_Y) player.vy = MAX_SPEED_Y;
+
+      // Horizontal collision (check corners)
+      let nextX = player.x + player.vx;
+      let nextY = player.y + player.vy;
+      let onGround = false;
+
+      if (player.vx > 0) {
+        const right = nextX + player.w;
+        const top = player.y + 2;
+        const bottom = player.y + player.h - 2;
+        if (solidAtWorld(right, top) || solidAtWorld(right, bottom)) {
+          const tileX = Math.floor(right / TILE);
+          const worldX = tileX * TILE;
+          nextX = worldX - player.w - 0.01;
+          player.vx = 0;
+        }
+      } else if (player.vx < 0) {
+        const left = nextX;
+        const top = player.y + 2;
+        const bottom = player.y + player.h - 2;
+        if (solidAtWorld(left, top) || solidAtWorld(left, bottom)) {
+          const tileX = Math.floor(left / TILE);
+          const worldX = (tileX + 1) * TILE;
+          nextX = worldX + 0.01;
+          player.vx = 0;
+        }
+      }
+
+      // Vertical collision
+      if (player.vy > 0) {
+        const bottom = nextY + player.h;
+        const left = nextX + 3;
+        const right = nextX + player.w - 3;
+        if (solidAtWorld(left, bottom) || solidAtWorld(right, bottom)) {
+          const tileY = Math.floor(bottom / TILE);
+          const worldY = tileY * TILE;
+          nextY = worldY - player.h - 0.01;
+          player.vy = 0;
+          onGround = true;
+        }
+      } else if (player.vy < 0) {
+        const top = nextY;
+        const left = nextX + 3;
+        const right = nextX + player.w - 3;
+        if (solidAtWorld(left, top) || solidAtWorld(right, top)) {
+          const tileY = Math.floor(top / TILE);
+          const worldY = (tileY + 1) * TILE;
+          nextY = worldY + 0.01;
+          player.vy = 0;
+        }
+      }
+
+      player.x = nextX;
+      player.y = nextY;
+      player.onGround = onGround;
+
+      if (player.y > H + 50 || player.x < -TILE || player.x > W + TILE) {
+        killPlayer("Fell into the void");
+      }
+
+      checkHazardsAndGoal();
+    }
+
+    function killPlayer(reason) {
+      if (player.dead) return;
+      player.dead = true;
+      player.vy = -10;
+      centerMsgEl.textContent = "You died! " + reason + "  (Press R)";
+    }
+
+    function checkHazardsAndGoal() {
+      const px = player.x, py = player.y, pw = player.w, ph = player.h;
+
+      // Spikes
+      const tileX1 = Math.floor(px / TILE);
+      const tileX2 = Math.floor((px + pw) / TILE);
+      const tileY1 = Math.floor(py / TILE);
+      const tileY2 = Math.floor((py + ph) / TILE);
+      for (let ty = tileY1; ty <= tileY2; ty++) {
+        for (let tx = tileX1; tx <= tileX2; tx++) {
+          if (isSpikeTile(tx, ty)) {
+            const sx = tx * TILE;
+            const sy = ty * TILE;
+            if (aabbOverlap(px, py, pw, ph, sx, sy, TILE, TILE)) {
+              killPlayer("You hit spikes");
+              return;
+            }
+          }
+        }
+      }
+
+      // Enemies
+      for (const e of enemies) {
+        if (aabbOverlap(px, py, pw, ph, e.x, e.y, e.w, e.h)) {
+          killPlayer("An enemy got you");
+          return;
+        }
+      }
+
+      // Goal
+      const gx = goalX * TILE;
+      const gy = (goalY - 1) * TILE;
+      const gw = TILE * 1.2;
+      const gh = TILE * 3;
+      if (aabbOverlap(px, py, pw, ph, gx, gy, gw, gh)) {
+        currentLevelIndex++;
+        mutateLevel();
+      }
+    }
+
+    function updateEnemies() {
+      for (const e of enemies) {
+        e.x += e.vx;
+        const dx = e.x - e.baseX;
+        if (dx > e.range) {
+          e.x = e.baseX + e.range;
+          e.vx *= -1;
+        } else if (dx < -e.range) {
+          e.x = e.baseX - e.range;
+          e.vx *= -1;
+        }
+
+        const tx = Math.floor((e.x + e.w / 2) / TILE);
+        for (let y = 0; y < ROWS; y++) {
+          if (isSolidTile(tx, y)) {
+            e.y = y * TILE - e.h;
+            break;
+          }
+        }
+      }
+    }
+
+    // --- Rendering ---
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+      skyGrad.addColorStop(0, "#0b1020");
+      skyGrad.addColorStop(0.5, "#050816");
+      skyGrad.addColorStop(1, "#020109");
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.fillStyle = "rgba(255,255,255,0.1)";
+      for (let i = 0; i < 40; i++) {
+        const x = (i * 37 + (currentLevelIndex * 53)) % W;
+        const y = (i * 71 + seed) % H;
+        ctx.fillRect(x, y, 2, 2);
+      }
+
+      for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+          const t = getTile(x, y);
+          const px = x * TILE;
+          const py = y * TILE;
+          if (t === T_SOLID) {
+            const h1 = 40 + (x * 3 + y * 7) % 40;
+            ctx.fillStyle = `hsl(${h1}, 45%, 26%)`;
+            ctx.fillRect(px, py, TILE, TILE);
+            ctx.fillStyle = "rgba(0,0,0,0.25)";
+            ctx.fillRect(px, py + TILE - 5, TILE, 5);
+          } else if (t === T_SPIKE) {
+            ctx.fillStyle = "#ff4b5c";
+            ctx.beginPath();
+            ctx.moveTo(px + 2, py + TILE);
+            ctx.lineTo(px + TILE / 2, py + 4);
+            ctx.lineTo(px + TILE - 2, py + TILE);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
+      }
+
+      const gx = goalX * TILE + TILE * 0.2;
+      const gy = (goalY - 1) * TILE;
+      ctx.fillStyle = "#c0c0c0";
+      ctx.fillRect(gx, gy - TILE * 1.2, TILE * 0.12, TILE * 3.2);
+      ctx.fillStyle = "#3ad97c";
+      ctx.beginPath();
+      ctx.moveTo(gx + TILE * 0.12, gy - TILE * 1.2);
+      ctx.lineTo(gx + TILE * 0.12 + TILE * 0.9, gy - TILE * 1.2 + TILE * 0.4);
+      ctx.lineTo(gx + TILE * 0.12, gy - TILE * 1.2 + TILE * 0.8);
+      ctx.closePath();
+      ctx.fill();
+
+      for (const e of enemies) {
+        ctx.fillStyle = "#ffb347";
+        ctx.fillRect(e.x, e.y, e.w, e.h);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(e.x + 5, e.y + 6, 4, 6);
+        ctx.fillRect(e.x + e.w - 9, e.y + 6, 4, 6);
+      }
+
+      ctx.save();
+      ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
+      const wobble = Math.sin(Date.now() / 200) * 0.05;
+      ctx.rotate(wobble);
+      const grad = ctx.createLinearGradient(-player.w / 2, -player.h / 2, player.w / 2, player.h / 2);
+      grad.addColorStop(0, "#5ee7df");
+      grad.addColorStop(1, "#b490ca");
+      ctx.fillStyle = grad;
+      ctx.fillRect(-player.w / 2, -player.h / 2, player.w, player.h);
+      ctx.fillStyle = "#111";
+      ctx.fillRect(-player.w / 4, -player.h / 4, 4, 6);
+      ctx.fillRect(player.w / 4 - 4, -player.h / 4, 4, 6);
+      ctx.restore();
+    }
+
+    // --- Game loop ---
+    let lastTime = 0;
+    function loop(ts) {
+      const dt = (ts - lastTime) / 16.67;
+      lastTime = ts;
+      updatePlayer(dt);
+      updateEnemies(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // --- Init ---
+    generateBaseLevel();
+    levelNumEl.textContent = currentLevelIndex;
+    mutationsNumEl.textContent = mutationCount;
+    centerMsgEl.textContent = "Reach the green flag to mutate the level!";
+    setTimeout(() => {
+      if (centerMsgEl.textContent.includes("Reach")) centerMsgEl.textContent = "";
+    }, 3000);
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
