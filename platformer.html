@@ -1,742 +1,1596 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Mutating Random Platformer</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #050816;
-      color: #f8f8f2;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      height: 100%;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    #container {
-      position: relative;
-      box-shadow: 0 0 40px rgba(0,0,0,0.8);
-      border-radius: 12px;
-      overflow: hidden;
-    }
-    canvas {
-      display: block;
-      background: radial-gradient(circle at top, #1a2950 0%, #04020c 55%, #000000 100%);
-    }
-    #ui {
-      position: absolute;
-      top: 10px;
-      left: 12px;
-      right: 12px;
-      display: flex;
-      justify-content: space-between;
-      font-size: 14px;
-      pointer-events: none;
-      text-shadow: 0 0 4px rgba(0,0,0,0.7);
-    }
-    #ui span.label {
-      opacity: 0.75;
-    }
-    #centerMsg {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      font-size: 20px;
-      text-shadow: 0 0 10px rgba(0,0,0,0.9);
-      pointer-events: none;
-    }
-    #bottomHint {
-      position: absolute;
-      left: 50%;
-      bottom: 12px;
-      transform: translateX(-50%);
-      font-size: 12px;
-      opacity: 0.85;
-      pointer-events: none;
-      text-shadow: 0 0 4px rgba(0,0,0,0.7);
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MUTATOR</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;overflow:hidden;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Share Tech Mono',monospace;}
+
+/* scanlines */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.15) 2px,rgba(0,0,0,.15) 4px);pointer-events:none;z-index:999;}
+
+#wrap{position:relative;width:100vw;height:100vh;}
+canvas{display:block;position:absolute;top:0;left:0;}
+
+/* HUD */
+#hud{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:8px 16px;z-index:100;background:linear-gradient(#000c,transparent);pointer-events:none;}
+#hud-left{display:flex;flex-direction:column;gap:2px;}
+#level-label{font-family:'Bebas Neue',sans-serif;font-size:2rem;line-height:1;letter-spacing:.1em;}
+#mutation-list{font-size:.6rem;color:#888;letter-spacing:.05em;min-height:14px;}
+#hud-right{text-align:right;}
+#timer-display{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;line-height:1;}
+#death-count{font-size:.6rem;color:#555;letter-spacing:.1em;}
+
+/* modifier announcements */
+#announce{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:200;text-align:center;pointer-events:none;opacity:0;transition:opacity .3s;}
+#announce h2{font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,6vw,4rem);letter-spacing:.15em;text-shadow:0 0 30px currentColor;}
+#announce p{font-size:clamp(.5rem,1.5vw,.8rem);color:#aaa;letter-spacing:.2em;margin-top:4px;}
+
+/* title / overlay screens */
+#overlay{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#000;}
+#overlay h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(3rem,10vw,7rem);letter-spacing:.2em;color:#fff;text-shadow:0 0 40px #fff4;}
+#overlay .sub{font-size:.65rem;color:#555;letter-spacing:.2em;text-align:center;max-width:400px;line-height:2;}
+#overlay button{background:transparent;border:1px solid #fff;color:#fff;font-family:'Share Tech Mono',monospace;font-size:.7rem;padding:10px 30px;cursor:pointer;letter-spacing:.2em;transition:all .2s;}
+#overlay button:hover{background:#fff;color:#000;}
+
+/* death flash */
+#death-flash{position:fixed;inset:0;z-index:250;background:#ff000000;pointer-events:none;transition:background .1s;}
+#death-flash.show{background:#ff000066;}
+
+
+</style>
 </head>
 <body>
-  <div id="container">
-    <canvas id="game" width="960" height="540"></canvas>
-    <div id="ui">
-      <div>
-        <span class="label">Level:</span> <span id="levelNum">1</span>
-        &nbsp;|&nbsp;
-        <span class="label">Mutations:</span> <span id="mutationsNum">0</span>
-      </div>
-      <div>
-        <span class="label">Chaos:</span> <span id="chaosFlag">OFF</span>
-      </div>
-    </div>
-    <div id="centerMsg"></div>
-    <div id="bottomHint">
-      Move: A/D or ←/→ &nbsp;|&nbsp; Jump: W/↑/Space &nbsp;|&nbsp; Restart: R &nbsp;|&nbsp; Toggle Chaos: C
-    </div>
+
+<div id="wrap"><canvas id="gc"></canvas></div>
+
+<div id="hud">
+  <div id="hud-left">
+    <div id="level-label" style="color:#fff">LEVEL 1</div>
+    <div id="mutation-list"></div>
   </div>
+  <div id="hud-right">
+    <div id="timer-display" style="color:#0f0;display:none">30</div>
+    <div id="death-count">DEATHS: 0</div>
+  </div>
+</div>
 
-  <script>
-    // --- Basic setup ---
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
-    const W = canvas.width;
-    const H = canvas.height;
+<div id="announce"><h2 id="ann-title"></h2><p id="ann-sub"></p></div>
+<div id="death-flash"></div>
 
-    const levelNumEl = document.getElementById("levelNum");
-    const mutationsNumEl = document.getElementById("mutationsNum");
-    const chaosFlagEl = document.getElementById("chaosFlag");
-    const centerMsgEl = document.getElementById("centerMsg");
+<div id="overlay">
+  <h1>MUTATOR</h1>
+  <div class="sub">A PLATFORMER THAT NEVER STAYS THE SAME<br>EVERY LEVEL COMPLETION WARPS THE WORLD</div>
+  <div style="font-size:.55rem;color:#333;letter-spacing:.15em;line-height:2.2;text-align:center;">WASD / ARROWS — MOVE &amp; JUMP<br>REACH THE <span style="color:#ff0">★ STAR</span> TO ADVANCE</div>
+  <button onclick="startGame()">▶ BEGIN MUTATION</button>
+</div>
 
-    const TILE = 32;
-    const COLS = Math.floor(W / TILE);      // 30
-    const ROWS = Math.floor(H / TILE);      // 16
-    const GROUND_ROW = ROWS - 2;
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════
+//  CANVAS SETUP
+// ═══════════════════════════════════════════════════
+const gc = document.getElementById('gc');
+const ctx = gc.getContext('2d');
+let W, H;
+function resize() {
+  W = gc.width = window.innerWidth;
+  H = gc.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', () => { resize(); });
 
-    const T_EMPTY  = 0;
-    const T_SOLID  = 1;
-    const T_SPIKE  = 2;
+// ═══════════════════════════════════════════════════
+//  AUDIO
+// ═══════════════════════════════════════════════════
+let AC = null;
+function getAC() { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); return AC; }
+function tone(f, type, dur, vol = .15, when = 0, slide) {
+  try {
+    const a = getAC(), o = a.createOscillator(), g = a.createGain();
+    o.connect(g); g.connect(a.destination);
+    o.type = type; o.frequency.setValueAtTime(f, a.currentTime + when);
+    if (slide) o.frequency.exponentialRampToValueAtTime(slide, a.currentTime + when + dur);
+    g.gain.setValueAtTime(vol, a.currentTime + when);
+    g.gain.exponentialRampToValueAtTime(.001, a.currentTime + when + dur);
+    o.start(a.currentTime + when); o.stop(a.currentTime + when + dur);
+  } catch (e) {}
+}
+function noise(dur, vol = .1, freqLow = 200, freqHigh = 800) {
+  try {
+    const a = getAC(), buf = a.createBuffer(1, a.sampleRate * dur, a.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const s = a.createBufferSource(), f = a.createBiquadFilter(), gn = a.createGain();
+    f.type = 'bandpass'; f.frequency.value = (freqLow + freqHigh) / 2;
+    s.buffer = buf; s.connect(f); f.connect(gn); gn.connect(a.destination);
+    gn.gain.setValueAtTime(vol, a.currentTime);
+    gn.gain.exponentialRampToValueAtTime(.001, a.currentTime + dur);
+    s.start(); s.stop(a.currentTime + dur);
+  } catch (e) {}
+}
+const SFX = {
+  jump()  { tone(220,'sine',.12,.18,0,440); },
+  land()  { noise(.06,.2,80,300); },
+  die()   { tone(440,'sawtooth',.05,.3); tone(220,'sawtooth',.15,.2,.05); tone(110,'sawtooth',.3,.15,.1); },
+  win()   { [523,659,784,1047,1319].forEach((f,i)=>tone(f,'sine',.18,.2,i*.08)); },
+  mutate(){ [200,400,800,1600,800,400,200].forEach((f,i)=>tone(f,'square',.06,.15,i*.05)); },
+  tick()  { tone(880,'square',.04,.2); },
+  god()   { tone(80,'sawtooth',.4,.35); noise(.3,.2,40,200); },
+  spike() { noise(.08,.3,400,2000); tone(200,'square',.1,.2); },
+  teleport(){ [1000,500,250].forEach((f,i)=>tone(f,'sine',.1,.2,i*.06)); },
+  bounce(){ tone(300,'sine',.08,.2,0,600); },
+  wind()  { noise(.2,.05,50,150); },
+};
 
-    // --- RNG ---
-    function makeRNG(seed) {
-      return function() {
-        let t = seed += 0x6D2B79F5;
-        t = Math.imul(t ^ t >>> 15, t | 1);
-        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-        return ((t ^ t >>> 14) >>> 0) / 4294967296;
-      };
+// ═══════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════
+const TILE = 32;
+const COLS = 25, ROWS = 16; // level grid
+const GRAVITY_BASE = 0.55;
+const JUMP_FORCE = -13;
+const MOVE_SPEED = 4.2;
+const FRICTION = 0.82;
+
+// ═══════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════
+let G = {};
+
+function initState() {
+  G = {
+    level: 1,
+    deaths: 0,
+    phase: 'play', // 'play' | 'mutating' | 'dead' | 'win'
+    tiles: [],     // 2D grid [row][col] — tile type
+    player: null,
+    enemies: [],
+    particles: [],
+    specials: [],  // special objects: bombs, teleporters, phantom blocks, etc.
+    modifiers: [], // active modifier strings
+    goal: null,    // {col, row}
+    spawnPt: null, // {col, row}
+    camera: { x: 0, y: 0 },
+    // modifier state
+    gravDir: 1,    // 1 = normal, -1 = flipped
+    godActive: false, godY: 0, godX: 0, godVX: 0, godWorldSpace: true,
+    bombTimer: 0, bombMax: 0,
+    wind: 0,
+    darkness: false,
+    ice: false,
+    bouncy: false,
+    stickyWalls: false,
+    blackHole: null,
+    shakeTimer: 0,
+    clone: null,
+    cloneTrail: [],
+    lavaY: ROWS * TILE + 40,  // world-space Y, starts below the level
+    lavaRising: false,
+    // hue for tile color
+    hue: 200,
+    tick: 0,
+    // level color accent
+    accent: '#00aaff',
+  };
+}
+
+// ═══════════════════════════════════════════════════
+//  LEVEL GENERATION — base level
+// ═══════════════════════════════════════════════════
+const T = { EMPTY: 0, SOLID: 1, SPIKE: 2, ICE_TILE: 3, BOUNCE_PAD: 4, TELEPORT: 5 };
+
+function blankGrid() {
+  return Array.from({ length: ROWS }, () => Array(COLS).fill(T.EMPTY));
+}
+
+function buildBaseLevel() {
+  const grid = blankGrid();
+  // Floor
+  for (let c = 0; c < COLS; c++) grid[ROWS - 1][c] = T.SOLID;
+  // Ceiling
+  for (let c = 0; c < COLS; c++) grid[0][c] = T.SOLID;
+  // Left/right walls
+  for (let r = 0; r < ROWS; r++) { grid[r][0] = T.SOLID; grid[r][COLS - 1] = T.SOLID; }
+
+  // Platforms — procedural but deterministic enough to be playable
+  // Use a few anchored platform groups
+  const platforms = [
+    [ROWS - 4, 3, 6],
+    [ROWS - 7, 8, 5],
+    [ROWS - 5, 14, 6],
+    [ROWS - 9, 18, 5],
+    [ROWS - 3, 10, 4],
+    [ROWS - 6, 2, 4],
+    [ROWS - 11, 6, 6],
+    [ROWS - 8, 12, 5],
+    [ROWS - 12, 20, 3],
+    [ROWS - 10, 1, 5],
+  ];
+  platforms.forEach(([r, c, len]) => {
+    for (let i = 0; i < len; i++) {
+      if (c + i < COLS - 1 && r > 0 && r < ROWS - 1) grid[r][c + i] = T.SOLID;
     }
-    let seed = (Date.now() ^ (Math.random() * 1e9)) | 0;
-    let rng = makeRNG(seed);
-    function rand() { return rng(); }
-    function randInt(min, max) { return min + Math.floor(rand() * (max - min + 1)); }
+  });
 
-    // --- Input ---
-    const keys = {};
-    window.addEventListener("keydown", e => {
-      keys[e.key.toLowerCase()] = true;
-      if (["ArrowLeft","ArrowRight","ArrowUp"," "].includes(e.key)) e.preventDefault();
-      if (e.key === "c" || e.key === "C") {
-        chaosMode = !chaosMode;
-        chaosFlagEl.textContent = chaosMode ? "ON" : "OFF";
-      }
-      if (e.key === "r" || e.key === "R") {
-        resetCurrentLevel();
-      }
-    });
-    window.addEventListener("keyup", e => { keys[e.key.toLowerCase()] = false; });
+  return grid;
+}
 
-    function isLeft()  { return keys["a"] || keys["arrowleft"]; }
-    function isRight() { return keys["d"] || keys["arrowright"]; }
-    function isJump()  { return keys["w"] || keys["arrowup"] || keys[" "]; }
-
-    // --- Level state ---
-    let currentLevelIndex = 1;
-    let mutationCount = 0;
-    let chaosMode = false;
-
-    let tiles = [];
-    let enemies = [];
-    let startX = 1, startY = GROUND_ROW - 1;
-    let goalX = COLS - 3, goalY = GROUND_ROW - 1;
-
-    const player = {
-      x: 0, y: 0,
-      vx: 0, vy: 0,
-      w: 20, h: 28,
-      onGround: false,
-      dead: false
-    };
-
-    function createEmptyGrid() {
-      const arr = new Array(COLS * ROWS);
-      arr.fill(T_EMPTY);
-      return arr;
+// ─── FLOOD FILL to check reachability ──────────────
+function canReach(grid, fromR, fromC, toR, toC) {
+  // Simplified: BFS on empty+solid tops — player can jump ~4 tiles up
+  const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+  const q = [[fromR, fromC]];
+  visited[fromR][fromC] = true;
+  while (q.length) {
+    const [r, c] = q.shift();
+    if (r === toR && c === toC) return true;
+    // Can move left/right on same row if standing on solid
+    const standing = r + 1 < ROWS && grid[r + 1][c] === T.SOLID;
+    const moves = [[0,1],[0,-1],[1,0],[-1,0],[-2,0],[-3,0],[-4,0],[-1,1],[-1,-1],[-2,1],[-2,-1],[-3,1],[-3,-1]];
+    for (const [dr, dc] of moves) {
+      const nr = r + dr, nc = c + dc;
+      if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+      if (grid[nr][nc] !== T.EMPTY) continue;
+      if (visited[nr][nc]) continue;
+      visited[nr][nc] = true;
+      q.push([nr, nc]);
     }
-    function idx(x, y) { return y * COLS + x; }
-    function inBounds(x, y) { return x >= 0 && x < COLS && y >= 0 && y < ROWS; }
+  }
+  return false;
+}
 
-    function setTile(x, y, t) {
-      if (!inBounds(x, y)) return;
-      tiles[idx(x, y)] = t;
-    }
-    function getTile(x, y) {
-      if (!inBounds(x, y)) return T_SOLID; // outside world behaves solid
-      return tiles[idx(x, y)];
-    }
-    function isSolidTile(x, y) { return getTile(x, y) === T_SOLID; }
-    function isSpikeTile(x, y) { return getTile(x, y) === T_SPIKE; }
+// ═══════════════════════════════════════════════════
+//  PLAYER
+// ═══════════════════════════════════════════════════
+function makePlayer(col, row) {
+  return {
+    x: col * TILE + TILE / 2,
+    y: row * TILE,
+    vx: 0, vy: 0,
+    w: 18, h: 24,
+    onGround: false,
+    onWall: 0, // -1 left, 1 right, 0 none
+    coyoteTime: 0,
+    jumpBuffer: 0,
+    wallJumpCooldown: 0,
+    wallContactTimer: 0,  // frames since last wall contact
+    wallSide: 0,          // which side the wall is on (+1 right wall = kick left, -1 = kick right)
+    alive: true,
+    facing: 1,
+    animFrame: 0,
+    flashTimer: 0,
+    stickyTimer: 0,
+    trailPositions: [],
+  };
+}
 
-    function solidAtWorld(wx, wy) {
-      const tx = Math.floor(wx / TILE);
-      const ty = Math.floor(wy / TILE);
-      return isSolidTile(tx, ty);
-    }
+// ═══════════════════════════════════════════════════
+//  ENEMIES
+// ═══════════════════════════════════════════════════
+function makeEnemy(col, row, type) {
+  return {
+    x: col * TILE + TILE / 2, y: row * TILE,
+    vx: type === 'patrol' ? 1.5 : 0,
+    vy: 0, w: 20, h: 20,
+    type, alive: true,
+    dir: 1,
+    shootTimer: 0,
+    bullets: [],
+    col, row,
+  };
+}
 
-    // Find the row just above the first solid tile in a column
-    function findSurfaceRow(col) {
-      for (let y = 0; y < ROWS; y++) {
-        if (isSolidTile(col, y)) return Math.max(1, y - 1);
-      }
-      return GROUND_ROW - 1;
-    }
-
-    // --- Base level generation ---
-    function generateBaseLevel() {
-      tiles = createEmptyGrid();
-      enemies = [];
-
-      // Simple but noisy ground band
-      let height = GROUND_ROW;
-      for (let x = 0; x < COLS; x++) {
-        if (x > 1 && x < COLS - 2) {
-          const r = rand();
-          if (r < 0.18) height = Math.min(GROUND_ROW, height + 1);
-          else if (r < 0.36) height = Math.max(GROUND_ROW - 3, height - 1);
-        }
-        for (let y = height; y < ROWS; y++) setTile(x, y, T_SOLID);
-      }
-
-      // Ensure clear start / goal columns exist
-      startX = 1;
-      goalX = COLS - 3;
-      startY = findSurfaceRow(startX);
-      goalY = findSurfaceRow(goalX);
-
-      // Clear some space around start & goal
-      for (let x = startX - 1; x <= startX + 2; x++) {
-        for (let y = startY - 3; y <= startY + 1; y++) setTile(x, y, T_EMPTY);
-      }
-      for (let x = goalX - 1; x <= goalX + 2; x++) {
-        for (let y = goalY - 3; y <= goalY + 1; y++) setTile(x, y, T_EMPTY);
-      }
-
-      // Some floating platforms
-      const platCount = randInt(4, 8);
-      for (let i = 0; i < platCount; i++) {
-        const x = randInt(3, COLS - 4);
-        const y = randInt(3, GROUND_ROW - 3);
-        const width = randInt(2, 5);
-        for (let dx = 0; dx < width; dx++) setTile(x + dx, y, T_SOLID);
-      }
-
-      respawnPlayer();
-    }
-
-    function respawnPlayer() {
-      player.x = (startX + 0.3) * TILE;
-      player.y = (startY - 0.5) * TILE;
-      player.vx = 0;
-      player.vy = 0;
-      player.onGround = false;
-      player.dead = false;
-    }
-
-    function resetCurrentLevel() {
-      respawnPlayer();
-      centerMsgEl.textContent = "Restarted level " + currentLevelIndex;
-      setTimeout(() => {
-        if (centerMsgEl.textContent.startsWith("Restarted"))
-          centerMsgEl.textContent = "";
-      }, 800);
-    }
-
-    // --- Mutations ---
-    function mutateLevel() {
-      mutationCount++;
-      const baseMutations = chaosMode ? 18 : 8;
-      const extra = Math.min(20, Math.floor(currentLevelIndex / 2));
-      const count = baseMutations + extra;
-
-      for (let i = 0; i < count; i++) {
-        const r = rand();
-        if (r < 0.4) mutationCarveOrAddGround();
-        else if (r < 0.7) mutationAddOrRemovePlatform();
-        else if (r < 0.9) mutationAddSpikes();
-        else mutationAddOrTweakEnemy();
-      }
-
-      enforceGroundSafety();
-      clampSpikeDensity();
-      clampEnemyCount();
-
-      respawnPlayer();
-      levelNumEl.textContent = currentLevelIndex;
-      mutationsNumEl.textContent = mutationCount;
-      centerMsgEl.textContent = "Level " + currentLevelIndex + " mutated!";
-      setTimeout(() => {
-        if (centerMsgEl.textContent.includes("mutated"))
-          centerMsgEl.textContent = "";
-      }, 1000);
-    }
-
-    function mutationCarveOrAddGround() {
-      const x = randInt(2, COLS - 3);
-      if (Math.abs(x - startX) < 3 || Math.abs(x - goalX) < 3) return;
-
-      const modeCarve = rand() < 0.55;
-      const maxHoleHeight = chaosMode ? 5 : 3;
-
-      let baseY = GROUND_ROW;
-      for (let y = 0; y < ROWS; y++) {
-        if (isSolidTile(x, y)) { baseY = y; break; }
-      }
-
-      if (modeCarve) {
-        const holeHeight = randInt(1, maxHoleHeight);
-        for (let k = 0; k < holeHeight; k++) {
-          const y = baseY + k;
-          if (y >= ROWS - 1) break;
-          setTile(x, y, T_EMPTY);
-        }
-      } else {
-        const addHeight = randInt(1, 3);
-        for (let k = 0; k < addHeight; k++) {
-          const y = baseY - 1 - k;
-          if (y < 2) break;
-          setTile(x, y, T_SOLID);
-        }
-      }
-    }
-
-    function mutationAddOrRemovePlatform() {
-      const add = rand() < 0.6;
-      const x = randInt(2, COLS - 4);
-      const y = randInt(2, GROUND_ROW - 2);
-      const width = randInt(2, 6);
-
-      if (add) {
-        for (let dx = 0; dx < width; dx++) {
-          const gx = x + dx;
-          if (gx >= COLS - 1) break;
-          if (Math.abs(gx - startX) < 2 && Math.abs(y - startY) < 2) continue;
-          if (Math.abs(gx - goalX) < 2 && Math.abs(y - goalY) < 2) continue;
-          setTile(gx, y, T_SOLID);
-        }
-      } else {
-        for (let dx = 0; dx < width; dx++) {
-          const gx = x + dx;
-          if (gx >= COLS - 1) break;
-          if (y >= GROUND_ROW) continue;
-          setTile(gx, y, T_EMPTY);
-        }
+// ═══════════════════════════════════════════════════
+//  PLACE GOAL & SPAWN
+// ═══════════════════════════════════════════════════
+function findSpawnAndGoal(grid) {
+  // Spawn on first solid surface on the left
+  let spawn = null, goal = null;
+  for (let r = ROWS - 2; r > 0; r--) {
+    for (let c = 1; c < COLS / 2; c++) {
+      if (grid[r][c] === T.EMPTY && grid[r + 1][c] === T.SOLID) {
+        spawn = { col: c, row: r }; break;
       }
     }
-
-    function mutationAddSpikes() {
-      const count = randInt(1, chaosMode ? 8 : 4);
-      for (let i = 0; i < count; i++) {
-        const x = randInt(1, COLS - 2);
-        const y = randInt(1, ROWS - 3);
-        if (isSolidTile(x, y + 1) && getTile(x, y) === T_EMPTY) {
-          if (Math.abs(x - startX) < 2 && Math.abs(y - startY) < 2) continue;
-          if (Math.abs(x - goalX) < 2 && Math.abs(y - goalY) < 2) continue;
-          setTile(x, y, T_SPIKE);
-        }
+    if (spawn) break;
+  }
+  // Goal on solid surface on right side
+  for (let r = 1; r < ROWS - 1; r++) {
+    for (let c = COLS - 3; c > COLS / 2; c--) {
+      if (grid[r][c] === T.EMPTY && (grid[r + 1][c] === T.SOLID || r === ROWS - 2)) {
+        goal = { col: c, row: r }; break;
       }
     }
+    if (goal) break;
+  }
+  if (!spawn) spawn = { col: 1, row: ROWS - 2 };
+  if (!goal) goal = { col: COLS - 2, row: 1 };
+  return { spawn, goal };
+}
 
-    function mutationAddOrTweakEnemy() {
-      const add = enemies.length === 0 || rand() < 0.7;
-      if (add) {
-        const col = randInt(3, COLS - 4);
-        const surfY = findSurfaceRow(col);
-        const ex = col * TILE + TILE * 0.2;
-        const ey = (surfY - 0.5) * TILE;
-        if (Math.abs(col - startX) < 3 || Math.abs(col - goalX) < 3) return;
+// ═══════════════════════════════════════════════════
+//  MUTATION ENGINE
+// ═══════════════════════════════════════════════════
+// Possible mutations as functions that operate on the level state
+// Each returns {name, desc} or null if it couldn't apply
 
-        const speed = (rand() * 0.4 + 0.5) * (rand() < 0.5 ? 1 : -1); // slower enemies
-        const patrolWidth = randInt(2, 6) * TILE;
+const MUTATIONS = [
 
-        enemies.push({
-          x: ex,
-          y: ey,
-          vx: speed,
-          vy: 0,
-          w: 22,
-          h: 26,
-          baseX: ex,
-          range: patrolWidth
-        });
-      } else if (enemies.length > 0) {
-        const e = enemies[randInt(0, enemies.length - 1)];
-        e.range *= rand() < 0.5 ? 0.8 : 1.2;
-        e.vx *= rand() < 0.5 ? -1 : 1.1;
+  // ── STRUCTURAL ──────────────────────────────────
+  function removePlatformTile(G) {
+    // Find a removable tile (not walls/floor/ceiling, not goal/spawn adjacent)
+    const candidates = [];
+    for (let r = 1; r < ROWS - 1; r++) {
+      for (let c = 1; c < COLS - 1; c++) {
+        if (G.tiles[r][c] !== T.SOLID) continue;
+        // Don't remove if spawn/goal is sitting on it
+        if (G.spawnPt && G.spawnPt.row === r - 1 && G.spawnPt.col === c) continue;
+        if (G.goal && G.goal.row === r - 1 && G.goal.col === c) continue;
+        // Test: remove it and check reachability
+        G.tiles[r][c] = T.EMPTY;
+        const ok = canReach(G.tiles, G.spawnPt.row, G.spawnPt.col, G.goal.row, G.goal.col);
+        G.tiles[r][c] = T.SOLID; // restore
+        if (ok) candidates.push([r, c]);
       }
     }
+    if (!candidates.length) return null;
+    const [r, c] = candidates[Math.floor(Math.random() * candidates.length)];
+    G.tiles[r][c] = T.EMPTY;
+    return { name: 'EROSION', desc: 'A tile crumbled away.' };
+  },
 
-    function enforceGroundSafety() {
-      // Make sure each column has some solid tiles at/under GROUND_ROW
-      for (let x = 0; x < COLS; x++) {
-        let solidFound = false;
-        for (let y = GROUND_ROW; y < ROWS; y++) {
-          if (isSolidTile(x, y)) { solidFound = true; break; }
-        }
-        if (!solidFound) {
-          for (let y = GROUND_ROW; y < ROWS; y++) setTile(x, y, T_SOLID);
-        }
+  function addPlatformTile(G) {
+    const candidates = [];
+    for (let r = 2; r < ROWS - 1; r++) {
+      for (let c = 1; c < COLS - 1; c++) {
+        if (G.tiles[r][c] !== T.EMPTY) continue;
+        // Must have something below or adjacent
+        const hasSupport = G.tiles[r + 1][c] === T.SOLID || G.tiles[r][c - 1] === T.SOLID || G.tiles[r][c + 1] === T.SOLID;
+        if (hasSupport) candidates.push([r, c]);
       }
     }
+    if (!candidates.length) return null;
+    const [r, c] = candidates[Math.floor(Math.random() * candidates.length)];
+    G.tiles[r][c] = T.SOLID;
+    return { name: 'GROWTH', desc: 'A new block materialised.' };
+  },
 
-    function clampSpikeDensity() {
-      const maxSpikes = chaosMode ? 80 : 45;
-      const spikes = [];
-      for (let y = 0; y < ROWS; y++) {
-        for (let x = 0; x < COLS; x++) {
-          if (isSpikeTile(x, y)) spikes.push({x, y});
-        }
+  function shiftPlatform(G) {
+    // Find a platform row (consecutive solid tiles) and shift it
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const r = Math.floor(Math.random() * (ROWS - 3)) + 1;
+      let start = -1, len = 0;
+      for (let c = 1; c < COLS - 1; c++) {
+        if (G.tiles[r][c] === T.SOLID && G.tiles[r - 1][c] !== T.SOLID) { // top of a platform
+          if (start === -1) start = c;
+          len++;
+        } else if (start !== -1) break;
       }
-      if (spikes.length > maxSpikes) {
-        const toRemove = spikes.length - maxSpikes;
-        for (let i = 0; i < toRemove; i++) {
-          const s = spikes[randInt(0, spikes.length - 1)];
-          setTile(s.x, s.y, T_EMPTY);
-        }
-      }
-    }
-
-    function clampEnemyCount() {
-      const maxEnemies = chaosMode ? 18 : 10;
-      while (enemies.length > maxEnemies) {
-        enemies.splice(randInt(0, enemies.length - 1), 1);
-      }
-    }
-
-    // --- Physics ---
-    const GRAVITY = 0.9;
-    const JUMP_VELOCITY = -13;         // slightly softer
-    const MOVE_ACCEL = 0.7;            // slower accel
-    const MOVE_FRICTION = 0.8;
-    const MAX_SPEED_X = 5;             // slower max speed
-    const MAX_SPEED_Y = 20;
-
-    const ENEMY_GRAVITY = 0.7;
-    const ENEMY_MAX_VY = 18;
-
-    function aabbOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
-      return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
-    }
-
-    function updatePlayer() {
-      if (player.dead) {
-        player.vx *= 0.9;
-        player.vy += GRAVITY;
-        player.x += player.vx;
-        player.y += player.vy;
-        if (player.y > H + 200) resetCurrentLevel();
-        return;
-      }
-
-      // Input
-      if (isLeft())  player.vx -= MOVE_ACCEL;
-      if (isRight()) player.vx += MOVE_ACCEL;
-      player.vx = Math.max(-MAX_SPEED_X, Math.min(MAX_SPEED_X, player.vx));
-      if (!isLeft() && !isRight()) {
-        player.vx *= MOVE_FRICTION;
-        if (Math.abs(player.vx) < 0.05) player.vx = 0;
-      }
-
-      if (isJump() && player.onGround) {
-        player.vy = JUMP_VELOCITY;
-        player.onGround = false;
-      }
-
-      player.vy += GRAVITY;
-      if (player.vy > MAX_SPEED_Y) player.vy = MAX_SPEED_Y;
-
-      // Horizontal collision (check corners)
-      let nextX = player.x + player.vx;
-      let nextY = player.y + player.vy;
-      let onGround = false;
-
-      if (player.vx > 0) {
-        const right = nextX + player.w;
-        const top = player.y + 2;
-        const bottom = player.y + player.h - 2;
-        if (solidAtWorld(right, top) || solidAtWorld(right, bottom)) {
-          const tileX = Math.floor(right / TILE);
-          const worldX = tileX * TILE;
-          nextX = worldX - player.w - 0.01;
-          player.vx = 0;
-        }
-      } else if (player.vx < 0) {
-        const left = nextX;
-        const top = player.y + 2;
-        const bottom = player.y + player.h - 2;
-        if (solidAtWorld(left, top) || solidAtWorld(left, bottom)) {
-          const tileX = Math.floor(left / TILE);
-          const worldX = (tileX + 1) * TILE;
-          nextX = worldX + 0.01;
-          player.vx = 0;
+      if (len >= 2 && len <= 6) {
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        const newStart = start + dir;
+        if (newStart >= 1 && newStart + len <= COLS - 1) {
+          // Remove old
+          for (let i = 0; i < len; i++) G.tiles[r][start + i] = T.EMPTY;
+          // Place new
+          for (let i = 0; i < len; i++) G.tiles[r][newStart + i] = T.SOLID;
+          // Check reachability
+          if (canReach(G.tiles, G.spawnPt.row, G.spawnPt.col, G.goal.row, G.goal.col)) {
+            return { name: 'SHIFT', desc: 'A platform slid sideways.' };
+          } else {
+            // Revert
+            for (let i = 0; i < len; i++) G.tiles[r][newStart + i] = T.EMPTY;
+            for (let i = 0; i < len; i++) G.tiles[r][start + i] = T.SOLID;
+          }
         }
       }
+    }
+    return null;
+  },
 
-      // Vertical collision
-      if (player.vy > 0) {
-        const bottom = nextY + player.h;
-        const left = nextX + 3;
-        const right = nextX + player.w - 3;
-        if (solidAtWorld(left, bottom) || solidAtWorld(right, bottom)) {
-          const tileY = Math.floor(bottom / TILE);
-          const worldY = tileY * TILE;
-          nextY = worldY - player.h - 0.01;
-          player.vy = 0;
-          onGround = true;
-        }
-      } else if (player.vy < 0) {
-        const top = nextY;
-        const left = nextX + 3;
-        const right = nextX + player.w - 3;
-        if (solidAtWorld(left, top) || solidAtWorld(right, top)) {
-          const tileY = Math.floor(top / TILE);
-          const worldY = (tileY + 1) * TILE;
-          nextY = worldY + 0.01;
-          player.vy = 0;
+  function moveGoal(G) {
+    const candidates = [];
+    for (let r = 1; r < ROWS - 1; r++) {
+      for (let c = 2; c < COLS - 2; c++) {
+        if (G.tiles[r][c] === T.EMPTY && G.tiles[r + 1] && G.tiles[r + 1][c] === T.SOLID) {
+          if (!(r === G.goal.row && c === G.goal.col)) candidates.push([r, c]);
         }
       }
-
-      player.x = nextX;
-      player.y = nextY;
-      player.onGround = onGround;
-
-      if (player.y > H + 50 || player.x < -TILE || player.x > W + TILE) {
-        killPlayer("Fell into the void");
-      }
-
-      checkHazardsAndGoal();
     }
+    if (!candidates.length) return null;
+    const [r, c] = candidates[Math.floor(Math.random() * candidates.length)];
+    G.goal = { row: r, col: c };
+    return { name: 'RELOCATION', desc: 'The goal moved.' };
+  },
 
-    function killPlayer(reason) {
-      if (player.dead) return;
-      player.dead = true;
-      player.vy = -10;
-      centerMsgEl.textContent = "You died! " + reason + "  (Press R)";
-    }
-
-    function checkHazardsAndGoal() {
-      const px = player.x, py = player.y, pw = player.w, ph = player.h;
-
-      // Spikes
-      const tileX1 = Math.floor(px / TILE);
-      const tileX2 = Math.floor((px + pw) / TILE);
-      const tileY1 = Math.floor(py / TILE);
-      const tileY2 = Math.floor((py + ph) / TILE);
-      for (let ty = tileY1; ty <= tileY2; ty++) {
-        for (let tx = tileX1; tx <= tileX2; tx++) {
-          if (isSpikeTile(tx, ty)) {
-            const sx = tx * TILE;
-            const sy = ty * TILE;
-            if (aabbOverlap(px, py, pw, ph, sx, sy, TILE, TILE)) {
-              killPlayer("You hit spikes");
-              return;
+  function addSpikes(G) {
+    const candidates = [];
+    for (let c = 1; c < COLS - 1; c++) {
+      for (let r = 1; r < ROWS - 1; r++) {
+        if (G.tiles[r][c] === T.EMPTY && G.tiles[r + 1][c] === T.SOLID) {
+          if (!(r === G.spawnPt.row && c === G.spawnPt.col)) {
+            if (!(r === G.goal.row && c === G.goal.col)) {
+              candidates.push([r, c]);
             }
           }
         }
       }
+    }
+    if (!candidates.length) return null;
+    const count = Math.floor(Math.random() * 3) + 1;
+    shuffle(candidates);
+    candidates.slice(0, count).forEach(([r, c]) => G.tiles[r][c] = T.SPIKE);
+    return { name: 'SPIKES', desc: `${count} spike${count > 1 ? 's' : ''} appeared.` };
+  },
 
-      // Enemies
-      for (const e of enemies) {
-        if (aabbOverlap(px, py, pw, ph, e.x, e.y, e.w, e.h)) {
-          killPlayer("An enemy got you");
-          return;
+  function addEnemy(G) {
+    const candidates = [];
+    for (let c = 2; c < COLS - 2; c++) {
+      for (let r = 1; r < ROWS - 1; r++) {
+        if (G.tiles[r][c] === T.EMPTY && G.tiles[r + 1][c] === T.SOLID) {
+          if (!(r === G.spawnPt.row && Math.abs(c - G.spawnPt.col) < 3)) candidates.push([r, c]);
         }
-      }
-
-      // Goal
-      const gx = goalX * TILE;
-      const gy = (goalY - 1) * TILE;
-      const gw = TILE * 1.2;
-      const gh = TILE * 3;
-      if (aabbOverlap(px, py, pw, ph, gx, gy, gw, gh)) {
-        currentLevelIndex++;
-        mutateLevel();
       }
     }
+    if (!candidates.length) return null;
+    const [r, c] = candidates[Math.floor(Math.random() * candidates.length)];
+    const type = Math.random() < 0.6 ? 'patrol' : 'shooter';
+    G.enemies.push(makeEnemy(c, r, type));
+    return { name: 'INFESTATION', desc: `A ${type} enemy spawned.` };
+  },
 
-    function updateEnemies() {
-      for (const e of enemies) {
-        // Gravity
-        e.vy += ENEMY_GRAVITY;
-        if (e.vy > ENEMY_MAX_VY) e.vy = ENEMY_MAX_VY;
+  function removeEnemy(G) {
+    if (!G.enemies.length) return null;
+    G.enemies.splice(Math.floor(Math.random() * G.enemies.length), 1);
+    return { name: 'CULLING', desc: 'An enemy vanished.' };
+  },
 
-        // Horizontal move + simple collision (like player, but no jumping)
-        let nextX = e.x + e.vx;
-        let nextY = e.y + e.vy;
-
-        // Horizontal collision
-        if (e.vx > 0) {
-          const right = nextX + e.w;
-          const top = e.y + 2;
-          const bottom = e.y + e.h - 2;
-          if (solidAtWorld(right, top) || solidAtWorld(right, bottom)) {
-            const tileX = Math.floor(right / TILE);
-            const worldX = tileX * TILE;
-            nextX = worldX - e.w - 0.01;
-            e.vx *= -1; // turn around
-          }
-        } else if (e.vx < 0) {
-          const left = nextX;
-          const top = e.y + 2;
-          const bottom = e.y + e.h - 2;
-          if (solidAtWorld(left, top) || solidAtWorld(left, bottom)) {
-            const tileX = Math.floor(left / TILE);
-            const worldX = (tileX + 1) * TILE;
-            nextX = worldX + 0.01;
-            e.vx *= -1; // turn around
-          }
-        }
-
-        let onGround = false;
-        // Vertical collision
-        if (e.vy > 0) {
-          const bottom = nextY + e.h;
-          const left = nextX + 3;
-          const right = nextX + e.w - 3;
-          if (solidAtWorld(left, bottom) || solidAtWorld(right, bottom)) {
-            const tileY = Math.floor(bottom / TILE);
-            const worldY = tileY * TILE;
-            nextY = worldY - e.h - 0.01;
-            e.vy = 0;
-            onGround = true;
-          }
-        } else if (e.vy < 0) {
-          const top = nextY;
-          const left = nextX + 3;
-          const right = nextX + e.w - 3;
-          if (solidAtWorld(left, top) || solidAtWorld(right, top)) {
-            const tileY = Math.floor(top / TILE);
-            const worldY = (tileY + 1) * TILE;
-            nextY = worldY + 0.01;
-            e.vy = 0;
-          }
-        }
-
-        // Edge detection: if on ground and about to walk off, turn around
-        if (onGround) {
-          const footY = nextY + e.h + 2;
-          const frontX = e.vx > 0 ? (nextX + e.w + 2) : (nextX - 2);
-          if (!solidAtWorld(frontX, footY)) {
-            e.vx *= -1;
-          }
-        }
-
-        e.x = nextX;
-        e.y = nextY;
-
-        // Despawn if they fall too far
-        if (e.y > H + 200) {
-          e.toRemove = true;
-        }
-      }
-
-      // Remove fallen enemies
-      for (let i = enemies.length - 1; i >= 0; i--) {
-        if (enemies[i].toRemove) enemies.splice(i, 1);
+  function stretchPlatform(G) {
+    for (let attempt = 0; attempt < 15; attempt++) {
+      const r = Math.floor(Math.random() * (ROWS - 3)) + 1;
+      const c = Math.floor(Math.random() * (COLS - 4)) + 2;
+      if (G.tiles[r][c] === T.SOLID && G.tiles[r][c + 1] === T.EMPTY && c + 1 < COLS - 1) {
+        G.tiles[r][c + 1] = T.SOLID;
+        return { name: 'GROWTH', desc: 'A platform extended.' };
       }
     }
+    return null;
+  },
 
-    // --- Rendering ---
-    function draw() {
-      ctx.clearRect(0, 0, W, H);
-
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
-      skyGrad.addColorStop(0, "#0b1020");
-      skyGrad.addColorStop(0.5, "#050816");
-      skyGrad.addColorStop(1, "#020109");
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, W, H);
-
-      ctx.fillStyle = "rgba(255,255,255,0.1)";
-      for (let i = 0; i < 40; i++) {
-        const x = (i * 37 + (currentLevelIndex * 53)) % W;
-        const y = (i * 71 + seed) % H;
-        ctx.fillRect(x, y, 2, 2);
+  function addBouncePad(G) {
+    const candidates = [];
+    for (let c = 1; c < COLS - 1; c++) {
+      for (let r = 1; r < ROWS - 1; r++) {
+        if (G.tiles[r][c] === T.EMPTY && G.tiles[r + 1][c] === T.SOLID) candidates.push([r, c]);
       }
+    }
+    if (!candidates.length) return null;
+    const [r, c] = candidates[Math.floor(Math.random() * candidates.length)];
+    G.tiles[r][c] = T.BOUNCE_PAD;
+    return { name: 'BOUNCE PAD', desc: 'A bounce pad appeared.' };
+  },
 
-      for (let y = 0; y < ROWS; y++) {
-        for (let x = 0; x < COLS; x++) {
-          const t = getTile(x, y);
-          const px = x * TILE;
-          const py = y * TILE;
-          if (t === T_SOLID) {
-            const h1 = 40 + (x * 3 + y * 7) % 40;
-            ctx.fillStyle = `hsl(${h1}, 45%, 26%)`;
-            ctx.fillRect(px, py, TILE, TILE);
-            ctx.fillStyle = "rgba(0,0,0,0.25)";
-            ctx.fillRect(px, py + TILE - 5, TILE, 5);
-          } else if (t === T_SPIKE) {
-            ctx.fillStyle = "#ff4b5c";
-            ctx.beginPath();
-            ctx.moveTo(px + 2, py + TILE);
-            ctx.lineTo(px + TILE / 2, py + 4);
-            ctx.lineTo(px + TILE - 2, py + TILE);
-            ctx.closePath();
-            ctx.fill();
-          }
-        }
+  function addTeleporters(G) {
+    const candidates = [];
+    for (let c = 1; c < COLS - 1; c++) {
+      for (let r = 1; r < ROWS - 1; r++) {
+        if (G.tiles[r][c] === T.EMPTY && G.tiles[r + 1][c] === T.SOLID) candidates.push([r, c]);
       }
+    }
+    if (candidates.length < 2) return null;
+    shuffle(candidates);
+    const [r1, c1] = candidates[0], [r2, c2] = candidates[1];
+    G.tiles[r1][c1] = T.TELEPORT;
+    G.tiles[r2][c2] = T.TELEPORT;
+    return { name: 'TELEPORTERS', desc: 'Two teleport pads linked.' };
+  },
 
-      const gx = goalX * TILE + TILE * 0.2;
-      const gy = (goalY - 1) * TILE;
-      ctx.fillStyle = "#c0c0c0";
-      ctx.fillRect(gx, gy - TILE * 1.2, TILE * 0.12, TILE * 3.2);
-      ctx.fillStyle = "#3ad97c";
-      ctx.beginPath();
-      ctx.moveTo(gx + TILE * 0.12, gy - TILE * 1.2);
-      ctx.lineTo(gx + TILE * 0.12 + TILE * 0.9, gy - TILE * 1.2 + TILE * 0.4);
-      ctx.lineTo(gx + TILE * 0.12, gy - TILE * 1.2 + TILE * 0.8);
-      ctx.closePath();
-      ctx.fill();
+  // ── MODIFIER MUTATIONS ────────────────────────────
+  function gravFlip(G) {
+    if (G.modifiers.includes('GRAVITY FLIP')) return null;
+    G.modifiers.push('GRAVITY FLIP');
+    return { name: '⬆ GRAVITY FLIP', desc: 'JUMP now flips gravity.' };
+  },
 
-      for (const e of enemies) {
-        ctx.fillStyle = "#ffb347";
-        ctx.fillRect(e.x, e.y, e.w, e.h);
-        ctx.fillStyle = "#000";
-        ctx.fillRect(e.x + 5, e.y + 6, 4, 6);
-        ctx.fillRect(e.x + e.w - 9, e.y + 6, 4, 6);
+  function addGod(G) {
+    if (G.modifiers.includes('THE GOD')) return null;
+    G.modifiers.push('THE GOD');
+    G.godActive = true;
+    G.godY = (G.camera.y || 0) - 150;  // start above viewport in world coords
+    G.godX = (G.camera.x || 0) + W / 2;
+    G.godVX = 0;
+    return { name: '👁 THE GOD DESCENDS', desc: 'An ancient evil pursues you.' };
+  },
+
+  function addBomb(G) {
+    if (G.modifiers.includes('TIME BOMB')) return null;
+    G.modifiers.push('TIME BOMB');
+    const secs = Math.max(12, 30 - G.level);
+    G.bombTimer = secs * 60;
+    G.bombMax = G.bombTimer;
+    return { name: '💣 TIME BOMB', desc: `${secs} seconds. Move.` };
+  },
+
+  function addIce(G) {
+    if (G.modifiers.includes('ICE')) return null;
+    G.modifiers.push('ICE');
+    G.ice = true;
+    return { name: '🧊 ICE WORLD', desc: 'All surfaces are slippery.' };
+  },
+
+  function addWind(G) {
+    if (G.modifiers.includes('WIND')) return null;
+    G.modifiers.push('WIND');
+    G.wind = (Math.random() < 0.5 ? 1 : -1) * (1.2 + Math.random() * 0.8);
+    return { name: `💨 WIND ${G.wind > 0 ? '→' : '←'}`, desc: 'Constant horizontal force.' };
+  },
+
+  function addDarkness(G) {
+    if (G.modifiers.includes('DARKNESS')) return null;
+    G.modifiers.push('DARKNESS');
+    G.darkness = true;
+    return { name: '🌑 DARKNESS', desc: 'Only you and your light.' };
+  },
+
+  function addBouncy(G) {
+    if (G.modifiers.includes('BOUNCY')) return null;
+    G.modifiers.push('BOUNCY');
+    G.bouncy = true;
+    return { name: '🔴 BOUNCY', desc: 'Landings launch you back.' };
+  },
+
+  function addStickyWalls(G) {
+    if (G.modifiers.includes('STICKY WALLS')) return null;
+    G.modifiers.push('STICKY WALLS');
+    G.stickyWalls = true;
+    return { name: '🕷 STICKY WALLS', desc: 'Walls grip you.' };
+  },
+
+  function addBlackHole(G) {
+    if (G.modifiers.includes('BLACK HOLE')) return null;
+    G.modifiers.push('BLACK HOLE');
+    G.blackHole = { x: W / 2, y: H / 2, strength: 0.18 + G.level * 0.02 };
+    return { name: '⚫ BLACK HOLE', desc: 'Gravity bends toward the center.' };
+  },
+
+  function addScreenShake(G) {
+    if (G.modifiers.includes('TREMORS')) return null;
+    G.modifiers.push('TREMORS');
+    return { name: '📳 TREMORS', desc: 'The world shakes randomly.' };
+  },
+
+  function addClone(G) {
+    if (G.modifiers.includes('SHADOW CLONE')) return null;
+    G.modifiers.push('SHADOW CLONE');
+    G.clone = { x: -9999, y: -9999, active: false };
+    G.cloneTrail = [];  // always start fresh
+    return { name: '👥 SHADOW CLONE', desc: 'Your past haunts you.' };
+  },
+
+  function addLava(G) {
+    if (G.modifiers.includes('RISING LAVA')) return null;
+    G.modifiers.push('RISING LAVA');
+    G.lavaRising = true;
+    G.lavaY = ROWS * TILE + 40;
+    return { name: '🌋 RISING LAVA', desc: 'Climb or die.' };
+  },
+
+  function invertControls(G) {
+    if (G.modifiers.includes('INVERTER')) return null;
+    G.modifiers.push('INVERTER');
+    return { name: '↔ INVERTER', desc: 'Left is right. Right is left.' };
+  },
+
+  function doubleGravity(G) {
+    if (G.modifiers.includes('DOUBLE GRAVITY')) return null;
+    G.modifiers.push('DOUBLE GRAVITY');
+    return { name: '⬇⬇ DOUBLE GRAVITY', desc: 'Fall twice as fast.' };
+  },
+
+  function phantomBlocks(G) {
+    if (G.modifiers.includes('PHANTOM')) return null;
+    G.modifiers.push('PHANTOM');
+    return { name: '👻 PHANTOM BLOCKS', desc: 'Some blocks will phase out.' };
+  },
+
+  function removeModifier(G) {
+    const removable = G.modifiers.filter(m => !['THE GOD'].includes(m)); // god is permanent once added
+    if (!removable.length) return null;
+    const m = removable[Math.floor(Math.random() * removable.length)];
+    G.modifiers = G.modifiers.filter(x => x !== m);
+    // Reset the state
+    if (m === 'ICE') G.ice = false;
+    if (m === 'WIND') G.wind = 0;
+    if (m === 'DARKNESS') G.darkness = false;
+    if (m === 'BOUNCY') G.bouncy = false;
+    if (m === 'STICKY WALLS') G.stickyWalls = false;
+    if (m === 'BLACK HOLE') G.blackHole = null;
+    if (m === 'RISING LAVA') { G.lavaRising = false; G.lavaY = ROWS * TILE + 40; }
+    if (m === 'INVERTER') {}
+    if (m === 'DOUBLE GRAVITY') {}
+    if (m === 'SHADOW CLONE') G.clone = null;
+    if (m === 'TIME BOMB') G.bombTimer = 0;
+    if (m === 'PHANTOM') {}
+    return { name: `CURE: ${m}`, desc: 'A curse was lifted.' };
+  },
+];
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function mutateLevel() {
+  // Number of mutations scales with level
+  const count = Math.min(1 + Math.floor(G.level / 2), 4);
+  const applied = [];
+
+  // Shuffle mutations and try each
+  const pool = [...MUTATIONS];
+  shuffle(pool);
+
+  for (const mutFn of pool) {
+    if (applied.length >= count) break;
+    const result = mutFn(G);
+    if (result) applied.push(result);
+  }
+
+  // Always ensure reachability after all mutations
+  if (!canReach(G.tiles, G.spawnPt.row, G.spawnPt.col, G.goal.row, G.goal.col)) {
+    // Emergency fix: rebuild bridges
+    buildBridge(G.tiles, G.spawnPt, G.goal);
+  }
+
+  return applied;
+}
+
+function buildBridge(grid, from, to) {
+  // Simple: add a floor row connecting spawn and goal
+  const midRow = Math.max(from.row, to.row);
+  for (let c = Math.min(from.col, to.col); c <= Math.max(from.col, to.col); c++) {
+    if (grid[midRow][c] === T.EMPTY) grid[midRow][c] = T.SOLID;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  PHANTOM BLOCK SYSTEM
+// ═══════════════════════════════════════════════════
+let phantomState = []; // tracks which solid blocks are currently phased
+let phantomTimer = 0;
+function tickPhantoms() {
+  phantomTimer++;
+  if (phantomTimer % 180 === 0) {
+    // Choose a random solid block to phase
+    const solids = [];
+    for (let r = 1; r < ROWS - 1; r++)
+      for (let c = 1; c < COLS - 1; c++) {
+        if (G.tiles[r][c] !== T.SOLID) continue;
+        // Don't phase spawn tile's floor or goal tile's floor
+        if (r === G.spawnPt.row + 1 && Math.abs(c - G.spawnPt.col) <= 1) continue;
+        if (r === G.goal.row + 1 && Math.abs(c - G.goal.col) <= 1) continue;
+        // Don't phase if it's the only path (rough check: has tiles above it that need it)
+        solids.push([r, c]);
       }
+    if (solids.length) {
+      const [r, c] = solids[Math.floor(Math.random() * solids.length)];
+      if (!phantomState.find(p => p.r === r && p.c === c)) {
+        phantomState.push({ r, c, timer: 120, warned: false });
+      }
+    }
+  }
+  phantomState = phantomState.filter(p => {
+    p.timer--;
+    if (p.timer <= 60 && !p.warned) p.warned = true;
+    if (p.timer <= 0) { G.tiles[p.r][p.c] = T.EMPTY; return false; }
+    return true;
+  });
+}
 
+// ═══════════════════════════════════════════════════
+//  PHYSICS
+// ═══════════════════════════════════════════════════
+function tileAt(r, c) {
+  if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return T.SOLID;
+  return G.tiles[r][c];
+}
+
+function isSolid(r, c) {
+  const t = tileAt(r, c);
+  return t === T.SOLID || t === T.BOUNCE_PAD || t === T.ICE_TILE;
+}
+
+function playerTileCollision(p) {
+  p.onGround = false;
+  p.onWall = 0;
+  const grav = G.gravDir;
+
+  // ── Vertical pass ────────────────────────────
+  const vLeft  = Math.floor((p.x - p.w / 2 + 2) / TILE);
+  const vRight = Math.floor((p.x + p.w / 2 - 3) / TILE);
+
+  if (grav === 1) {
+    if (p.vy >= 0) {
+      const br = Math.floor((p.y + p.h) / TILE);
+      if (isSolid(br, vLeft) || isSolid(br, vRight)) {
+        p.y = br * TILE - p.h;
+        p.vy = landedV(br, p);
+        p.onGround = true;
+        p.coyoteTime = 8;
+      }
+    }
+    if (p.vy < 0) {
+      const tr = Math.floor(p.y / TILE);
+      if (isSolid(tr, vLeft) || isSolid(tr, vRight)) {
+        p.y = (tr + 1) * TILE;
+        p.vy = 0;
+      }
+    }
+  } else {
+    if (p.vy <= 0) {
+      const tr = Math.floor(p.y / TILE);
+      if (isSolid(tr, vLeft) || isSolid(tr, vRight)) {
+        p.y = (tr + 1) * TILE;
+        p.vy = landedV(tr, p);
+        p.onGround = true;
+        p.coyoteTime = 8;
+      }
+    }
+    if (p.vy > 0) {
+      const br = Math.floor((p.y + p.h) / TILE);
+      if (isSolid(br, vLeft) || isSolid(br, vRight)) {
+        p.y = br * TILE - p.h;
+        p.vy = 0;
+      }
+    }
+  }
+
+  // ── Horizontal pass (after vertical so y is resolved) ──
+  const hTop    = Math.floor((p.y + 2) / TILE);
+  const hBottom = Math.floor((p.y + p.h - 3) / TILE);
+  const hLeft   = Math.floor((p.x - p.w / 2) / TILE);
+  const hRight  = Math.floor((p.x + p.w / 2) / TILE);
+
+  if (p.vx > 0) {
+    if (isSolid(hTop, hRight) || isSolid(hBottom, hRight)) {
+      p.x = hRight * TILE - p.w / 2;
+      p.vx = 0;
+      p.onWall = 1;
+      if (G.stickyWalls) p.stickyTimer = 20;
+    }
+  } else if (p.vx < 0) {
+    if (isSolid(hTop, hLeft - 1) || isSolid(hBottom, hLeft - 1)) {
+      p.x = hLeft * TILE + p.w / 2;
+      p.vx = 0;
+      p.onWall = -1;
+      if (G.stickyWalls) p.stickyTimer = 20;
+    }
+  }
+}
+
+function landedV(tileRow, p) {
+  const tileType = tileAt(tileRow, Math.floor(p.x / TILE));
+  const absVy = Math.abs(p.vy);
+  if (tileType === T.BOUNCE_PAD && absVy > 1) {
+    SFX.bounce();
+    return JUMP_FORCE * 1.7 * G.gravDir;
+  }
+  if (G.bouncy && absVy > 3) {
+    SFX.bounce();
+    return -p.vy * 0.45;
+  }
+  if (absVy > 3) SFX.land();
+  return 0;
+}
+
+// ═══════════════════════════════════════════════════
+//  KEYS
+// ═══════════════════════════════════════════════════
+const keys = {};
+// Jump input buffer — pressing jump up to 8 frames early still registers
+let jumpBuffer = 0;
+const JUMP_BUFFER_FRAMES = 8;
+
+document.addEventListener('keydown', e => {
+  if (!keys[e.code]) {
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+      jumpBuffer = JUMP_BUFFER_FRAMES;
+    }
+  }
+  keys[e.code] = true;
+  if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+});
+document.addEventListener('keyup', e => {
+  keys[e.code] = false;
+});
+
+function inputLeft()  { return keys['ArrowLeft']  || keys['KeyA']; }
+function inputRight() { return keys['ArrowRight'] || keys['KeyD']; }
+
+// ═══════════════════════════════════════════════════
+//  GAME LOOP
+// ═══════════════════════════════════════════════════
+let lastTime = 0;
+let rafId = null;
+// Visual-only transition state
+let glitchAnim = { active: false, timer: 0, maxTimer: 45, tiles: [] };
+
+function startGame() {
+  document.getElementById('overlay').style.display = 'none';
+  try { getAC(); } catch(e){}
+  initState();
+  G.tiles = buildBaseLevel();
+  const { spawn, goal } = findSpawnAndGoal(G.tiles);
+  G.spawnPt = spawn;
+  G.goal = goal;
+  G.player = makePlayer(spawn.col, spawn.row);
+  G.hue = Math.random() * 360;
+  G.accent = `hsl(${G.hue},90%,60%)`;
+  updateHUD();
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(loop);
+}
+
+function loop(ts) {
+  const dt = Math.min((ts - lastTime) / 16.67, 3);
+  lastTime = ts;
+  G.tick++;
+  if (G.phase === 'play') {
+    update(dt);
+  }
+  draw();
+  rafId = requestAnimationFrame(loop);
+}
+
+// ═══════════════════════════════════════════════════
+//  UPDATE
+// ═══════════════════════════════════════════════════
+function update(dt) {
+  const p = G.player;
+  if (!p || !p.alive) return;
+
+  const inverted = G.modifiers.includes('INVERTER');
+  const dblGrav = G.modifiers.includes('DOUBLE GRAVITY');
+  const phantom = G.modifiers.includes('PHANTOM');
+  const gravFlip = G.modifiers.includes('GRAVITY FLIP');
+  const noGravFlip = !gravFlip; // jump behaves normally
+
+  // Tremors
+  if (G.modifiers.includes('TREMORS') && Math.random() < 0.008) {
+    G.shakeTimer = 20 + Math.floor(Math.random() * 30);
+  }
+  if (G.shakeTimer > 0) G.shakeTimer--;
+
+  // Phantom blocks
+  if (phantom) tickPhantoms();
+
+  // ── Horizontal movement ──────────────────────────
+  const friction = G.ice ? 0.95 : 0.78;
+  let moveL = inverted ? inputRight() : inputLeft();
+  let moveR = inverted ? inputLeft() : inputRight();
+
+  if (p.stickyTimer > 0) { p.stickyTimer--; }
+  else {
+    if (moveL) { p.vx -= MOVE_SPEED * 0.38 * dt; p.facing = -1; }
+    if (moveR) { p.vx += MOVE_SPEED * 0.38 * dt; p.facing = 1; }
+    if (!moveL && !moveR) p.vx *= friction;
+    p.vx = Math.max(-MOVE_SPEED * 1.6, Math.min(MOVE_SPEED * 1.6, p.vx));
+  }
+
+  // Wind
+  if (G.wind) p.vx += G.wind * 0.1 * dt;
+
+  // Black hole
+  if (G.blackHole) {
+    const bh = G.blackHole;
+    const bx = bh.x - G.camera.x, by = bh.y - G.camera.y;
+    const dx = bx - p.x, dy = by - p.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 10) {
+      p.vx += (dx / dist) * bh.strength * dt;
+      p.vy += (dy / dist) * bh.strength * dt;
+    }
+  }
+
+  // ── Jump buffer decay ───────────────────────────
+  if (jumpBuffer > 0) jumpBuffer--;
+
+  // ── Jump ────────────────────────────────────────
+  if (jumpBuffer > 0) {
+    if (gravFlip) {
+      G.gravDir *= -1;
+      p.vy = 0;
+      jumpBuffer = 0;
+      SFX.jump();
+    } else {
+      const canJump = p.onGround || p.coyoteTime > 0;
+      const canWallJump = p.wallContactTimer > 0 && !p.onGround && p.wallJumpCooldown <= 0;
+      if (canJump) {
+        p.vy = JUMP_FORCE * G.gravDir;
+        p.onGround = false;
+        p.coyoteTime = 0;
+        jumpBuffer = 0;
+        SFX.jump();
+      } else if (canWallJump) {
+        p.vy = JUMP_FORCE * 0.85 * G.gravDir;
+        p.vx = p.wallSide * MOVE_SPEED * 2.0;
+        p.wallJumpCooldown = 14;
+        jumpBuffer = 0;
+        SFX.jump();
+      }
+    }
+  }
+
+  // ── Gravity ─────────────────────────────────────
+  const grav = GRAVITY_BASE * (dblGrav ? 2 : 1) * G.gravDir;
+  p.vy += grav * dt;
+  p.vy = Math.max(-22, Math.min(22, p.vy));
+
+  // ── Apply velocity ───────────────────────────────
+  p.x += p.vx * dt;
+  p.y += p.vy * dt;
+
+  if (p.coyoteTime > 0) p.coyoteTime--;
+  if (p.wallJumpCooldown > 0) p.wallJumpCooldown--;
+  // wallContactTimer: set when touching wall, decays after leaving
+  if (p.onWall !== 0) {
+    p.wallContactTimer = 10;
+    p.wallSide = -p.onWall; // kick direction = away from wall
+  } else if (p.wallContactTimer > 0) {
+    p.wallContactTimer--;
+  }
+
+  playerTileCollision(p);
+
+  // ── Out of bounds ────────────────────────────────
+  const worldW = COLS * TILE, worldH = ROWS * TILE;
+  if (p.x < 0 || p.x > worldW || p.y < 0 || p.y > worldH) killPlayer('fell off the edge');
+
+  // ── Spike collision ──────────────────────────────
+  const pc = Math.floor(p.x / TILE), pr = Math.floor((p.y + p.h / 2) / TILE);
+  if (tileAt(pr, pc) === T.SPIKE || tileAt(pr + 1, pc) === T.SPIKE) {
+    SFX.spike();
+    killPlayer('impaled');
+  }
+
+  // ── Teleporter ──────────────────────────────────
+  const teleportsInLevel = [];
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++)
+    if (G.tiles[r][c] === T.TELEPORT) teleportsInLevel.push({ r, c });
+
+  if (teleportsInLevel.length >= 2 && p.onGround) {
+    const tpR = Math.floor((p.y + p.h) / TILE);
+    const tpC = Math.floor(p.x / TILE);
+    const onTP = teleportsInLevel.find(t => t.r === tpR - 1 && t.c === tpC);
+    if (onTP && !p._onTeleport) {
+      const others = teleportsInLevel.filter(t => !(t.r === onTP.r && t.c === onTP.c));
+      if (others.length) {
+        const dest = others[Math.floor(Math.random() * others.length)];
+        p.x = dest.c * TILE + TILE / 2;
+        p.y = dest.r * TILE;
+        p.vy = 0;
+        SFX.teleport();
+        p._onTeleport = true;
+      }
+    } else if (!onTP) p._onTeleport = false;
+  }
+
+  // ── Enemies ─────────────────────────────────────
+  G.enemies.forEach(e => {
+    if (!e.alive) return;
+    if (e.type === 'patrol') {
+      e.x += e.vx * e.dir * dt;
+      // Reverse at walls/edges
+      const ec = Math.floor(e.x / TILE), er = Math.floor((e.y + e.h) / TILE);
+      if (isSolid(er, ec + e.dir) || !isSolid(er + 1, ec)) e.dir *= -1;
+      e.vy += GRAVITY_BASE * dt;
+      e.y += e.vy * dt;
+      const ebottom = Math.floor((e.y + e.h) / TILE);
+      if (isSolid(ebottom, ec)) { e.y = ebottom * TILE - e.h; e.vy = 0; }
+    }
+    if (e.type === 'shooter') {
+      e.shootTimer++;
+      if (e.shootTimer > 120) {
+        e.shootTimer = 0;
+        const angle = Math.atan2(p.y - e.y, p.x - e.x);
+        e.bullets.push({ x: e.x, y: e.y + e.h / 2, vx: Math.cos(angle) * 5, vy: Math.sin(angle) * 5, life: 120 });
+      }
+    }
+    // Update bullets
+    e.bullets = e.bullets.filter(b => {
+      b.x += b.vx * dt; b.y += b.vy * dt; b.life--;
+      // Hit player
+      if (Math.abs(b.x - p.x) < 12 && Math.abs(b.y - p.y) < 12) {
+        killPlayer('shot');
+        return false;
+      }
+      return b.life > 0;
+    });
+    // Enemy touch = die
+    if (Math.abs(e.x - p.x) < 14 && Math.abs(e.y - p.y) < 16) killPlayer('touched enemy');
+  });
+
+  // ── The God ─────────────────────────────────────
+  if (G.modifiers.includes('THE GOD') && G.godActive) {
+    G.godY += (1.2 + G.level * 0.1) * dt;
+    G.godVX += (p.x - G.godX) * 0.003 * dt;
+    G.godVX *= 0.95;
+    G.godX += G.godVX * dt;
+    if (Math.abs(G.godX - p.x) < 40 && Math.abs(G.godY - p.y) < 60) killPlayer('smited by god');
+    if (G.godY > G.camera.y + H + 200) {
+      G.godY = G.camera.y - 150;  // re-enter from top of viewport
+      G.godX = p.x + (Math.random() < 0.5 ? -200 : 200);
+      SFX.god();
+    }
+  }
+
+  // ── Time bomb ───────────────────────────────────
+  if (G.modifiers.includes('TIME BOMB') && G.bombTimer > 0) {
+    G.bombTimer--;
+    if (G.bombTimer <= 0) killPlayer('blown up');
+    if (G.bombTimer % 60 === 0 && G.bombTimer <= 300) SFX.tick();
+  }
+
+  // ── Rising lava ─────────────────────────────────
+  if (G.lavaRising) {
+    G.lavaY -= (0.5 + G.level * 0.06) * dt;  // world-space pixels/frame
+    if (G.lavaY < p.y + p.h) killPlayer('engulfed in lava');  // both world-space
+  }
+
+  // ── Shadow clone ─────────────────────────────────
+  if (G.modifiers.includes('SHADOW CLONE') && G.clone) {
+    G.cloneTrail.push({ x: p.x, y: p.y });
+    // Keep a rolling 600-frame buffer
+    if (G.cloneTrail.length > 600) G.cloneTrail.shift();
+
+    const DELAY = 240; // 4 seconds of delay — clone follows 4s behind
+
+    if (G.cloneTrail.length > DELAY) {
+      // Index-based: no tick math, no floating-point gaps
+      const past = G.cloneTrail[G.cloneTrail.length - 1 - DELAY];
+      G.clone.x = past.x;
+      G.clone.y = past.y;
+      G.clone.active = true;
+    } else {
+      // Trail not long enough yet — keep clone invisible far away
+      G.clone.active = false;
+      G.clone.x = -9999;
+      G.clone.y = -9999;
+    }
+
+    // Kill only when clone is active and actually overlapping
+    if (G.clone.active &&
+        Math.abs(G.clone.x - p.x) < 13 &&
+        Math.abs(G.clone.y - p.y) < 20) {
+      killPlayer('caught by your shadow');
+    }
+  }
+
+  // ── Reach goal ──────────────────────────────────
+  const gx = G.goal.col * TILE, gy = G.goal.row * TILE;
+  if (Math.abs(p.x - (gx + TILE / 2)) < 20 && Math.abs(p.y - gy) < 24) {
+    completeLevel();
+  }
+
+  // ── Camera ──────────────────────────────────────
+  const targetCX = p.x - W / 2;
+  const targetCY = p.y - H / 2;
+  G.camera.x += (targetCX - G.camera.x) * 0.1;
+  G.camera.y += (targetCY - G.camera.y) * 0.1;
+
+  // Clamping
+  const maxCX = COLS * TILE - W, maxCY = ROWS * TILE - H;
+  G.camera.x = Math.max(0, Math.min(maxCX, G.camera.x));
+  G.camera.y = Math.max(0, Math.min(maxCY, G.camera.y));
+
+  // Apply screen shake
+  if (G.shakeTimer > 0) {
+    G.camera.x += (Math.random() - 0.5) * 6;
+    G.camera.y += (Math.random() - 0.5) * 6;
+  }
+
+  // Trail for player
+  p.trailPositions.push({ x: p.x, y: p.y });
+  if (p.trailPositions.length > 8) p.trailPositions.shift();
+
+  // Particles
+  G.particles = G.particles.filter(p2 => {
+    p2.x += p2.vx * dt; p2.y += p2.vy * dt;
+    p2.vy += 0.15 * dt; p2.life -= dt;
+    p2.alpha = p2.life / p2.maxLife;
+    return p2.life > 0;
+  });
+
+  G.tick++;
+}
+
+// ═══════════════════════════════════════════════════
+//  DRAW
+// ═══════════════════════════════════════════════════
+function draw() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  ctx.translate(-G.camera.x, -G.camera.y);
+
+  const cx = G.camera.x, cy = G.camera.y;
+  const hue = G.hue;
+
+  // ── Darkness effect ─────────────────────────────
+  if (G.darkness && G.player) {
+    // Draw everything then mask with radial gradient
+    drawWorld(hue);
+    const p = G.player;
+    const maskGrd = ctx.createRadialGradient(p.x, p.y + p.h/2, 30, p.x, p.y + p.h/2, 160);
+    maskGrd.addColorStop(0, 'rgba(0,0,0,0)');
+    maskGrd.addColorStop(1, 'rgba(0,0,0,0.97)');
+    ctx.fillStyle = maskGrd;
+    ctx.fillRect(cx, cy, W, H);
+  } else {
+    drawWorld(hue);
+  }
+
+  ctx.restore();
+
+  // ── Lava (screen-space overlay) ──────────────────
+  if (G.lavaRising && G.lavaY < G.camera.y + H) {
+    const lavaScreenY = G.lavaY - G.camera.y;
+    const lavGrd = ctx.createLinearGradient(0, lavaScreenY, 0, H);
+    lavGrd.addColorStop(0, '#ff4400aa');
+    lavGrd.addColorStop(0.3, '#ff6600cc');
+    lavGrd.addColorStop(1, '#ff8800ee');
+    ctx.fillStyle = lavGrd;
+    ctx.fillRect(0, lavaScreenY, W, H - lavaScreenY);
+    // Lava surface shimmer
+    for (let x = 0; x < W; x += 20) {
+      const yOff = Math.sin(G.tick * 0.08 + x * 0.1) * 6;
+      ctx.fillStyle = '#ffaa00';
+      ctx.fillRect(x, lavaScreenY + yOff, 10, 4);
+    }
+  }
+
+  // ── Black hole visual ───────────────────────────
+  if (G.blackHole) {
+    const bh = G.blackHole;
+    const bhSX = bh.x - G.camera.x, bhSY = bh.y - G.camera.y;
+    const bhGrd = ctx.createRadialGradient(bhSX, bhSY, 0, bhSX, bhSY, 60);
+    bhGrd.addColorStop(0, '#000');
+    bhGrd.addColorStop(0.4, '#22003388');
+    bhGrd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = bhGrd;
+    ctx.fillRect(0, 0, W, H);
+    // Rim
+    ctx.strokeStyle = `hsl(${hue},80%,60%)`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(bhSX, bhSY, 28 + Math.sin(G.tick * 0.05) * 5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // ── Visual mutation glitch overlay ─────────────
+  if (glitchAnim.active) {
+    glitchAnim.timer++;
+    const t = glitchAnim.timer / glitchAnim.maxTimer; // 0..1+
+    const peak = Math.sin(Math.min(t, 1) * Math.PI); // rises and falls
+
+    // Color inversion flash at peak
+    if (peak > 0.6) {
       ctx.save();
-      ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
-      const wobble = Math.sin(Date.now() / 200) * 0.05;
-      ctx.rotate(wobble);
-      const grad = ctx.createLinearGradient(-player.w / 2, -player.h / 2, player.w / 2, player.h / 2);
-      grad.addColorStop(0, "#5ee7df");
-      grad.addColorStop(1, "#b490ca");
-      ctx.fillStyle = grad;
-      ctx.fillRect(-player.w / 2, -player.h / 2, player.w, player.h);
-      ctx.fillStyle = "#111";
-      ctx.fillRect(-player.w / 4, -player.h / 4, 4, 6);
-      ctx.fillRect(player.w / 4 - 4, -player.h / 4, 4, 6);
+      ctx.globalAlpha = (peak - 0.6) * 0.7;
+      ctx.fillStyle = G.accent;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
       ctx.restore();
     }
 
-    // --- Game loop ---
-    let lastTime = 0;
-    function loop(ts) {
-      const dt = (ts - lastTime) / 16.67;
-      lastTime = ts;
-      updatePlayer(dt);
-      updateEnemies(dt);
-      draw();
-      requestAnimationFrame(loop);
+    // Horizontal scanline glitch strips
+    ctx.save();
+    const strips = 6;
+    for (let i = 0; i < strips; i++) {
+      const sy = Math.floor(Math.random() * H);
+      const sh = Math.floor(4 + Math.random() * 12);
+      const shift = (Math.random() - 0.5) * 40 * peak;
+      if (peak > 0.2) {
+        ctx.globalAlpha = peak * 0.6;
+        ctx.drawImage(gc, 0, sy, W, sh, shift, sy, W, sh);
+      }
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    // Tile dissolve — randomly offset tiles flash bright
+    ctx.save();
+    ctx.translate(-G.camera.x, -G.camera.y);
+    glitchAnim.tiles.forEach(tile => {
+      if (glitchAnim.timer < tile.delay) return;
+      const localT = Math.min((glitchAnim.timer - tile.delay) / 12, 1);
+      const flash = Math.sin(localT * Math.PI);
+      if (flash > 0.05) {
+        ctx.globalAlpha = flash * peak * 0.9;
+        ctx.fillStyle = `hsl(${G.hue + Math.random() * 60}, 100%, 80%)`;
+        ctx.fillRect(tile.c * TILE, tile.r * TILE, TILE, TILE);
+      }
+    });
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  // ── Bomb timer bar ──────────────────────────────
+  if (G.modifiers.includes('TIME BOMB') && G.bombTimer > 0) {
+    const pct = G.bombTimer / G.bombMax;
+    const timerEl = document.getElementById('timer-display');
+    timerEl.style.display = 'block';
+    const secs = Math.ceil(G.bombTimer / 60);
+    timerEl.textContent = secs;
+    timerEl.style.color = pct > 0.5 ? '#0f0' : pct > 0.25 ? '#ffcc00' : '#ff4444';
+    if (G.bombTimer <= 180 && G.tick % 4 < 2) {
+      ctx.fillStyle = '#ff000022';
+      ctx.fillRect(0, 0, W, H);
+    }
+  } else {
+    document.getElementById('timer-display').style.display = 'none';
+  }
+}
+
+function drawWorld(hue) {
+  const p = G.player;
+
+  // Background grid (subtle)
+  ctx.strokeStyle = `hsla(${hue},30%,12%,0.5)`;
+  ctx.lineWidth = 0.5;
+  const startC = Math.floor(G.camera.x / TILE), startR = Math.floor(G.camera.y / TILE);
+  const endC = startC + Math.ceil(W / TILE) + 1, endR = startR + Math.ceil(H / TILE) + 1;
+  for (let c = startC; c <= endC; c++) {
+    ctx.beginPath(); ctx.moveTo(c * TILE, G.camera.y); ctx.lineTo(c * TILE, G.camera.y + H); ctx.stroke();
+  }
+  for (let r = startR; r <= endR; r++) {
+    ctx.beginPath(); ctx.moveTo(G.camera.x, r * TILE); ctx.lineTo(G.camera.x + W, r * TILE); ctx.stroke();
+  }
+
+  // ── Draw tiles ───────────────────────────────────
+  for (let r = startR; r <= endR; r++) {
+    for (let c = startC; c <= endC; c++) {
+      if (r < 0 || r >= ROWS || c < 0 || c >= COLS) continue;
+      const t = G.tiles[r][c];
+      const tx = c * TILE, ty = r * TILE;
+
+      if (t === T.SOLID) {
+        // Phantom warning
+        const ph = phantomState.find(ps => ps.r === r && ps.c === c);
+        if (ph && ph.warned) {
+          const flash = Math.floor(G.tick / 6) % 2;
+          ctx.fillStyle = flash ? `hsl(${hue},80%,55%)` : `hsl(${hue+40},60%,30%)`;
+        } else {
+          ctx.fillStyle = `hsl(${hue},70%,40%)`;
+        }
+        ctx.fillRect(tx, ty, TILE, TILE);
+        // Top highlight
+        ctx.fillStyle = `hsl(${hue},80%,60%)`;
+        ctx.fillRect(tx, ty, TILE, 3);
+        // Inner shadow
+        ctx.fillStyle = `hsl(${hue},50%,25%)`;
+        ctx.fillRect(tx + 2, ty + 4, TILE - 4, TILE - 6);
+      } else if (t === T.SPIKE) {
+        ctx.fillStyle = `hsl(${hue},40%,15%)`;
+        ctx.fillRect(tx, ty, TILE, TILE);
+        // Draw triangle spikes
+        ctx.fillStyle = '#ff3333';
+        for (let i = 0; i < 3; i++) {
+          const sx = tx + i * (TILE / 3) + TILE / 6;
+          ctx.beginPath();
+          ctx.moveTo(sx, ty + TILE);
+          ctx.lineTo(sx - TILE / 6, ty);
+          ctx.lineTo(sx + TILE / 6, ty);
+          ctx.closePath();
+          ctx.fill();
+        }
+      } else if (t === T.BOUNCE_PAD) {
+        ctx.fillStyle = `hsl(${hue + 120},80%,50%)`;
+        ctx.fillRect(tx, ty, TILE, TILE);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(tx + 4, ty + TILE / 2, TILE - 8, 4);
+        ctx.fillRect(tx + 8, ty + TILE / 2 + 6, TILE - 16, 3);
+      } else if (t === T.TELEPORT) {
+        const pulse = 0.5 + 0.5 * Math.sin(G.tick * 0.1);
+        ctx.fillStyle = `hsla(${hue + 180},90%,60%,${0.5 + pulse * 0.4})`;
+        ctx.fillRect(tx, ty, TILE, TILE);
+        ctx.strokeStyle = `hsl(${hue + 180},100%,80%)`;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(tx + 2, ty + 2, TILE - 4, TILE - 4);
+        ctx.fillStyle = '#fff';
+        ctx.font = '14px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('⟳', tx + TILE / 2, ty + TILE / 2 + 5);
+      }
+    }
+  }
+
+  // ── Particles ────────────────────────────────────
+  G.particles.forEach(pt => {
+    ctx.globalAlpha = pt.alpha;
+    ctx.fillStyle = pt.color;
+    ctx.fillRect(pt.x - pt.size / 2, pt.y - pt.size / 2, pt.size, pt.size);
+  });
+  ctx.globalAlpha = 1;
+
+  // ── Shadow clone ─────────────────────────────────
+  if (G.clone && G.clone.active) {
+    // Pulse opacity so player can anticipate it
+    const clonePulse = 0.4 + 0.25 * Math.sin(G.tick * 0.15);
+    ctx.globalAlpha = clonePulse;
+    ctx.fillStyle = '#aa00ff';
+    ctx.shadowBlur = 20; ctx.shadowColor = '#aa00ff';
+    // Draw as a player-shaped silhouette
+    ctx.fillRect(G.clone.x - 9, G.clone.y, 18, 24);
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  }
+
+  // ── Enemies ──────────────────────────────────────
+  G.enemies.forEach(e => {
+    if (!e.alive) return;
+    const ex = e.x - e.w / 2, ey = e.y;
+    if (e.type === 'patrol') {
+      ctx.fillStyle = '#ff2244';
+      ctx.shadowBlur = 10; ctx.shadowColor = '#ff2244';
+      ctx.fillRect(ex, ey, e.w, e.h);
+      // eyes
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(ex + (e.dir > 0 ? e.w - 8 : 2), ey + 4, 5, 5);
+    } else {
+      ctx.fillStyle = '#ff8800';
+      ctx.shadowBlur = 10; ctx.shadowColor = '#ff8800';
+      ctx.beginPath();
+      ctx.arc(e.x, e.y + e.h / 2, e.w / 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    // Bullets
+    ctx.fillStyle = '#ff4400';
+    e.bullets.forEach(b => {
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  });
+
+  // ── The God ──────────────────────────────────────
+  if (G.godActive && G.modifiers.includes('THE GOD')) {
+    const godSize = 60 + Math.sin(G.tick * 0.05) * 8;
+    ctx.save();
+    ctx.translate(G.godX, G.godY);
+    // Body
+    ctx.fillStyle = '#fff';
+    ctx.shadowBlur = 40; ctx.shadowColor = '#ffffff88';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, godSize * 0.5, godSize * 0.7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Eye
+    ctx.shadowBlur = 20; ctx.shadowColor = '#ff000099';
+    ctx.fillStyle = '#ff0000';
+    ctx.beginPath();
+    ctx.ellipse(0, -10, 18, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(0, -10, 10, 0, Math.PI * 2);
+    ctx.fill();
+    // Rays
+    ctx.strokeStyle = `hsla(0,100%,80%,${0.3 + 0.3 * Math.sin(G.tick * 0.1)})`;
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 + G.tick * 0.02;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * godSize * 0.5, Math.sin(a) * godSize * 0.5);
+      ctx.lineTo(Math.cos(a) * godSize * 1.2, Math.sin(a) * godSize * 1.2);
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  // ── Player trail ─────────────────────────────────
+  if (p) {
+    p.trailPositions.forEach((pt, i) => {
+      const alpha = (i / p.trailPositions.length) * 0.3;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = G.accent;
+      ctx.fillRect(pt.x - p.w / 4, pt.y, p.w / 2, p.h / 2);
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  // ── Player ───────────────────────────────────────
+  if (p && p.alive) {
+    const px = p.x - p.w / 2, py = p.y;
+    const squish = p.onGround ? 1.15 : (Math.abs(p.vy) > 8 ? 0.85 : 1);
+    const squeeze = 2 - squish;
+    const pw = p.w * squeeze, ph = p.h * squish;
+    const pxAdj = p.x - pw / 2, pyAdj = py + (p.h - ph);
+
+    if (p.flashTimer > 0 && Math.floor(G.tick / 3) % 2) {
+      ctx.globalAlpha = 0.3;
+      p.flashTimer--;
     }
 
-    // --- Init ---
-    generateBaseLevel();
-    levelNumEl.textContent = currentLevelIndex;
-    mutationsNumEl.textContent = mutationCount;
-    centerMsgEl.textContent = "Reach the green flag to mutate the level!";
-    setTimeout(() => {
-      if (centerMsgEl.textContent.includes("Reach")) centerMsgEl.textContent = "";
-    }, 3000);
+    ctx.fillStyle = G.accent;
+    ctx.shadowBlur = 14;
+    ctx.shadowColor = G.accent;
+    // Body
+    ctx.fillRect(pxAdj, pyAdj, pw, ph);
+    // Eyes
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#000';
+    const eyeX = p.facing > 0 ? pxAdj + pw * 0.55 : pxAdj + pw * 0.1;
+    ctx.fillRect(eyeX, pyAdj + 4, 5, 5);
+    // Legs animation
+    if (p.onGround && Math.abs(p.vx) > 0.5) {
+      const leg = Math.sin(G.tick * 0.35) * 5;
+      ctx.fillStyle = G.accent;
+      ctx.fillRect(pxAdj, pyAdj + ph, pw / 2 - 1, 4 + leg);
+      ctx.fillRect(pxAdj + pw / 2 + 1, pyAdj + ph, pw / 2 - 1, 4 - leg);
+    }
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+  }
 
-    requestAnimationFrame(loop);
-  </script>
+  // ── Goal ─────────────────────────────────────────
+  if (G.goal) {
+    const gx = G.goal.col * TILE, gy = G.goal.row * TILE;
+    const pulse = 0.7 + 0.3 * Math.sin(G.tick * 0.08);
+    ctx.save();
+    ctx.translate(gx + TILE / 2, gy + TILE / 2);
+    ctx.rotate(G.tick * 0.03);
+    ctx.scale(pulse, pulse);
+    ctx.fillStyle = '#ffcc00';
+    ctx.shadowBlur = 25; ctx.shadowColor = '#ffcc00';
+    ctx.font = '24px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('★', 0, 0);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  LEVEL COMPLETE
+// ═══════════════════════════════════════════════════
+function completeLevel() {
+  if (G.phase !== 'play') return;
+  G.phase = 'mutating';
+  SFX.win();
+
+  // Spawn win particles
+  const p = G.player;
+  for (let i = 0; i < 30; i++) {
+    G.particles.push({
+      x: p.x, y: p.y,
+      vx: (Math.random() - 0.5) * 8,
+      vy: -Math.random() * 10,
+      color: `hsl(${Math.random() * 360},90%,60%)`,
+      size: Math.random() * 8 + 3,
+      life: 60 + Math.random() * 60,
+      maxLife: 120, alpha: 1,
+    });
+  }
+
+  G.level++;
+  G.hue = (G.hue + 40 + Math.random() * 60) % 360;
+  G.accent = `hsl(${G.hue},90%,60%)`;
+
+  // Mutate!
+  // Start visual glitch transition immediately, mutate at peak
+  glitchAnim.active = true;
+  glitchAnim.timer = 0;
+  glitchAnim.tiles = [];
+  // Capture all solid tile positions for dissolve effect
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (G.tiles[r][c] !== T.EMPTY)
+        glitchAnim.tiles.push({ r, c, delay: Math.random() * 20, done: false });
+
+  // Mutate at midpoint of animation
+  setTimeout(() => {
+    const mutations = mutateLevel();
+    SFX.mutate();
+
+    // Announce
+    const ann = document.getElementById('announce');
+    const title = document.getElementById('ann-title');
+    const sub = document.getElementById('ann-sub');
+    ann.style.color = G.accent;
+    title.style.color = G.accent;
+
+    const mainMut = mutations[0];
+    title.textContent = mainMut ? mainMut.name : `LEVEL ${G.level}`;
+    sub.textContent = mutations.map(m => m.name).join('  +  ');
+
+    ann.style.opacity = '1';
+    setTimeout(() => { ann.style.opacity = '0'; }, 2000);
+
+    // Reset player at end of visual transition
+    setTimeout(() => {
+      G.player = makePlayer(G.spawnPt.col, G.spawnPt.row);
+      if (G.lavaRising) G.lavaY = ROWS * TILE + 40;
+      phantomState = [];
+      phantomTimer = 0;
+      // Reset clone trail so it doesn't immediately kill on new level
+      G.cloneTrail = [];
+      if (G.clone) { G.clone.active = false; G.clone.x = -9999; G.clone.y = -9999; }
+      G.camera.x = 0; G.camera.y = 0;
+      G.phase = 'play';
+      glitchAnim.active = false;
+      updateHUD();
+    }, 400);
+  }, 300);
+}
+
+// ═══════════════════════════════════════════════════
+//  DEATH
+// ═══════════════════════════════════════════════════
+function killPlayer(reason) {
+  if (!G.player || !G.player.alive || G.phase !== 'play') return;
+  G.player.alive = false;
+  G.deaths++;
+  SFX.die();
+
+  // Death particles
+  for (let i = 0; i < 20; i++) {
+    G.particles.push({
+      x: G.player.x, y: G.player.y + G.player.h / 2,
+      vx: (Math.random() - 0.5) * 12,
+      vy: (Math.random() - 0.5) * 12,
+      color: G.accent,
+      size: Math.random() * 6 + 2,
+      life: 40 + Math.random() * 40, maxLife: 80, alpha: 1,
+    });
+  }
+
+  // Flash
+  const flash = document.getElementById('death-flash');
+  flash.classList.add('show');
+  setTimeout(() => flash.classList.remove('show'), 200);
+
+  // Respawn
+  setTimeout(() => {
+    if (G.phase !== 'play') return;
+    G.player = makePlayer(G.spawnPt.col, G.spawnPt.row);
+    if (G.lavaRising) G.lavaY = ROWS * TILE + 40;  // reset to world-space bottom
+    if (G.modifiers.includes('TIME BOMB')) {
+      G.bombTimer = G.bombMax; // reset bomb on death
+    }
+    // Reset clone trail so it doesn't kill instantly on respawn
+    if (G.clone) {
+      G.cloneTrail = [];
+      G.clone.active = false;
+      G.clone.x = -999;
+      G.clone.y = -999;
+    }
+    updateHUD();
+  }, 500);
+}
+
+// ═══════════════════════════════════════════════════
+//  HUD
+// ═══════════════════════════════════════════════════
+function updateHUD() {
+  const lbl = document.getElementById('level-label');
+  lbl.textContent = `LEVEL ${G.level}`;
+  lbl.style.color = G.accent;
+
+  document.getElementById('death-count').textContent = `DEATHS: ${G.deaths}`;
+  document.getElementById('mutation-list').textContent =
+    G.modifiers.length ? G.modifiers.join('  ·  ') : '';
+}
+
+</script>
 </body>
 </html>
