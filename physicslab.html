@@ -785,6 +785,30 @@ function haptic(idx,str,ms){
   }catch(e){}
 }
 
+// ── DEFERRED COLLISION QUEUE (never mutate world mid-step) ───────────────
+var pendingHits = [];
+
+function flushPendingHits(){
+  for(var i=0;i<pendingHits.length;i++){
+    var h=pendingHits[i];
+    if(!h||h.done) continue;
+    h.done=true;
+    try{
+      if(h.target&&h.target.mass>0){
+        try{ h.target.wakeUp(); }catch(e){}
+        try{ h.target.applyImpulse(new CANNON.Vec3(h.fwd.x*5,h.fwd.y*5+1,h.fwd.z*5),h.target.position); }catch(e){}
+      }
+      if(h.target&&h.target.vd&&h.target.vd.type==='enemy'){
+        var fv=new CANNON.Vec3(h.fwd.x*9,h.fwd.y*9+2,h.fwd.z*9);
+        damageEnemy(h.target.vd.enemyRef,h.damage,fv);
+      }
+      spawnHitFX(h.px,h.py,h.pz);
+      removeProjObj(h.pObj);
+    }catch(e){ console.warn('flushHit err:',e); }
+  }
+  pendingHits.length=0;
+}
+
 // ── SHOOTING ─────────────────────────────────────────────────────────────
 function fireWeapon(wType,fromCtrl,ctrlIdx,isVR){
   if(!wType||!WDEFS[wType]||WDEFS[wType].melee) return;
@@ -817,25 +841,25 @@ function fireWeapon(wType,fromCtrl,ctrlIdx,isVR){
   body.linearDamping=0.01;
   body.vd={type:'projectile',damage:def.dmg,fwd:fwd.clone()};
   world.addBody(body);
-  var pObj={mesh:mesh,body:body,life:3.5,geo:geo};
+  var pObj={mesh:mesh,body:body,life:3.5,geo:geo,hit:false};
   G.physObjs.push(pObj); G.projectiles.push(pObj);
 
   var mfl=new THREE.PointLight(0xffaa00,10,1.8); mfl.position.copy(origin); scene.add(mfl);
   setTimeout(function(){ scene.remove(mfl); },55);
 
+  // SAFE: only queue the hit here — world.remove happens AFTER world.step in flushPendingHits()
   body.addEventListener('collide',function(evt){
+    if(pObj.hit) return; // dedupe: cannon can fire multiple collide events per step
+    pObj.hit=true;
     try{
-      var target=evt.body;
-      if(!target) return;
-      if(target.vd&&target.vd.type==='enemy'){
-        var fv=new CANNON.Vec3(fwd.x*9,fwd.y*9+2,fwd.z*9);
-        damageEnemy(target.vd.enemyRef,def.dmg,fv);
-      }
-      if(target.mass>0){
-        try{ target.wakeUp(); target.applyImpulse(new CANNON.Vec3(fwd.x*5,fwd.y*5+1,fwd.z*5),target.position); }catch(e){}
-      }
-      spawnHitFX(body.position.x,body.position.y,body.position.z);
-      removeProjObj(pObj);
+      pendingHits.push({
+        pObj:pObj,
+        target:evt.body||null,
+        fwd:fwd.clone(),
+        damage:def.dmg,
+        px:body.position.x, py:body.position.y, pz:body.position.z,
+        done:false
+      });
     }catch(e){}
   });
 
@@ -1274,6 +1298,7 @@ renderer.setAnimationLoop(function(timeMs){
 
   // FIX 2: Better physics timestep, cap substeps
   world.step(1/120, dt, 4);
+  flushPendingHits(); // process collisions AFTER step — safe to mutate world here
   syncPhysics();
 
   // Cull far objects periodically
