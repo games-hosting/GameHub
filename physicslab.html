@@ -184,7 +184,8 @@ canvas { display:block; width:100%!important; height:100%!important; }
     <b>WASD</b> MOVE &nbsp;|&nbsp; <b>MOUSE</b> LOOK (click to lock) &nbsp;|&nbsp; <b>CLICK</b> SHOOT<br>
     <b>F</b> GRAB/THROW &nbsp;|&nbsp; <b>G</b> DROP &nbsp;|&nbsp; <b>SHIFT</b> SLOW-MO<br>
     <b>R</b> RELOAD &nbsp;|&nbsp; <b>TAB</b> RADIAL MENU &nbsp;|&nbsp; <b>1-4</b> SWITCH WEAPON &nbsp;|&nbsp; <b>SPACE</b> JUMP<br>
-    VR: <b>GRIP</b> GRAB/THROW &nbsp;|&nbsp; <b>TRIGGER</b> SHOOT &nbsp;|&nbsp; <b>THUMBSTICK</b> SLOW-MO
+    VR: <b>L-STICK</b> MOVE &nbsp;|&nbsp; <b>R-STICK</b> SNAP TURN &nbsp;|&nbsp; <b>A/B</b> JUMP<br>
+    VR: <b>GRIP</b> GRAB/THROW &nbsp;|&nbsp; <b>TRIGGER</b> SHOOT &nbsp;|&nbsp; <b>R-STICK CLICK</b> SLOW-MO
   </div>
   <div id="loading-bar-wrap"><div id="loading-bar"></div></div>
 </div>
@@ -201,6 +202,10 @@ var GRAVITY    = -20;
 var SLOW_SCALE = 0.25;
 var GRAB_DIST  = 3.2;
 var THROW_MULT = 9;
+var MAX_PHYS_OBJS = 50;
+var MAX_PARTICLES  = 20;
+var MAX_PROJECTILES = 12;
+var DESPAWN_DIST   = 50;
 
 var WDEFS = {
   pistol:{ mass:1.2, hw:0.07,hh:0.10,hd:0.22, ammo:12, fr:0.28, spd:42, dmg:25, melee:false },
@@ -224,9 +229,19 @@ var G = {
   currentWeapon:prefs.lastWeapon,
   ammo:{ pistol:12, rifle:30 },
   kills:0, health:100,
-  frameCount:0, lastFPSTime:0,
+  frameCount:0, lastFPSTime:0, currentFPS:60,
   enemies:[], projectiles:[], physObjs:[], decorMeshes:[],
   lastFireTime:0,
+  lowPerfMode:false,
+  frameIdx:0,
+  // VR locomotion state
+  vrYaw:0,
+  vrSnapCooldown:0,
+  vrOnGround:false,
+  vrVelocityY:0,
+  vrPrevLeftStick:[0,0],
+  vrPrevRightStick:[0,0],
+  vrJumpCooldown:0,
 };
 
 // ── RENDERER ─────────────────────────────────────────────────────────────
@@ -261,7 +276,7 @@ renderer.setSize(innerWidth, innerHeight);
 var world = new CANNON.World();
 world.gravity.set(0, GRAVITY, 0);
 world.broadphase = new CANNON.SAPBroadphase(world);
-world.solver.iterations = 10;
+world.solver.iterations = 8;
 
 var mGround = new CANNON.Material('ground');
 var mObj    = new CANNON.Material('obj');
@@ -289,6 +304,27 @@ var pulsingLights = [];
   scene.add(l); pulsingLights.push(l);
 });
 
+// ── PERFORMANCE MONITOR ──────────────────────────────────────────────────
+function checkPerf(fps){
+  if(fps < 45 && !G.lowPerfMode){
+    G.lowPerfMode = true;
+    renderer.shadowMap.enabled = false;
+    sun.castShadow = false;
+    // Reduce to 2 pulsing lights
+    for(var i=2;i<pulsingLights.length;i++){
+      try{ scene.remove(pulsingLights[i]); }catch(e){}
+    }
+    pulsingLights = pulsingLights.slice(0,2);
+    console.log("PERF: Low performance mode activated");
+  } else if(fps >= 55 && G.lowPerfMode){
+    G.lowPerfMode = false;
+    renderer.shadowMap.enabled = true;
+    sun.castShadow = true;
+    console.log("PERF: Normal performance mode restored");
+  }
+  console.log("Perf OK: FPS", fps);
+}
+
 // ── MATERIAL CACHE ───────────────────────────────────────────────────────
 var MC = {};
 function gm(n){
@@ -314,12 +350,32 @@ function gm(n){
   return MC[n];
 }
 
+// ── PROPERLY DISPOSE AND REMOVE OBJECT ──────────────────────────────────
+function disposeObj(obj){
+  if(!obj) return;
+  // Remove mesh from scene and dispose
+  if(obj.mesh){
+    scene.remove(obj.mesh);
+    if(obj.mesh.geometry) try{ obj.mesh.geometry.dispose(); }catch(e){}
+    // Don't dispose shared materials from MC cache
+  }
+  // Remove body from physics world
+  if(obj.body){
+    try{ world.remove(obj.body); }catch(e){}
+  }
+  // Remove from physObjs
+  var pi = G.physObjs.indexOf(obj);
+  if(pi !== -1) G.physObjs.splice(pi,1);
+}
+
 // ── SYNC PHYSICS → MESH ──────────────────────────────────────────────────
 function syncPhysics(){
   for(var i=0;i<G.physObjs.length;i++){
     var o=G.physObjs[i];
-    o.mesh.position.copy(o.body.position);
-    o.mesh.quaternion.copy(o.body.quaternion);
+    if(o && o.mesh && o.body){
+      o.mesh.position.copy(o.body.position);
+      o.mesh.quaternion.copy(o.body.quaternion);
+    }
   }
 }
 
@@ -405,7 +461,7 @@ function buildLevel(){
     spawnEnemy(Math.sin(ea)*7, 0, Math.cos(ea)*7-5);
   }
 
-  for(var st=0;st<180;st++){
+  for(var st=0;st<120;st++){
     var sm=new THREE.Mesh(new THREE.SphereGeometry(0.02+Math.random()*0.04,4,4),new THREE.MeshBasicMaterial({color:0xffffff}));
     sm.position.set((Math.random()-0.5)*110,16+Math.random()*35,(Math.random()-0.5)*110);
     scene.add(sm);
@@ -488,12 +544,15 @@ function spawnEnemy(ex,ey,ez){
   [-0.065,0.065].forEach(function(xo){
     var eye=new THREE.Mesh(new THREE.SphereGeometry(0.04,6,6),eyeM);
     eye.position.set(xo,0.03,0.1);
-    enemy.parts.find(function(p){return p.name==='head';}).mesh.add(eye);
+    var headPart = enemy.parts.find(function(p){return p.name==='head';});
+    if(headPart) headPart.mesh.add(eye);
   });
   var eLight=new THREE.PointLight(0xff0000,0.8,2);
-  enemy.parts.find(function(p){return p.name==='torso';}).mesh.add(eLight);
+  var torsoPart = enemy.parts.find(function(p){return p.name==='torso';});
+  if(torsoPart) torsoPart.mesh.add(eLight);
   function ptpc(bA,bB,pa,pb){
-    world.addConstraint(new CANNON.PointToPointConstraint(bA,new CANNON.Vec3(pa[0],pa[1],pa[2]),bB,new CANNON.Vec3(pb[0],pb[1],pb[2])));
+    if(!bA||!bB) return;
+    try{ world.addConstraint(new CANNON.PointToPointConstraint(bA,new CANNON.Vec3(pa[0],pa[1],pa[2]),bB,new CANNON.Vec3(pb[0],pb[1],pb[2]))); }catch(e){}
   }
   ptpc(bodies.torso,bodies.head, [0,0.24,0],[0,-0.12,0]);
   ptpc(bodies.torso,bodies.larm, [-0.17,0.18,0],[0,0.22,0]);
@@ -508,105 +567,219 @@ function damageEnemy(enemy,dmg,fwd){
   if(!enemy||!enemy.alive) return;
   enemy.health-=dmg;
   if(enemy.health<=0){ enemy.alive=false; G.kills++; document.getElementById('kill-count').textContent=G.kills; showNotify('ENEMY DOWN — '+G.kills+' KILLS'); }
-  if(fwd){ enemy.parts.forEach(function(p){ p.body.wakeUp(); p.body.applyImpulse(fwd,p.body.position); }); }
+  if(fwd){ enemy.parts.forEach(function(p){ if(!p||!p.body) return; try{ p.body.wakeUp(); p.body.applyImpulse(fwd,p.body.position); }catch(e){} }); }
 }
 
 // ── VR CONTROLLERS ───────────────────────────────────────────────────────
-var vrCtrls=[], vrPrev=[new THREE.Vector3(),new THREE.Vector3()], vrVel=[new THREE.Vector3(),new THREE.Vector3()];
+var vrCtrls=[];
+var vrVel=[new THREE.Vector3(),new THREE.Vector3()];
+var vrPrevPos=[new THREE.Vector3(),new THREE.Vector3()];
 
 function initVRControllers(){
   vrCtrls=[];
   for(var ci=0;ci<2;ci++){
     (function(idx){
-      var ctrl=renderer.xr.getController(idx);
-      var hand=new THREE.Group();
-      hand.add(new THREE.Mesh(new THREE.BoxGeometry(0.065,0.042,0.1),gm('hand')));
-      for(var fi=0;fi<4;fi++){ var fg=new THREE.Mesh(new THREE.CylinderGeometry(0.007,0.007,0.055,6),gm('hand')); fg.rotation.x=-0.3; fg.position.set(-0.023+fi*0.016,0,-0.066); hand.add(fg); }
-      var hl=new THREE.PointLight(0x00ffe7,0.7,0.5); hl.position.y=0.02; hand.add(hl);
-      ctrl.add(hand); rig.add(ctrl); ctrl.userData.idx=idx;
-      ctrl.addEventListener('selectstart',  function(){ onTrigger(idx,true);  });
-      ctrl.addEventListener('selectend',    function(){ onTrigger(idx,false); });
-      ctrl.addEventListener('squeezestart', function(){ onGrip(idx,true);  });
-      ctrl.addEventListener('squeezeend',   function(){ onGrip(idx,false); });
-      vrCtrls[idx]=ctrl;
+      try{
+        var ctrl=renderer.xr.getController(idx);
+        if(!ctrl) return;
+        var hand=new THREE.Group();
+        hand.add(new THREE.Mesh(new THREE.BoxGeometry(0.065,0.042,0.1),gm('hand')));
+        for(var fi=0;fi<4;fi++){ var fg=new THREE.Mesh(new THREE.CylinderGeometry(0.007,0.007,0.055,6),gm('hand')); fg.rotation.x=-0.3; fg.position.set(-0.023+fi*0.016,0,-0.066); hand.add(fg); }
+        var hl=new THREE.PointLight(0x00ffe7,0.7,0.5); hl.position.y=0.02; hand.add(hl);
+        ctrl.add(hand); rig.add(ctrl); ctrl.userData.idx=idx;
+        ctrl.addEventListener('selectstart',  function(){ onTrigger(idx,true);  });
+        ctrl.addEventListener('selectend',    function(){ onTrigger(idx,false); });
+        ctrl.addEventListener('squeezestart', function(){ onGrip(idx,true);  });
+        ctrl.addEventListener('squeezeend',   function(){ onGrip(idx,false); });
+        vrCtrls[idx]=ctrl;
+      }catch(e){ console.warn('VR controller init error idx '+idx+':',e); }
     })(ci);
   }
 }
 
 function onTrigger(idx,pressed){
   if(!pressed) return;
-  var grabbed=idx===0?G.grabbedL:G.grabbedR;
-  if(grabbed&&grabbed.body.vd.type==='weapon'){ fireWeapon(grabbed.body.vd.wType,vrCtrls[idx],idx,true); }
+  try{
+    var grabbed=idx===0?G.grabbedL:G.grabbedR;
+    if(grabbed&&grabbed.body&&grabbed.body.vd&&grabbed.body.vd.type==='weapon'){
+      fireWeapon(grabbed.body.vd.wType,vrCtrls[idx],idx,true);
+    }
+  }catch(e){ console.warn('onTrigger error:',e); }
 }
 
 function onGrip(idx,pressed){
-  if(pressed){
-    var ctrl=vrCtrls[idx]; if(!ctrl) return;
-    var wp=new THREE.Vector3(); ctrl.getWorldPosition(wp);
-    var best=findNearest(wp);
-    if(best){ grabObj(idx,best); }
-  } else { throwObj(idx); }
+  try{
+    if(pressed){
+      var ctrl=vrCtrls[idx]; if(!ctrl) return;
+      var wp=new THREE.Vector3(); ctrl.getWorldPosition(wp);
+      var best=findNearest(wp);
+      if(best){ grabObj(idx,best); }
+    } else { throwObj(idx); }
+  }catch(e){ console.warn('onGrip error:',e); }
 }
 
 function grabObj(idx,obj){
-  obj.body.type=CANNON.Body.KINEMATIC; obj.body.mass=0; obj.body.updateMassProperties();
-  if(idx===0) G.grabbedL=obj; else G.grabbedR=obj;
-  haptic(idx,0.35,50); updateGrabDisplay();
+  if(!obj||!obj.body) return;
+  try{
+    obj.body.type=CANNON.Body.KINEMATIC; obj.body.mass=0; obj.body.updateMassProperties();
+    if(idx===0) G.grabbedL=obj; else G.grabbedR=obj;
+    haptic(idx,0.35,50); updateGrabDisplay();
+  }catch(e){ console.warn('grabObj error:',e); }
 }
 
 function throwObj(idx){
-  var obj=idx===0?G.grabbedL:G.grabbedR; if(!obj) return;
-  obj.body.type=CANNON.Body.DYNAMIC; obj.body.mass=obj.body.vd.origMass||5; obj.body.updateMassProperties(); obj.body.wakeUp();
-  var v=vrVel[idx];
-  obj.body.velocity.set(v.x*THROW_MULT,v.y*THROW_MULT,v.z*THROW_MULT);
-  obj.body.angularVelocity.set((Math.random()-0.5)*8,(Math.random()-0.5)*8,(Math.random()-0.5)*8);
-  if(idx===0) G.grabbedL=null; else G.grabbedR=null;
-  haptic(idx,0.65,80); updateGrabDisplay();
+  try{
+    var obj=idx===0?G.grabbedL:G.grabbedR; if(!obj||!obj.body) return;
+    obj.body.type=CANNON.Body.DYNAMIC; obj.body.mass=obj.body.vd.origMass||5; obj.body.updateMassProperties();
+    try{ obj.body.wakeUp(); }catch(e){}
+    var v=vrVel[idx]||new THREE.Vector3();
+    obj.body.velocity.set(v.x*THROW_MULT,v.y*THROW_MULT,v.z*THROW_MULT);
+    obj.body.angularVelocity.set((Math.random()-0.5)*8,(Math.random()-0.5)*8,(Math.random()-0.5)*8);
+    if(idx===0) G.grabbedL=null; else G.grabbedR=null;
+    haptic(idx,0.65,80); updateGrabDisplay();
+  }catch(e){ console.warn('throwObj error:',e); }
 }
 
 function findNearest(pos){
   var best=null,bestD=GRAB_DIST;
-  var cv=new CANNON.Vec3(pos.x,pos.y,pos.z);
-  for(var i=0;i<G.physObjs.length;i++){
-    var o=G.physObjs[i];
-    if(!o.body.vd||!o.body.vd.grabbable) continue;
-    var d=o.body.position.distanceTo(cv);
-    if(d<bestD){bestD=d;best=o;}
-  }
+  try{
+    var cv=new CANNON.Vec3(pos.x,pos.y,pos.z);
+    for(var i=0;i<G.physObjs.length;i++){
+      var o=G.physObjs[i];
+      if(!o||!o.body||!o.body.vd||!o.body.vd.grabbable) continue;
+      var d=o.body.position.distanceTo(cv);
+      if(d<bestD){bestD=d;best=o;}
+    }
+  }catch(e){}
   return best;
+}
+
+// ── FIX 1: VR LOCOMOTION ─────────────────────────────────────────────────
+function updateVRControllers(dt){
+  try{
+    var sess=renderer.xr.getSession();
+    if(!sess) return;
+    var inputSources=sess.inputSources;
+    if(!inputSources) return;
+
+    for(var idx=0;idx<2;idx++){
+      try{
+        // Update controller velocity for throwing
+        var ctrl=vrCtrls[idx];
+        if(ctrl){
+          var curPos=new THREE.Vector3(); ctrl.getWorldPosition(curPos);
+          if(vrPrevPos[idx]){
+            vrVel[idx].subVectors(curPos,vrPrevPos[idx]).divideScalar(Math.max(dt,0.001));
+          }
+          vrPrevPos[idx].copy(curPos);
+        }
+
+        // Gamepad input
+        var src=inputSources[idx];
+        if(!src||!src.gamepad) continue;
+        var gp=src.gamepad;
+        if(!gp.axes) continue;
+
+        var isLeft=(src.handedness==='left')||(idx===0);
+
+        if(isLeft){
+          // LEFT STICK: locomotion
+          var ax=gp.axes[2]!==undefined?gp.axes[2]:(gp.axes[0]||0);
+          var ay=gp.axes[3]!==undefined?gp.axes[3]:(gp.axes[1]||0);
+          var deadzone=0.18;
+          if(Math.abs(ax)>deadzone||Math.abs(ay)>deadzone){
+            var speed=3.0;
+            // Move relative to rig yaw
+            var yaw=G.vrYaw;
+            var fwdX=-Math.sin(yaw)*(-ay)*speed;
+            var fwdZ=-Math.cos(yaw)*(-ay)*speed;
+            var strX= Math.cos(yaw)*(ax)*speed;
+            var strZ=-Math.sin(yaw)*(ax)*speed;
+            rig.position.x+=(fwdX+strX)*dt;
+            rig.position.z+=(fwdZ+strZ)*dt;
+            // Clamp to arena
+            rig.position.x=Math.max(-19,Math.min(19,rig.position.x));
+            rig.position.z=Math.max(-19,Math.min(19,rig.position.z));
+          }
+          // A/B buttons (buttons[4],[5]) — jump
+          G.vrJumpCooldown-=dt;
+          var aBtn=(gp.buttons[4]&&gp.buttons[4].pressed)||(gp.buttons[5]&&gp.buttons[5].pressed);
+          if(aBtn&&G.vrOnGround&&G.vrJumpCooldown<=0){
+            G.vrVelocityY=7.0;
+            G.vrOnGround=false;
+            G.vrJumpCooldown=0.5;
+            haptic(idx,0.6,60);
+          }
+        } else {
+          // RIGHT STICK: snap turn
+          var rx=gp.axes[2]!==undefined?gp.axes[2]:(gp.axes[0]||0);
+          var snapDZ=0.5;
+          G.vrSnapCooldown-=dt;
+          if(G.vrSnapCooldown<=0){
+            if(rx>snapDZ){
+              G.vrYaw-=Math.PI/6; // 30deg right snap
+              rig.rotation.y=G.vrYaw;
+              G.vrSnapCooldown=0.25;
+              haptic(idx,0.2,30);
+            } else if(rx<-snapDZ){
+              G.vrYaw+=Math.PI/6; // 30deg left snap
+              rig.rotation.y=G.vrYaw;
+              G.vrSnapCooldown=0.25;
+              haptic(idx,0.2,30);
+            }
+          }
+          // Right stick click (button[10]) or left stick click — slow-mo toggle
+          var stickClick=(gp.buttons[10]&&gp.buttons[10].pressed);
+          if(stickClick && !G._vrSlowPrev){ G.slowMo?deactivateSlowMo():activateSlowMo(); }
+          G._vrSlowPrev=stickClick;
+
+          // Trigger old thumbstick slow-mo (button[3] fallback)
+          var b3=(gp.buttons[3]&&gp.buttons[3].pressed);
+          if(b3&&!G.slowMo) activateSlowMo();
+          else if(!b3&&G.slowMo&&!G._vrSlowLatch) deactivateSlowMo();
+        }
+      }catch(e2){ /* per-controller errors silenced */ }
+    }
+
+    // VR vertical movement (gravity + jump)
+    G.vrVelocityY+=GRAVITY*dt;
+    rig.position.y+=G.vrVelocityY*dt;
+    if(rig.position.y<=0){
+      rig.position.y=0;
+      G.vrVelocityY=0;
+      G.vrOnGround=true;
+    } else {
+      G.vrOnGround=false;
+    }
+    rig.rotation.y=G.vrYaw;
+
+  }catch(e){ /* session errors silenced */ }
 }
 
 function updateVRGrabs(){
   [[G.grabbedL,0],[G.grabbedR,1]].forEach(function(pair){
-    var obj=pair[0],idx=pair[1];
-    if(!obj||!vrCtrls[idx]) return;
-    var wp=new THREE.Vector3(); vrCtrls[idx].getWorldPosition(wp);
-    obj.body.position.set(wp.x,wp.y,wp.z);
-    var wq=new THREE.Quaternion(); vrCtrls[idx].getWorldQuaternion(wq);
-    obj.body.quaternion.set(wq.x,wq.y,wq.z,wq.w);
-    obj.mesh.position.copy(obj.body.position);
-    obj.mesh.quaternion.copy(obj.body.quaternion);
-  });
-}
-
-function updateVRVelocity(){
-  vrCtrls.forEach(function(ctrl,idx){
-    if(!ctrl) return;
-    vrVel[idx].subVectors(ctrl.position,vrPrev[idx]).divideScalar(0.016);
-    vrPrev[idx].copy(ctrl.position);
     try{
-      var sess=renderer.xr.getSession();
-      if(sess&&sess.inputSources&&sess.inputSources[idx]){
-        var gp=sess.inputSources[idx].gamepad;
-        if(gp&&gp.buttons&&gp.buttons[3]&&gp.buttons[3].pressed){ if(!G.slowMo) activateSlowMo(); }
-        else if(G.slowMo) deactivateSlowMo();
+      var obj=pair[0],idx=pair[1];
+      if(!obj||!obj.body||!vrCtrls[idx]) return;
+      var wp=new THREE.Vector3(); vrCtrls[idx].getWorldPosition(wp);
+      obj.body.position.set(wp.x,wp.y,wp.z);
+      var wq=new THREE.Quaternion(); vrCtrls[idx].getWorldQuaternion(wq);
+      obj.body.quaternion.set(wq.x,wq.y,wq.z,wq.w);
+      if(obj.mesh){
+        obj.mesh.position.copy(obj.body.position);
+        obj.mesh.quaternion.copy(obj.body.quaternion);
       }
     }catch(e){}
   });
 }
 
 function haptic(idx,str,ms){
-  try{ var s=renderer.xr.getSession(); if(!s) return; var src=s.inputSources&&s.inputSources[idx]; if(src&&src.gamepad&&src.gamepad.hapticActuators&&src.gamepad.hapticActuators[0]) src.gamepad.hapticActuators[0].pulse(str,ms); }catch(e){}
+  try{
+    var s=renderer.xr.getSession(); if(!s) return;
+    var src=s.inputSources&&s.inputSources[idx]; if(!src) return;
+    var gp=src.gamepad; if(!gp) return;
+    if(gp.hapticActuators&&gp.hapticActuators[0]) gp.hapticActuators[0].pulse(str,ms);
+  }catch(e){}
 }
 
 // ── SHOOTING ─────────────────────────────────────────────────────────────
@@ -614,18 +787,25 @@ function fireWeapon(wType,fromCtrl,ctrlIdx,isVR){
   if(!wType||!WDEFS[wType]||WDEFS[wType].melee) return;
   var def=WDEFS[wType];
   if(!G.ammo[wType]||G.ammo[wType]<=0){ showNotify('RELOAD — R'); return; }
+  // Cap projectiles
+  if(G.projectiles.length>=MAX_PROJECTILES){ removeProjObj(G.projectiles[0]); }
   G.ammo[wType]--; updateAmmoDisplay();
 
   var fwd=new THREE.Vector3();
-  if(fromCtrl){ fromCtrl.getWorldDirection(fwd); fwd.negate(); }
-  else { camera.getWorldDirection(fwd); }
+  try{
+    if(fromCtrl){ fromCtrl.getWorldDirection(fwd); fwd.negate(); }
+    else { camera.getWorldDirection(fwd); }
+  }catch(e){ camera.getWorldDirection(fwd); }
 
   var origin=new THREE.Vector3();
-  if(fromCtrl) fromCtrl.getWorldPosition(origin);
-  else camera.getWorldPosition(origin);
+  try{
+    if(fromCtrl) fromCtrl.getWorldPosition(origin);
+    else camera.getWorldPosition(origin);
+  }catch(e){ camera.getWorldPosition(origin); }
   origin.addScaledVector(fwd,0.5);
 
-  var mesh=new THREE.Mesh(new THREE.SphereGeometry(0.036,6,6),gm('proj'));
+  var geo=new THREE.SphereGeometry(0.036,6,6);
+  var mesh=new THREE.Mesh(geo,gm('proj'));
   mesh.position.copy(origin); scene.add(mesh);
   var body=new CANNON.Body({mass:0.04,material:mObj});
   body.addShape(new CANNON.Sphere(0.036));
@@ -634,21 +814,26 @@ function fireWeapon(wType,fromCtrl,ctrlIdx,isVR){
   body.linearDamping=0.01;
   body.vd={type:'projectile',damage:def.dmg,fwd:fwd.clone()};
   world.addBody(body);
-  var pObj={mesh:mesh,body:body,life:3.5};
+  var pObj={mesh:mesh,body:body,life:3.5,geo:geo};
   G.physObjs.push(pObj); G.projectiles.push(pObj);
 
   var mfl=new THREE.PointLight(0xffaa00,10,1.8); mfl.position.copy(origin); scene.add(mfl);
   setTimeout(function(){ scene.remove(mfl); },55);
 
   body.addEventListener('collide',function(evt){
-    var target=evt.body;
-    if(target.vd&&target.vd.type==='enemy'){
-      var fv=new CANNON.Vec3(fwd.x*9,fwd.y*9+2,fwd.z*9);
-      damageEnemy(target.vd.enemyRef,def.dmg,fv);
-    }
-    if(target.mass>0){ target.wakeUp(); target.applyImpulse(new CANNON.Vec3(fwd.x*5,fwd.y*5+1,fwd.z*5),target.position); }
-    spawnHitFX(body.position.x,body.position.y,body.position.z);
-    removeProjObj(pObj);
+    try{
+      var target=evt.body;
+      if(!target) return;
+      if(target.vd&&target.vd.type==='enemy'){
+        var fv=new CANNON.Vec3(fwd.x*9,fwd.y*9+2,fwd.z*9);
+        damageEnemy(target.vd.enemyRef,def.dmg,fv);
+      }
+      if(target.mass>0){
+        try{ target.wakeUp(); target.applyImpulse(new CANNON.Vec3(fwd.x*5,fwd.y*5+1,fwd.z*5),target.position); }catch(e){}
+      }
+      spawnHitFX(body.position.x,body.position.y,body.position.z);
+      removeProjObj(pObj);
+    }catch(e){}
   });
 
   if(isVR) haptic(ctrlIdx||0,0.7,40);
@@ -656,18 +841,27 @@ function fireWeapon(wType,fromCtrl,ctrlIdx,isVR){
 }
 
 function removeProjObj(pObj){
+  if(!pObj) return;
   try{ world.remove(pObj.body); }catch(e){}
-  scene.remove(pObj.mesh);
+  if(pObj.mesh) scene.remove(pObj.mesh);
+  if(pObj.geo) try{ pObj.geo.dispose(); }catch(e){}
   var pi=G.physObjs.indexOf(pObj); if(pi!==-1) G.physObjs.splice(pi,1);
   var qi=G.projectiles.indexOf(pObj); if(qi!==-1) G.projectiles.splice(qi,1);
 }
 
 function spawnHitFX(px,py,pz){
-  for(var i=0;i<7;i++){
-    var pm=new THREE.Mesh(new THREE.SphereGeometry(0.025,4,4),new THREE.MeshBasicMaterial({color:0xff9900}));
+  var count=G.lowPerfMode?4:7;
+  var active=G.decorMeshes.filter(function(d){ return d.userData.life!==undefined; });
+  if(active.length>=MAX_PARTICLES) return;
+  var mat=new THREE.MeshBasicMaterial({color:0xff9900,transparent:true});
+  for(var i=0;i<count;i++){
+    var geo=new THREE.SphereGeometry(0.025,4,4);
+    var pm=new THREE.Mesh(geo,mat.clone());
     pm.position.set(px,py,pz);
     pm.userData.vel=new THREE.Vector3((Math.random()-0.5)*6,Math.random()*4+1,(Math.random()-0.5)*6);
-    pm.userData.life=0.45; scene.add(pm); G.decorMeshes.push(pm);
+    pm.userData.life=0.45;
+    pm.userData.geo=geo;
+    scene.add(pm); G.decorMeshes.push(pm);
   }
 }
 
@@ -678,8 +872,8 @@ function doMelee(){
   var dmg=WDEFS[wType]?WDEFS[wType].dmg:40;
   var hit=false;
   G.enemies.forEach(function(enemy){
-    if(!enemy.alive) return;
-    var torso=enemy.parts.find(function(p){return p.name==='torso';}); if(!torso) return;
+    if(!enemy||!enemy.alive) return;
+    var torso=enemy.parts.find(function(p){return p.name==='torso';}); if(!torso||!torso.body) return;
     var ep=torso.body.position;
     var d=Math.sqrt((ep.x-reach.x)**2+(ep.y-reach.y)**2+(ep.z-reach.z)**2);
     if(d<2.8){
@@ -729,7 +923,7 @@ world.addBody(playerBody);
 
 var onGround=false;
 playerBody.addEventListener('collide',function(e){
-  if(e.contact&&e.contact.ni&&e.contact.ni.y>0.5) onGround=true;
+  if(e&&e.contact&&e.contact.ni&&e.contact.ni.y>0.5) onGround=true;
 });
 
 function movePlayer(dt){
@@ -768,23 +962,25 @@ function desktopGrab(){
   var best=null,bestD=GRAB_DIST;
   for(var i=0;i<G.physObjs.length;i++){
     var o=G.physObjs[i];
-    if(!o.body.vd||!o.body.vd.grabbable) continue;
+    if(!o||!o.body||!o.body.vd||!o.body.vd.grabbable) continue;
     var bp=o.body.position;
     var d=Math.sqrt((bp.x-tgt.x)**2+(bp.y-tgt.y)**2+(bp.z-tgt.z)**2);
     if(d<bestD){bestD=d;best=o;}
   }
   if(best){
-    best.body.type=CANNON.Body.KINEMATIC; best.body.mass=0; best.body.updateMassProperties();
-    G.grabbedDesktop=best;
-    document.getElementById('grab-display').textContent=(best.body.vd.type||'OBJ').toUpperCase();
-    showNotify('GRABBED — CLICK TO THROW');
+    try{
+      best.body.type=CANNON.Body.KINEMATIC; best.body.mass=0; best.body.updateMassProperties();
+      G.grabbedDesktop=best;
+      document.getElementById('grab-display').textContent=(best.body.vd.type||'OBJ').toUpperCase();
+      showNotify('GRABBED — CLICK TO THROW');
+    }catch(e){ console.warn('grab error:',e); }
   }
 }
 
 function desktopDrop(){
   if(!G.grabbedDesktop) return;
   var o=G.grabbedDesktop;
-  o.body.type=CANNON.Body.DYNAMIC; o.body.mass=o.body.vd.origMass||5; o.body.updateMassProperties();
+  try{ o.body.type=CANNON.Body.DYNAMIC; o.body.mass=o.body.vd.origMass||5; o.body.updateMassProperties(); }catch(e){}
   o.body.velocity.set(0,0,0); G.grabbedDesktop=null;
   document.getElementById('grab-display').textContent='NONE';
 }
@@ -793,20 +989,23 @@ function desktopThrow(){
   if(!G.grabbedDesktop) return;
   var o=G.grabbedDesktop;
   var fwd=new THREE.Vector3(); camera.getWorldDirection(fwd);
-  o.body.type=CANNON.Body.DYNAMIC; o.body.mass=o.body.vd.origMass||5; o.body.updateMassProperties(); o.body.wakeUp();
-  o.body.velocity.set(fwd.x*22,fwd.y*22+2,fwd.z*22);
-  o.body.angularVelocity.set((Math.random()-0.5)*12,(Math.random()-0.5)*12,(Math.random()-0.5)*12);
+  try{
+    o.body.type=CANNON.Body.DYNAMIC; o.body.mass=o.body.vd.origMass||5; o.body.updateMassProperties();
+    o.body.wakeUp();
+    o.body.velocity.set(fwd.x*22,fwd.y*22+2,fwd.z*22);
+    o.body.angularVelocity.set((Math.random()-0.5)*12,(Math.random()-0.5)*12,(Math.random()-0.5)*12);
+  }catch(e){}
   G.grabbedDesktop=null; document.getElementById('grab-display').textContent='NONE';
   showNotify('THROW!');
 }
 
 function updateDesktopGrab(){
-  if(!G.grabbedDesktop) return;
+  if(!G.grabbedDesktop||!G.grabbedDesktop.body) return;
   var fwd=new THREE.Vector3(); camera.getWorldDirection(fwd);
   var tgt=camera.position.clone().addScaledVector(fwd,1.9);
   G.grabbedDesktop.body.position.set(tgt.x,tgt.y-0.1,tgt.z);
   G.grabbedDesktop.body.velocity.set(0,0,0);
-  G.grabbedDesktop.mesh.position.copy(G.grabbedDesktop.body.position);
+  if(G.grabbedDesktop.mesh) G.grabbedDesktop.mesh.position.copy(G.grabbedDesktop.body.position);
 }
 
 // ── SLOW-MO ──────────────────────────────────────────────────────────────
@@ -825,6 +1024,36 @@ function reloadWeapon(){
   if(wt&&WDEFS[wt]&&!WDEFS[wt].melee){G.ammo[wt]=WDEFS[wt].ammo;updateAmmoDisplay();showNotify('RELOADED');}
 }
 
+// ── DESPAWN FAR OBJECTS ───────────────────────────────────────────────────
+function cullFarObjects(){
+  var camPos=new THREE.Vector3();
+  if(G.inVR) camPos.set(rig.position.x,rig.position.y,rig.position.z);
+  else camPos.copy(camera.position);
+
+  for(var i=G.physObjs.length-1;i>=0;i--){
+    var o=G.physObjs[i];
+    if(!o||!o.body||!o.body.vd) continue;
+    var vd=o.body.vd;
+    // Only cull dynamic throwable objects, not level geometry/enemies/weapons
+    if(vd.type!=='crate'&&vd.type!=='barrel'&&vd.type!=='projectile') continue;
+    if(o===G.grabbedDesktop||o===G.grabbedL||o===G.grabbedR) continue;
+    var bp=o.body.position;
+    var dx=bp.x-camPos.x,dy=bp.y-camPos.y,dz=bp.z-camPos.z;
+    if(Math.sqrt(dx*dx+dy*dy+dz*dz)>DESPAWN_DIST){
+      disposeObj(o);
+    }
+  }
+
+  // Also cap total objects
+  var dynamic=G.physObjs.filter(function(o){ return o&&o.body&&o.body.vd&&(o.body.vd.type==='crate'||o.body.vd.type==='barrel'); });
+  while(dynamic.length>MAX_PHYS_OBJS-20){
+    var oldest=dynamic.shift();
+    if(oldest&&oldest!==G.grabbedDesktop&&oldest!==G.grabbedL&&oldest!==G.grabbedR){
+      disposeObj(oldest);
+    }
+  }
+}
+
 // ── UI HELPERS ────────────────────────────────────────────────────────────
 function updateAmmoDisplay(){
   var wt=['','pistol','rifle','bat','sword'][G.currentWeapon];
@@ -836,8 +1065,8 @@ function updateAmmoDisplay(){
 
 function updateGrabDisplay(){
   var parts=[];
-  if(G.grabbedL) parts.push('L:'+(G.grabbedL.body.vd.type||'OBJ').toUpperCase());
-  if(G.grabbedR) parts.push('R:'+(G.grabbedR.body.vd.type||'OBJ').toUpperCase());
+  if(G.grabbedL) parts.push('L:'+(G.grabbedL.body&&G.grabbedL.body.vd&&G.grabbedL.body.vd.type||'OBJ').toUpperCase());
+  if(G.grabbedR) parts.push('R:'+(G.grabbedR.body&&G.grabbedR.body.vd&&G.grabbedR.body.vd.type||'OBJ').toUpperCase());
   document.getElementById('grab-display').textContent=parts.join(' ')||'NONE';
 }
 
@@ -861,7 +1090,7 @@ function updateGrabIndicator(){
   var tgt=camera.position.clone().addScaledVector(fwd,2.2);
   var found=false;
   for(var i=0;i<G.physObjs.length;i++){
-    var o=G.physObjs[i]; if(!o.body.vd||!o.body.vd.grabbable) continue;
+    var o=G.physObjs[i]; if(!o||!o.body||!o.body.vd||!o.body.vd.grabbable) continue;
     var bp=o.body.position;
     if(Math.sqrt((bp.x-tgt.x)**2+(bp.y-tgt.y)**2+(bp.z-tgt.z)**2)<2.0){found=true;break;}
   }
@@ -904,18 +1133,27 @@ function spawnCrateAhead(){
 }
 
 // ── ANIMATE DECOR ─────────────────────────────────────────────────────────
-function animateDecor(t){
+function animateDecor(t, dt){
   for(var i=0;i<pulsingLights.length;i++){
     var l=pulsingLights[i];
-    l.intensity=l.userData.base*(0.8+0.22*Math.sin(t*1.6+l.userData.off));
+    if(l&&l.userData) l.intensity=l.userData.base*(0.8+0.22*Math.sin(t*1.6+l.userData.off));
   }
   for(var j=G.decorMeshes.length-1;j>=0;j--){
     var dm=G.decorMeshes[j];
-    if(dm.userData.rotSpeed) dm.rotation.z+=dm.userData.rotSpeed*0.016;
+    if(!dm) continue;
+    if(dm.userData.rotSpeed) dm.rotation.z+=dm.userData.rotSpeed*dt;
     if(dm.userData.life!==undefined){
-      dm.userData.life-=0.016;
-      if(dm.userData.life<=0){ scene.remove(dm); G.decorMeshes.splice(j,1); }
-      else{ dm.position.addScaledVector(dm.userData.vel,0.016); dm.userData.vel.y-=9.8*0.016; dm.material.opacity=dm.userData.life/0.45; dm.material.transparent=true; }
+      dm.userData.life-=dt;
+      if(dm.userData.life<=0){
+        scene.remove(dm);
+        if(dm.userData.geo) try{ dm.userData.geo.dispose(); }catch(e){}
+        if(dm.material) try{ dm.material.dispose(); }catch(e){}
+        G.decorMeshes.splice(j,1);
+      } else {
+        dm.position.addScaledVector(dm.userData.vel,dt);
+        dm.userData.vel.y-=9.8*dt;
+        if(dm.material) dm.material.opacity=dm.userData.life/0.45;
+      }
     }
   }
 }
@@ -925,15 +1163,21 @@ var aiTimer=0;
 function updateAI(dt){
   aiTimer-=dt; if(aiTimer>0) return; aiTimer=2.0;
   G.enemies.forEach(function(enemy){
-    if(!enemy.alive) return;
-    var torso=enemy.parts.find(function(p){return p.name==='torso';}); if(!torso) return;
-    if(Math.random()>0.35){ var a=Math.random()*Math.PI*2; torso.body.wakeUp(); torso.body.applyImpulse(new CANNON.Vec3(Math.sin(a)*3.5,0,Math.cos(a)*3.5),torso.body.position); }
+    if(!enemy||!enemy.alive) return;
+    var torso=enemy.parts.find(function(p){return p.name==='torso';}); if(!torso||!torso.body) return;
+    if(Math.random()>0.35){
+      try{
+        var a=Math.random()*Math.PI*2; torso.body.wakeUp();
+        torso.body.applyImpulse(new CANNON.Vec3(Math.sin(a)*3.5,0,Math.cos(a)*3.5),torso.body.position);
+      }catch(e){}
+    }
   });
 }
 
 // ── PROJECTILE CLEANUP ────────────────────────────────────────────────────
 function updateProj(dt){
   for(var i=G.projectiles.length-1;i>=0;i--){
+    if(!G.projectiles[i]) continue;
     G.projectiles[i].life-=dt;
     if(G.projectiles[i].life<=0) removeProjObj(G.projectiles[i]);
   }
@@ -942,7 +1186,12 @@ function updateProj(dt){
 // ── FPS ───────────────────────────────────────────────────────────────────
 function fpsCount(now){
   G.frameCount++;
-  if(now-G.lastFPSTime>1000){ document.getElementById('fps-display').textContent=G.frameCount; G.frameCount=0; G.lastFPSTime=now; }
+  if(now-G.lastFPSTime>1000){
+    G.currentFPS=G.frameCount;
+    document.getElementById('fps-display').textContent=G.frameCount;
+    checkPerf(G.frameCount);
+    G.frameCount=0; G.lastFPSTime=now;
+  }
 }
 
 // ── VR SESSION ───────────────────────────────────────────────────────────
@@ -955,17 +1204,34 @@ async function enterVR(){
     renderer.xr.setSession(sess); G.inVR=true;
     document.getElementById('mode-display').textContent='VR';
     initVRControllers();
-    sess.addEventListener('end',function(){ G.inVR=false; vrCtrls=[]; document.getElementById('mode-display').textContent='DESKTOP'; });
+    // Reset VR state
+    G.vrYaw=0; G.vrVelocityY=0; G.vrOnGround=true;
+    rig.position.set(0,0,6); rig.rotation.y=0;
+    sess.addEventListener('end',function(){
+      G.inVR=false; vrCtrls=[];
+      document.getElementById('mode-display').textContent='DESKTOP';
+    });
     showNotify('VR SESSION STARTED');
   }catch(err){ showNotify('VR ERROR: '+err.message); console.error(err); }
 }
 
 // ── MAIN LOOP ─────────────────────────────────────────────────────────────
 var clock=new THREE.Clock();
+var cullTimer=0;
 renderer.setAnimationLoop(function(timeMs){
-  var rawDt=Math.min(clock.getDelta(),0.05);
+  var rawDt=clock.getDelta();
+
+  // FIX: Skip frame if dt too large (tab unfocused etc)
+  if(rawDt>0.033&&G.playing){
+    // Still count the frame but don't simulate wild physics
+    rawDt=0.033;
+  }
+  rawDt=Math.min(rawDt,0.05);
+
+  G.frameIdx++;
   fpsCount(timeMs);
-  animateDecor(timeMs*0.001);
+  var tSec=timeMs*0.001;
+  animateDecor(tSec, rawDt);
 
   if(!G.playing){
     world.step(1/60,rawDt*0.25,2);
@@ -980,11 +1246,24 @@ renderer.setAnimationLoop(function(timeMs){
   updateProj(dt);
   updateGrabIndicator();
 
-  if(G.inVR){ updateVRVelocity(); updateVRGrabs(); }
-  else { movePlayer(dt); updateDesktopGrab(); playerBody.wakeUp(); }
+  // FIX: Throttle VR sync to every 2nd frame
+  if(G.inVR){
+    updateVRControllers(dt);
+    if(G.frameIdx%2===0) updateVRGrabs();
+  } else {
+    movePlayer(dt);
+    updateDesktopGrab();
+    try{ playerBody.wakeUp(); }catch(e){}
+  }
 
-  world.step(1/60,dt,3);
+  // FIX 2: Better physics timestep, cap substeps
+  world.step(1/120, dt, 4);
   syncPhysics();
+
+  // Cull far objects periodically
+  cullTimer-=dt;
+  if(cullTimer<=0){ cullFarObjects(); cullTimer=3.0; }
+
   renderer.render(scene,camera);
 });
 
