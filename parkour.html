@@ -1,0 +1,2396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOMENTUM ERA</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#0a0a0f;overflow:hidden;font-family:'Press Start 2P',monospace;}
+#gameCanvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;}
+#menuScreen{
+  position:fixed;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;z-index:100;overflow:hidden;
+}
+#menuScreen::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,#87ceeb 0%,#b0e0ff 55%,#d4f0a0 55%,#8ac86c 65%,#5a9b32 65%,#3d7020 100%);
+  z-index:0;
+}
+#menuBgCanvas{position:absolute;inset:0;z-index:1;pointer-events:none;}
+.menu-content{position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;}
+.menu-title{font-family:'Press Start 2P',monospace;font-size:clamp(22px,4vw,46px);color:#fff;letter-spacing:4px;margin-bottom:6px;text-shadow:0 0 0 #000, 3px 3px 0 #1a3a00, 0 0 30px rgba(255,100,0,0.4);animation:titleFloat 3s ease-in-out infinite;}
+@keyframes titleFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+.menu-sub{font-family:'VT323',monospace;font-size:clamp(16px,2.2vw,26px);color:#fff;margin-bottom:44px;letter-spacing:3px;text-shadow:1px 1px 0 #1a3a00;}
+.menu-btn{font-family:'Press Start 2P',monospace;font-size:clamp(7px,1.1vw,12px);background:rgba(0,0,0,0.75);border:2px solid #ff4444;color:#ff4444;padding:11px 26px;margin:5px;cursor:pointer;pointer-events:all;transition:all 0.08s;letter-spacing:2px;backdrop-filter:blur(2px);}
+.menu-btn:hover{background:#ff4444;color:#fff;box-shadow:0 0 18px #ff4444;}
+.menu-btn.special{border-color:#ffdd00;color:#ffdd00;}
+.menu-btn.special:hover{background:#ffdd00;color:#000;box-shadow:0 0 18px #ffdd00;}
+.menu-btn.green{border-color:#44ff88;color:#44ff88;}
+.menu-btn.green:hover{background:#44ff88;color:#000;box-shadow:0 0 18px #44ff88;}
+.overlay{position:fixed;inset:0;background:#0a0a0f;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:100;gap:10px;}
+.screen-title{font-family:'Press Start 2P',monospace;font-size:clamp(11px,1.8vw,18px);color:#ff4444;margin-bottom:18px;text-shadow:2px 2px 0 #330000;}
+.player-slots{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:24px;}
+.player-slot{width:115px;height:130px;border:2px solid #333;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'VT323',monospace;gap:4px;}
+.player-slot.ready{border-color:#44ff44;}
+.slot-char{font-size:28px;}
+.settings-grid{display:flex;flex-direction:column;gap:10px;width:min(420px,90vw);margin-bottom:20px;}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-family:'VT323',monospace;font-size:clamp(15px,2vw,20px);color:#aaa;}
+.setting-row label{color:#fff;}
+.setting-btn-group{display:flex;gap:4px;}
+.sett-btn{font-family:'Press Start 2P',monospace;font-size:clamp(5px,0.8vw,9px);background:#111;border:2px solid #444;color:#888;padding:5px 8px;cursor:pointer;pointer-events:all;transition:all 0.1s;}
+.sett-btn.active{border-color:#ffdd00;color:#ffdd00;background:#1a1500;}
+.sett-btn:hover{border-color:#ff8844;color:#ff8844;}
+.peer-input{font-family:'Press Start 2P',monospace;font-size:clamp(7px,1vw,11px);background:#111;border:2px solid #444;color:#fff;padding:8px 14px;outline:none;pointer-events:all;width:min(300px,80vw);}
+.peer-input:focus{border-color:#ff4444;}
+.peer-code{font-family:'Press Start 2P',monospace;font-size:clamp(13px,2vw,22px);color:#ffdd00;letter-spacing:4px;background:#111;border:2px solid #ffdd00;padding:10px 20px;}
+#corruptionScreen{position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:200;}
+.glitch-title{font-family:'Press Start 2P',monospace;font-size:clamp(14px,2.5vw,24px);color:#00ff88;text-align:center;margin-bottom:24px;animation:glitchAnim 0.15s infinite;}
+@keyframes glitchAnim{0%{text-shadow:2px 0 #f00,-2px 0 #00f;transform:translate(0);}25%{text-shadow:-2px 0 #f00,2px 0 #00f;transform:translate(-2px,1px);}50%{text-shadow:2px 0 #0f0,-2px 0 #f0f;transform:translate(1px,-1px);}75%{text-shadow:-1px 0 #f00,1px 0 #0ff;transform:translate(-1px,2px);}100%{text-shadow:2px 0 #f00,-2px 0 #00f;transform:translate(0);}}
+.sim-label{font-family:'Press Start 2P',monospace;font-size:clamp(8px,1.2vw,13px);color:#00ff88;margin-bottom:16px;letter-spacing:4px;}
+.sim-bar-wrap{width:min(400px,80vw);height:20px;background:#0a0a0f;border:2px solid #00ff88;overflow:hidden;}
+.sim-bar-fill{height:100%;background:linear-gradient(90deg,#00ff88,#00ffff);width:0%;}
+.sim-percent{font-family:'Press Start 2P',monospace;font-size:11px;color:#00ff88;margin-top:8px;}
+#choiceScreen{position:fixed;inset:0;background:rgba(0,0,0,0.93);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:150;}
+.choice-title{font-family:'Press Start 2P',monospace;font-size:clamp(10px,1.5vw,16px);color:#ffdd00;margin-bottom:8px;}
+.choice-sub{font-family:'VT323',monospace;font-size:clamp(15px,2vw,22px);color:#aaa;margin-bottom:22px;}
+.choice-options{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+.choice-btn{font-family:'Press Start 2P',monospace;font-size:clamp(5px,0.85vw,9px);background:#111;border:2px solid #ff4444;color:#ff4444;padding:13px 16px;cursor:pointer;pointer-events:all;transition:all 0.12s;max-width:155px;text-align:center;line-height:1.7;}
+.choice-btn:hover{background:#ff4444;color:#000;}
+.choice-btn.pw{border-color:#00aaff;color:#00aaff;}
+.choice-btn.pw:hover{background:#00aaff;color:#000;}
+.choice-btn.sp{border-color:#ffdd00;color:#ffdd00;animation:spGlow 1s ease-in-out infinite;}
+@keyframes spGlow{0%,100%{box-shadow:0 0 10px #ffdd00;}50%{box-shadow:0 0 22px #ffdd00,0 0 36px #ff8800;}}
+#winScreen{position:fixed;inset:0;background:rgba(0,0,0,0.86);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:140;}
+.win-title{font-family:'Press Start 2P',monospace;font-size:clamp(16px,3vw,36px);color:#ffdd00;text-shadow:0 0 20px #ffdd00,4px 4px 0 #664400;margin-bottom:14px;animation:winPop 0.4s ease-out;}
+@keyframes winPop{0%{transform:scale(0.4);opacity:0;}100%{transform:scale(1);opacity:1;}}
+.win-sub{font-family:'VT323',monospace;font-size:clamp(16px,2.5vw,28px);color:#fff;margin-bottom:28px;}
+.scoreboard{background:#111;border:2px solid #333;padding:14px;min-width:260px;}
+.score-row{font-family:'VT323',monospace;font-size:clamp(14px,1.8vw,20px);color:#fff;padding:4px 0;border-bottom:1px solid #222;display:flex;justify-content:space-between;gap:20px;}
+.score-row:last-child{border-bottom:none;}
+#eraShift{position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:180;}
+.era-title{font-family:'Press Start 2P',monospace;font-size:clamp(11px,1.8vw,20px);color:#ff4444;margin-bottom:16px;text-align:center;}
+.era-maps{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;}
+.era-map-btn{width:150px;height:110px;background:#111;border:2px solid #444;color:#fff;cursor:pointer;pointer-events:all;font-family:'Press Start 2P',monospace;font-size:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transition:all 0.12s;}
+.era-map-btn:hover{border-color:#ff4444;box-shadow:0 0 14px rgba(255,68,68,0.4);}
+.sd-banner{position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:50;display:none;}
+.sd-text{font-family:'Press Start 2P',monospace;font-size:clamp(11px,2.2vw,26px);color:#ff2200;text-align:center;padding:7px;background:rgba(0,0,0,0.82);animation:sdPulse 0.7s ease-in-out infinite;}
+@keyframes sdPulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+.timer-hud{position:fixed;top:12px;left:50%;transform:translateX(-50%);font-family:'Press Start 2P',monospace;font-size:clamp(10px,1.5vw,15px);color:#fff;text-shadow:2px 2px 0 #000;background:rgba(0,0,0,0.72);padding:6px 12px;border:1px solid #444;display:none;z-index:20;}
+.timer-hud.danger{color:#ff4444;animation:tdanger 0.5s ease-in-out infinite;}
+@keyframes tdanger{0%,100%{opacity:1;}50%{opacity:0.45;}}
+.place-hud{position:fixed;top:12px;right:12px;font-family:'Press Start 2P',monospace;font-size:clamp(6px,0.9vw,10px);color:#ffdd00;text-shadow:1px 1px 0 #000;display:none;z-index:20;}
+#debugOverlay{position:fixed;top:50px;left:8px;font-family:'VT323',monospace;font-size:13px;color:#0f0;pointer-events:none;z-index:200;display:none;background:rgba(0,0,0,0.7);padding:4px 8px;}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div class="sd-banner" id="sdBanner"><div class="sd-text">⚠ SUDDEN DEATH ⚠</div></div>
+<div class="timer-hud" id="timerHud">2:00</div>
+<div class="place-hud" id="placeHud"></div>
+<div id="debugOverlay"></div>
+
+<!-- MAIN MENU -->
+<div id="menuScreen">
+  <canvas id="menuBgCanvas"></canvas>
+  <div class="menu-content">
+    <div class="menu-title">MOMENTUM ERA</div>
+    <div class="menu-sub">// FAST. PRECISE. UNSTOPPABLE. //</div>
+    <button class="menu-btn special" onclick="showModeSelect()">▶ PLAY</button>
+    <button class="menu-btn" onclick="toggleControls()">CONTROLS</button>
+    <div id="controlsHelp" style="display:none;margin-top:12px;font-family:'VT323',monospace;font-size:clamp(13px,1.6vw,19px);color:#fff;text-align:center;line-height:2.1;background:rgba(0,0,0,0.7);padding:12px 20px;backdrop-filter:blur(4px);">
+      <span style="color:#ff8888">P1</span> WASD · W=jump · S=slide/fastfall · <span style="color:#ffdd00">F=powerup</span><br>
+      <span style="color:#88aaff">P2</span> IJKL · I=jump · K=slide/fastfall · <span style="color:#ffdd00">H=powerup</span><br>
+      <span style="color:#88ff88">P3</span> Arrows · ↑=jump · ↓=slide/fastfall · <span style="color:#ffdd00">-=powerup</span><br>
+      <span style="color:#ffdd88">Speed Ramps:</span> orange sloped tiles boost you forward!<br>
+      <span style="color:#ffdd88">Bunny Hop:</span> jump just as you land for speed boost<br>
+      <span style="color:#ffdd88">Air Accel:</span> hold direction in air to keep building speed<br>
+    </div>
+  </div>
+</div>
+
+<!-- MODE SELECT -->
+<div id="modeSelect" class="overlay">
+  <div class="screen-title">SELECT MODE</div>
+  <button class="menu-btn special" onclick="startLocal()">LOCAL MULTIPLAYER<br><span style="font-size:0.7em;color:#aaa">1–3 PLAYERS</span></button>
+  <button class="menu-btn" onclick="showPeerHost()">ONLINE — HOST</button>
+  <button class="menu-btn" onclick="showPeerJoin()">ONLINE — JOIN</button>
+  <button class="menu-btn" onclick="startSinglePlayer()">SOLO + BOTS</button>
+  <button class="menu-btn" style="border-color:#555;color:#555;margin-top:8px;" onclick="showMenu()">← BACK</button>
+</div>
+
+<!-- LOCAL LOBBY -->
+<div id="lobbyScreen" class="overlay">
+  <div class="screen-title">LOCAL LOBBY</div>
+  <div class="player-slots" id="playerSlots"></div>
+  <div style="font-family:'VT323',monospace;font-size:clamp(14px,2vw,20px);color:#888;margin-bottom:16px;text-align:center;">
+    Press your jump key to join!<br>
+    <span id="lobbyStatus" style="color:#ffdd00;"></span>
+  </div>
+  <div class="settings-grid" id="lobbySettings">
+    <div class="setting-row"><label>DIFFICULTY</label><div class="setting-btn-group" id="diffBtns"></div></div>
+    <div class="setting-row"><label>VOID FLOOR</label><div class="setting-btn-group" id="voidBtns"></div></div>
+    <div class="setting-row"><label>MAP STYLE</label><div class="setting-btn-group" id="styleBtns"></div></div>
+  </div>
+  <button class="menu-btn special" id="startLocalBtn" onclick="launchLocal()" style="display:none;pointer-events:all;">START RACE ▶</button>
+  <button class="menu-btn" style="pointer-events:all;margin-top:8px;" onclick="showMenu()">← BACK</button>
+</div>
+
+<!-- PEER LOBBY -->
+<div id="peerLobby" class="overlay">
+  <div class="screen-title" id="peerTitle">ONLINE LOBBY</div>
+  <div class="peer-code" id="peerCode" style="display:none"></div>
+  <div style="font-family:'VT323',monospace;font-size:18px;color:#aaa;" id="peerStatus">Connecting...</div>
+  <input class="peer-input" id="peerJoinInput" placeholder="ENTER ROOM CODE" style="display:none;" maxlength="6">
+  <button class="menu-btn" id="peerJoinBtn" style="display:none;pointer-events:all;" onclick="peerDoJoin()">JOIN ROOM</button>
+  <div class="settings-grid" id="peerSettings" style="display:none;">
+    <div class="setting-row"><label>DIFFICULTY</label><div class="setting-btn-group" id="peerDiffBtns"></div></div>
+    <div class="setting-row"><label>VOID FLOOR</label><div class="setting-btn-group" id="peerVoidBtns"></div></div>
+  </div>
+  <button class="menu-btn special" id="peerStartBtn" style="display:none;pointer-events:all;" onclick="peerStartGame()">START GAME</button>
+  <div id="peerPlayerList" style="font-family:'VT323',monospace;font-size:18px;color:#aaa;text-align:center;margin-top:8px;"></div>
+  <button class="menu-btn" style="pointer-events:all;margin-top:12px;" onclick="showMenu()">← BACK</button>
+</div>
+
+<!-- CORRUPTION SCREEN -->
+<div id="corruptionScreen">
+  <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,136,0.03) 2px,rgba(0,255,136,0.03) 4px);pointer-events:none;"></div>
+  <div class="glitch-title" id="corruptTitle">REALITY UNSTABLE</div>
+  <div class="sim-label">SIMULATION LOADING</div>
+  <div class="sim-bar-wrap"><div class="sim-bar-fill" id="simBar"></div></div>
+  <div class="sim-percent" id="simPercent">0%</div>
+</div>
+
+<!-- CHOICE SCREEN -->
+<div id="choiceScreen">
+  <div class="choice-title" id="choiceTitle">WINNER CHOOSES</div>
+  <div class="choice-sub" id="choiceSub">Corrupt the run or take a powerup?</div>
+  <div class="choice-options" id="choiceOptions"></div>
+  <div style="font-family:'VT323',monospace;font-size:15px;color:#555;margin-top:10px;" id="choiceTimer"></div>
+</div>
+
+<!-- WIN SCREEN -->
+<div id="winScreen">
+  <div class="win-title" id="winTitle">PLAYER WINS!</div>
+  <div class="win-sub" id="winSub"></div>
+  <div class="scoreboard" id="scoreboard"></div>
+  <button class="menu-btn special" style="margin-top:18px;pointer-events:all;" onclick="nextRound()">NEXT ROUND ▶</button>
+  <button class="menu-btn" style="margin-top:4px;pointer-events:all;" onclick="showMenu()">QUIT TO MENU</button>
+</div>
+
+<!-- ERA SHIFT -->
+<div id="eraShift">
+  <div class="era-title">ERA SHIFT!<br><span style="font-size:0.7em;color:#aaa">WINNER PICKS THE NEXT WORLD</span></div>
+  <div class="era-maps" id="eraMaps"></div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+<script>
+'use strict';
+// ════════════════════════════════════════════════════════════════
+//  MOMENTUM ERA v6
+//  CHANGES FROM v5:
+//  A) REDRAW FIX: finish position comes from map, always synced
+//  B) SPEED REWORK: slopes give momentum, higher jump carry, air accel
+//  C) SMART AI: waypoint pathfinding along chunk path, 3 personalities
+//  D) MAP POLISH: bigger corridors, spikes only on open air tiles,
+//     "gauntlet_end" chunk type for tight finale section
+// ════════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+
+// ── DIFFICULTY PRESETS ─────────────────────────────────────────
+const DIFFICULTIES = {
+  zen:    { name:'ZEN',    corridorW:5, spikeChance:0.00, gapChance:0.00, movingPlats:1,  slideBoost:1.5, color:'#44aaff' },
+  easy:   { name:'EASY',   corridorW:4, spikeChance:0.05, gapChance:0.05, movingPlats:3,  slideBoost:1.2, color:'#44ff88' },
+  normal: { name:'NORMAL', corridorW:3, spikeChance:0.10, gapChance:0.08, movingPlats:5,  slideBoost:1.0, color:'#ffdd00' },
+  hard:   { name:'HARD',   corridorW:2, spikeChance:0.18, gapChance:0.14, movingPlats:8,  slideBoost:0.9, color:'#ff8844' },
+  brutal: { name:'BRUTAL', corridorW:1, spikeChance:0.26, gapChance:0.22, movingPlats:11, slideBoost:0.8, color:'#ff4444' },
+};
+
+const TILE = 14;
+
+// ── PHYSICS ────────────────────────────────────────────────────
+const GRAVITY        = 0.50;
+const GRAVITY_FALL   = 0.85;
+const MAX_FALL       = 24;
+const WALK_SPEED     = 3.0;    // intentionally sluggish ground — reward air momentum
+const ACCEL_GROUND   = 0.50;
+const FRIC_GROUND    = 0.72;
+const SPEED_CAP      = 32.0;   // sky-high ceiling — bhop chains can get insane
+
+// Air: zero friction, full momentum carry
+const JUMP_AIR_ACCEL  = 0.28;
+const AIR_BRAKE_FACTOR = 0.02;  // almost no brake from air input
+const AIR_FRIC        = 1.0;   // ZERO air drag — speed never decays in air
+
+// Jump: speed carry is the whole game
+const JUMP_VY_BASE    = -5.2;   // standing still = small hop
+const JUMP_SPD_CARRY  = 0.45;   // BIG: fast run = massive jump arc
+const JUMP_VY_CAP     = -15.0;  // at max speed, jumps are enormous
+const JUMP_HOLD_BOOST = -0.44;
+const JUMP_HOLD_MAX   = 16;
+const COYOTE_FRAMES   = 10;
+const JUMP_BUF_FRAMES = 10;
+
+const DJUMP_VY_BASE   = -4.8;
+const DJUMP_SPD_CARRY = 0.30;
+
+// Wall hop: ADDS to existing speed (doesn't reset it)
+const WALL_ADD_X      = 9.0;   // added speed away from wall — stacks with carry
+const WALL_LAUNCH_Y   = -9.0;
+const WALL_LOCK       = 10;
+const WALL_SLIDE_MAX  = 1.2;
+
+const VAULT_SPD_MIN   = WALK_SPEED * 0.7;
+const VAULT_VX_BOOST  = 4.0;
+const VAULT_VY        = -5.5;
+const VAULT_CD        = 16;
+
+const SLIDE_MIN_SPD   = 1.5;
+const SLIDE_VX        = 11.0;
+const SLIDE_FRAMES    = 30;
+const SLIDE_H         = 9;
+const NORMAL_H        = 22;
+const SLIDE_FRIC      = 0.93;   // slides carry speed a long time
+
+// Slopes: serious acceleration — hit one going fast and you rocket
+const SLOPE_ACCEL     = 1.2;
+const SLOPE_MAX_BONUS = 10.0;
+
+const FF_ACCEL        = 4.0;
+const FF_MAX          = 28;
+
+// Bhop: each bhop multiplies speed meaningfully, chains build fast
+const BHOP_WINDOW     = 10;
+const BHOP_BOOST      = 1.30;   // 30% per bhop — chains get CoD-fast quick
+const BHOP_MAX_STACK  = 6;      // cap stacks to prevent infinite
+
+const FLOW_MAX        = 100;
+const FLOW_DECAY      = 0.03;
+const FLOW_SPD_GAIN   = 0.06;
+const FLOW_LAND_GAIN  = 12;
+const FLOW_VAULT_GAIN = 16;
+const FLOW_WALL_GAIN  = 16;
+const FLOW_BHOP_GAIN  = 22;
+const FLOW_SLOPE_GAIN = 0.12;
+const FLOW_SPD_BONUS  = 0.50;
+
+const ROUND_TIME      = 120;
+const LAVA_RISE       = 0.30;
+
+// ── BIOMES ─────────────────────────────────────────────────────
+const BIOMES = [
+  {name:'URBAN MAZE',    icon:'🏙', tileCol:'#445566', bg:'#0d1520', groundCol:'#223344', accent:'#5588bb', fogCol:'#1a2535'},
+  {name:'NEON DUNGEON',  icon:'⚡', tileCol:'#1a0a2e', bg:'#060010', groundCol:'#0d0520', accent:'#cc00ff', fogCol:'#100018'},
+  {name:'RUINS',         icon:'🏛', tileCol:'#5a4a36', bg:'#12100d', groundCol:'#3d3025', accent:'#cc9944', fogCol:'#1a1510'},
+  {name:'ICY CAVERN',    icon:'❄', tileCol:'#5588aa', bg:'#0a1520', groundCol:'#3366aa', accent:'#88ddff', fogCol:'#0d1e30'},
+  {name:'VOLCANIC',      icon:'🌋', tileCol:'#552211', bg:'#100500', groundCol:'#331100', accent:'#ff5500', fogCol:'#180800'},
+  {name:'OVERGROWN',     icon:'🌿', tileCol:'#2a5520', bg:'#0a1205', groundCol:'#1a3a10', accent:'#55ff44', fogCol:'#0d1a08'},
+];
+
+// ── GAME STATE ─────────────────────────────────────────────────
+const GS = {
+  mode:null, players:[], map:null,
+  seed:Date.now(), round:0,
+  wins:{}, eraWins:0, totalWins:{},
+  roundTime:ROUND_TIME,
+  suddenDeath:false, lavaY:99999,
+  running:false, paused:false,
+  currentBiome:0, roundWinner:null,
+  choiceTimeout:null, _glitchIv:null,
+  frame:0,
+  difficulty:'normal',
+  voidFloor:true,
+  _lowGravity:false, _speedDemon:false, _darkMap:false, _gravityFlip:false,
+};
+
+const PLAYER_COLORS = ['#ff5555','#55aaff','#55ff88','#ffdd55','#ff88ff','#ff9944','#55ffff','#ff55aa'];
+const PLAYER_NAMES  = ['RED','BLUE','GREEN','YELLOW','PINK','ORANGE','CYAN','MAGENTA'];
+const PLAYER_W      = 16;
+const PLAYER_CTRLS = [
+  {left:'KeyA',     right:'KeyD',      up:'KeyW',    down:'KeyS',     powerup:'KeyF'},
+  {left:'KeyJ',     right:'KeyL',      up:'KeyI',    down:'KeyK',     powerup:'KeyH'},
+  {left:'ArrowLeft',right:'ArrowRight',up:'ArrowUp', down:'ArrowDown',powerup:'Minus'},
+];
+const ONLINE_CTRL = {left:'KeyA',right:'KeyD',up:'KeyW',down:'KeyS',powerup:'KeyF'};
+
+// ── INPUT ──────────────────────────────────────────────────────
+const keys = {};
+const just = {};
+window.addEventListener('keydown', e => {
+  if(!keys[e.code]){ keys[e.code]=true; just[e.code]=true; onKeyDown(e.code); }
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.key)) e.preventDefault();
+});
+window.addEventListener('keyup', e => { keys[e.code]=false; });
+function clearJust(){ for(const k in just) delete just[k]; }
+function onKeyDown(code){
+  if(document.getElementById('lobbyScreen').style.display==='flex')
+    PLAYER_CTRLS.forEach((c,i)=>{ if(code===c.up) tryJoinLobby(i); });
+  if(code==='KeyD' && GS.running){
+    const d=document.getElementById('debugOverlay');
+    d.style.display = d.style.display==='none'?'block':'none';
+  }
+}
+
+// ── RNG ────────────────────────────────────────────────────────
+function mulberry32(seed){
+  return function(){
+    seed|=0; seed=seed+0x6D2B79F5|0;
+    let t=Math.imul(seed^seed>>>15,1|seed);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return((t^t>>>14)>>>0)/4294967296;
+  };
+}
+let rng = mulberry32(GS.seed);
+
+// ════════════════════════════════════════════════════════════════
+//  MAP GENERATOR v6
+//  KEY CHANGES:
+//  - Bigger chunk interiors (more space, wider corridors)
+//  - Spikes validated: only placed on open floor/wall tiles (no embedded)
+//  - Speed ramp tiles: slope objects that accelerate players
+//  - "gauntlet_end" chunk type: used for last 2 chunks before finish
+//  - Finish position ALWAYS derived from map, never stale
+//  - FIX: redraw_maze now correctly updates finish from the new map
+// ════════════════════════════════════════════════════════════════
+
+const CHUNK_W  = 30;  // wider chunks = longer runs
+const CHUNK_H  = 24;
+const WALL_T   = 2;
+const GRID_W   = 4;
+const GRID_H   = 3;
+
+const DOOR_H   = 10;  // very tall doors — easy to run through at speed
+const DOOR_W   = 12;  // very wide doors
+const PUNCH_H  = WALL_T * 2 + 4;
+const PUNCH_W  = WALL_T * 2 + 4;
+
+function generateMap(seed, biomeIdx, diffKey) {
+  rng = mulberry32(seed);
+  const diff  = DIFFICULTIES[diffKey] || DIFFICULTIES.normal;
+  const biome = BIOMES[biomeIdx % BIOMES.length];
+
+  const TW = CHUNK_W * GRID_W;
+  const TH = CHUNK_H * GRID_H;
+
+  const tiles = new Uint8Array(TW * TH).fill(1);
+  const clr = (x,y,w,h) => {
+    for(let dy=0;dy<h;dy++) for(let dx=0;dx<w;dx++){
+      const px=x+dx,py=y+dy;
+      if(px>=0&&px<TW&&py>=0&&py<TH) tiles[py*TW+px]=0;
+    }
+  };
+  const sol = (x,y,w,h) => {
+    for(let dy=0;dy<h;dy++) for(let dx=0;dx<w;dx++){
+      const px=x+dx,py=y+dy;
+      if(px>=0&&px<TW&&py>=0&&py<TH) tiles[py*TW+px]=1;
+    }
+  };
+  const gt  = (x,y) => (x<0||x>=TW||y<0||y>=TH) ? 1 : tiles[y*TW+x];
+
+  const IW = CHUNK_W - WALL_T*2;
+  const IH = CHUNK_H - WALL_T*2;
+  const gI  = (gx,gy) => gy*GRID_W+gx;
+
+  // ── DIAGONAL CORNERS ────────────────────────────────────────
+  const startLeft = rng() < 0.5;
+  const SC = { gx: startLeft ? 0 : GRID_W-1, gy: 0 };
+  const FC = { gx: startLeft ? GRID_W-1 : 0, gy: GRID_H-1 };
+
+  // ── BUILD PATH ───────────────────────────────────────────────
+  // Strategy: walk from SC toward FC, always moving closer.
+  // Guarantee: every step adds a connection. FC is always reachable.
+  const visited     = new Uint8Array(GRID_W * GRID_H).fill(0);
+  const connections = [];
+  const path        = [{ gx: SC.gx, gy: SC.gy }];
+  visited[gI(SC.gx, SC.gy)] = 1;
+  let cx = SC.gx, cy = SC.gy;
+
+  for(let itr = 0; itr < 1200; itr++) {
+    // Stop when we've reached FC
+    if(cx === FC.gx && cy === FC.gy) break;
+
+    const choices = [];
+    const tx = FC.gx > cx ? 1 : FC.gx < cx ? -1 : 0;
+
+    // Bias: strongly prefer moving down, then toward FC.gx
+    if(cy+1 < GRID_H && !visited[gI(cx, cy+1)])
+      choices.push({dx:0,dy:1},{dx:0,dy:1},{dx:0,dy:1});
+    if(tx !== 0 && cx+tx >= 0 && cx+tx < GRID_W && !visited[gI(cx+tx, cy)])
+      choices.push({dx:tx,dy:0},{dx:tx,dy:0});
+    if(tx !== 0 && cx-tx >= 0 && cx-tx < GRID_W && !visited[gI(cx-tx, cy)])
+      choices.push({dx:-tx,dy:0});
+
+    if(!choices.length) {
+      // Dead end — force move down if possible, otherwise we're done
+      if(cy+1 < GRID_H){
+        const ny = cy+1;
+        // Add connection even if already visited — we NEED a door here
+        if(!connections.find(c=>c.ax===cx&&c.ay===cy&&c.bx===cx&&c.by===ny)){
+          connections.push({ax:cx,ay:cy,bx:cx,by:ny,horiz:false,doorType:'doorway'});
+        }
+        if(!visited[gI(cx,ny)]){ visited[gI(cx,ny)]=1; path.push({gx:cx,gy:ny}); }
+        cy = ny;
+      } else break;
+      continue;
+    }
+
+    const mv = choices[Math.floor(rng()*choices.length)];
+    const nx = cx+mv.dx, ny = cy+mv.dy;
+    if(nx<0||nx>=GRID_W||ny<0||ny>=GRID_H) continue;
+    if(visited[gI(nx,ny)]) continue;
+
+    connections.push({ax:cx,ay:cy,bx:nx,by:ny,horiz:mv.dy===0,doorType:'doorway'});
+    visited[gI(nx,ny)]=1;
+    path.push({gx:nx,gy:ny});
+    cx=nx; cy=ny;
+  }
+
+  // Final guarantee: if we ended without reaching FC, force a direct path down
+  while(cy !== FC.gy || cx !== FC.gx) {
+    let nx=cx, ny=cy;
+    if(cy < FC.gy) ny=cy+1;
+    else if(cx < FC.gx) nx=cx+1;
+    else if(cx > FC.gx) nx=cx-1;
+    else break;
+
+    // Always add a connection (door) between current and next
+    const horiz = ny===cy;
+    if(!connections.find(c=>c.ax===cx&&c.ay===cy&&c.bx===nx&&c.by===ny)){
+      connections.push({ax:cx,ay:cy,bx:nx,by:ny,horiz,doorType:'doorway'});
+    }
+    if(!visited[gI(nx,ny)]){ visited[gI(nx,ny)]=1; path.push({gx:nx,gy:ny}); }
+    cx=nx; cy=ny;
+  }
+
+  // ── ASSIGN CHUNK TYPES ───────────────────────────────────────
+  // Last 2 non-finish path chunks → gauntlet_end (tight finale)
+  const chunkType = {};
+  const pathLen = path.length;
+
+  // Mark last 2 chunks before finish as gauntlet_end
+  const endChunks = new Set();
+  if(pathLen >= 4){
+    endChunks.add(`${path[pathLen-2].gx},${path[pathLen-2].gy}`);
+  }
+  if(pathLen >= 5){
+    endChunks.add(`${path[pathLen-3].gx},${path[pathLen-3].gy}`);
+  }
+
+  for(let i=0; i<path.length; i++){
+    const {gx,gy}=path[i];
+    const key=`${gx},${gy}`;
+    if(chunkType[key]) continue;
+    if(gx===SC.gx&&gy===SC.gy){ chunkType[key]='spawn'; continue; }
+    if(gx===FC.gx&&gy===FC.gy){ chunkType[key]='finish'; continue; }
+    if(endChunks.has(key)){ chunkType[key]='gauntlet_end'; continue; }
+
+    const roll = rng();
+    const nextConn = connections.find(c=>c.ax===gx&&c.ay===gy&&!c.horiz);
+    const canPit = nextConn && i < pathLen-3;
+
+    if(canPit && roll < 0.06){       // pits much rarer
+      chunkType[key]='spike_pit_top';
+      const bKey=`${nextConn.bx},${nextConn.by}`;
+      chunkType[bKey]='spike_pit_bot';
+    } else if(roll < 0.35){ chunkType[key]='open'; }       // lots of open space
+    else if(roll < 0.65) { chunkType[key]='speed_run'; }   // speed ramps dominate
+    else if(roll < 0.75) { chunkType[key]='platform'; }    // some platforms
+    else if(roll < 0.83) { chunkType[key]='bounce_room'; }
+    else if(roll < 0.90) { chunkType[key]='corridor'; }
+    else                 { chunkType[key]='normal'; }
+  }
+
+  // ── ASSIGN DOOR TYPES ────────────────────────────────────────
+  for(const conn of connections){
+    const {ax,ay,bx,by,horiz}=conn;
+    const isSpawnExit=(ax===SC.gx&&ay===SC.gy);
+    const isFinishEntry=(bx===FC.gx&&by===FC.gy);
+    if(isSpawnExit||isFinishEntry){ conn.doorType='doorway'; continue; }
+    const r=rng();
+    conn.doorType = horiz ? (r<0.65?'open':r<0.88?'doorway':'wait')
+                          : (r<0.50?'open':r<0.85?'doorway':'wait');
+  }
+
+  const waitDoors=[];
+
+  // ── CARVE CHUNK INTERIORS ────────────────────────────────────
+  for(const {gx,gy} of path){
+    const key=`${gx},${gy}`;
+    const type=chunkType[key]||'normal';
+    if(type==='spike_pit_top'){
+      clr(gx*CHUNK_W+WALL_T, gy*CHUNK_H+WALL_T, IW, IH);
+      clr(gx*CHUNK_W+WALL_T, (gy+1)*CHUNK_H+WALL_T, IW, IH);
+      clr(gx*CHUNK_W+WALL_T, gy*CHUNK_H+CHUNK_H-WALL_T, IW, WALL_T*2);
+    } else {
+      clr(gx*CHUNK_W+WALL_T, gy*CHUNK_H+WALL_T, IW, IH);
+    }
+  }
+
+  // ── CARVE DOORS ──────────────────────────────────────────────
+  for(const conn of connections){
+    const {ax,ay,bx,by,horiz,doorType}=conn;
+    if(horiz){
+      const leftGX=Math.min(ax,bx);
+      const wallX=leftGX*CHUNK_W+CHUNK_W-WALL_T;
+      const floorY=ay*CHUNK_H+CHUNK_H-WALL_T-1;
+      const doorTopY=floorY-DOOR_H+1;
+      if(doorType==='open'){
+        clr(wallX,ay*CHUNK_H+WALL_T,PUNCH_H,IH);
+      } else if(doorType==='wait'){
+        waitDoors.push({tx:wallX,ty:doorTopY,tw:PUNCH_H,th:DOOR_H,timer:-1,active:true,horiz:true});
+      } else {
+        clr(wallX,doorTopY,PUNCH_H,DOOR_H);
+        sol(wallX,floorY+1,PUNCH_H,1);
+      }
+    } else {
+      const topGY=Math.min(ay,by);
+      const wallY=topGY*CHUNK_H+CHUNK_H-WALL_T;
+      const intL=ax*CHUNK_W+WALL_T;
+      const maxOff=IW-DOOR_W;
+      const offX=maxOff>0?Math.floor(rng()*maxOff):0;
+      const doorX=intL+offX;
+      if(doorType==='open'){
+        clr(ax*CHUNK_W+WALL_T,wallY,IW,PUNCH_W);
+      } else if(doorType==='wait'){
+        waitDoors.push({tx:doorX,ty:wallY,tw:DOOR_W,th:PUNCH_W,timer:-1,active:true,horiz:false});
+      } else {
+        clr(doorX,wallY,DOOR_W,PUNCH_W);
+      }
+    }
+  }
+
+  // ── SPAWN & FINISH ───────────────────────────────────────────
+  const spawnTX = SC.gx*CHUNK_W + WALL_T + 2;
+  const spawnTY = SC.gy*CHUNK_H + CHUNK_H - WALL_T - 1;
+  sol(spawnTX-1, spawnTY+1, 7, 1);
+
+  // Finish chunk: completely clear interior, open ALL walls for entry, flag on floor center
+  const finChunkX = FC.gx * CHUNK_W;
+  const finChunkY = FC.gy * CHUNK_H;
+  // Clear full interior
+  clr(finChunkX, finChunkY, CHUNK_W, CHUNK_H);
+  // Restore outer boundary walls except the one that connects to the path
+  // Top wall
+  sol(finChunkX, finChunkY, CHUNK_W, WALL_T);
+  // Bottom wall
+  sol(finChunkX, finChunkY + CHUNK_H - WALL_T, CHUNK_W, WALL_T);
+  // Left wall
+  sol(finChunkX, finChunkY, WALL_T, CHUNK_H);
+  // Right wall
+  sol(finChunkX + CHUNK_W - WALL_T, finChunkY, WALL_T, CHUNK_H);
+  // Now punch wide openings in all 4 walls so player can enter from any direction
+  const midX = finChunkX + Math.floor(CHUNK_W/2) - Math.floor(IW/3);
+  const openW = Math.floor(IW * 2/3);
+  const midY = finChunkY + Math.floor(CHUNK_H/2) - Math.floor(IH/3);
+  const openH = Math.floor(IH * 2/3);
+  clr(midX, finChunkY, openW, WALL_T + 1);                        // top gap
+  clr(midX, finChunkY + CHUNK_H - WALL_T - 1, openW, WALL_T + 1); // bottom gap
+  clr(finChunkX, midY, WALL_T + 1, openH);                        // left gap
+  clr(finChunkX + CHUNK_W - WALL_T - 1, midY, WALL_T + 1, openH); // right gap
+  // Solid floor at bottom of interior
+  const finFloorTY = finChunkY + CHUNK_H - WALL_T - 1;
+  sol(finChunkX + WALL_T, finFloorTY, IW, 1);
+  // Flag sits on that floor, horizontally centered in the chunk
+  const finishTX = finChunkX + Math.floor(CHUNK_W / 2);
+  const finishTY = finFloorTY;
+
+  // ── SPEED RAMPS ──────────────────────────────────────────────
+  // Slope data: {x, y, dir: 'left'|'right'} — pixels coords, drawn diagonally
+  const speedRamps = [];
+
+  // ── CHUNK DECORATION ─────────────────────────────────────────
+  const spikes=[], bouncePads=[], movingPlats=[];
+
+  // Helper: check tile is open air above solid floor (valid spike location)
+  const validSpikeUp = (sx,sy) =>
+    sx>0 && sx<TW && sy>0 && sy<TH &&
+    tiles[sy*TW+sx]===0 &&       // tile itself is air
+    sy+1<TH && tiles[(sy+1)*TW+sx]===1; // solid below
+
+  const validSpikeWall = (sx,sy,dir) => {
+    if(sx<0||sx>=TW||sy<0||sy>=TH) return false;
+    if(tiles[sy*TW+sx]!==0) return false;  // must be air
+    // Also check the two tiles tall of the player must be hittable
+    if(sy-1<0||tiles[(sy-1)*TW+sx]!==0) return false;
+    return true;
+  };
+
+  for(const {gx,gy} of path){
+    const key=`${gx},${gy}`;
+    const type=chunkType[key]||'normal';
+    if(type==='spawn'||type==='finish') continue;
+
+    const bx=gx*CHUNK_W+WALL_T;
+    const by=gy*CHUNK_H+WALL_T;
+    const floorY=gy*CHUNK_H+CHUNK_H-WALL_T-1; // interior floor tile y
+
+    switch(type){
+
+      case 'open': {
+        // Wide open — few obstacles, 1-2 ramps pointing same direction
+        if(rng()<0.3){
+          const pw=4+Math.floor(rng()*5);
+          const px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
+          const py=by+Math.floor(IH*0.35+rng()*IH*0.25);
+          if(gt(px,py)===0) sol(px,py,pw,1);
+        }
+        // 1-3 speed ramps, all pointing the same direction (creates a runway)
+        const openDir = rng()<0.5 ? 'right' : 'left';
+        const nRamps = 1+Math.floor(rng()*3);
+        for(let i=0;i<nRamps;i++){
+          const rx=bx+2+Math.floor(rng()*Math.max(1,IW-6));
+          speedRamps.push({tx:rx, ty:floorY, dir:openDir});
+        }
+        break;
+      }
+
+      case 'speed_run': {
+        // Pure speed room: flat floor, ramps everywhere, minimal blockage
+        const facing = rng()<0.5 ? 'right' : 'left';
+        const numRamps = 3+Math.floor(rng()*4);  // 3-6 ramps
+        for(let i=0;i<numRamps;i++){
+          const rx=bx+1+Math.floor(rng()*Math.max(1,IW-4));
+          speedRamps.push({tx:rx, ty:floorY, dir:facing});
+        }
+        // Maybe a single low step to jump over (adds rhythm)
+        if(rng()<0.25){
+          const pw=2+Math.floor(rng()*2);
+          const px=bx+Math.floor(IW*0.4+rng()*IW*0.2);
+          sol(px,floorY-2,pw,2);
+        }
+        break;
+      }
+
+      case 'platform': {
+        const numP=2+Math.floor(rng()*2);
+        for(let i=0;i<numP;i++){
+          const pw=4+Math.floor(rng()*6);
+          const px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
+          const py=by+2+Math.floor(rng()*(IH-5));
+          if(gt(px,py)===0) sol(px,py,pw,1);
+        }
+        // Maybe one ramp
+        if(rng()<0.4) speedRamps.push({tx:bx+2+Math.floor(rng()*Math.max(1,IW-6)), ty:floorY, dir:rng()<0.5?'right':'left'});
+        break;
+      }
+
+      case 'spike_pit_top': {
+        const numP=2+Math.floor(rng()*2);
+        for(let i=0;i<numP;i++){
+          const pw=4+Math.floor(rng()*4);
+          const px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
+          const py=gy*CHUNK_H+WALL_T+2+Math.floor(rng()*(IH+IH-4));
+          if(gt(px,py)===0) sol(px,py,pw,1);
+        }
+        break;
+      }
+
+      case 'spike_pit_bot': {
+        const pitFloorY=by+IH-1;
+        for(let sx=bx+1;sx<bx+IW-1;sx+=1+Math.floor(rng()*2)){
+          if(validSpikeUp(sx,pitFloorY)) spikes.push({x:sx,y:pitFloorY,dir:'up'});
+        }
+        const pw=5, px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
+        sol(px,by+Math.floor(IH*0.5),pw,1);
+        break;
+      }
+
+      case 'corridor': {
+        // Clean straight run
+        if(rng()<0.4){
+          const pw=2+Math.floor(rng()*3);
+          const px=bx+Math.floor(IW*0.3+rng()*IW*0.4);
+          sol(px,floorY-3,pw,3);
+        }
+        if(rng()<0.5) speedRamps.push({tx:bx+2+Math.floor(rng()*Math.max(1,IW-4)), ty:floorY, dir:rng()<0.5?'right':'left'});
+        break;
+      }
+
+      case 'bounce_room': {
+        const numB=2+Math.floor(rng()*2);
+        for(let i=0;i<numB;i++){
+          const bpx=bx+2+Math.floor(rng()*Math.max(1,IW-3));
+          if(validSpikeUp(bpx,floorY)) bouncePads.push({x:bpx,y:floorY});
+        }
+        const numP=1+Math.floor(rng()*2);
+        for(let i=0;i<numP;i++){
+          const pw=4+Math.floor(rng()*4);
+          const px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
+          const py=by+2+Math.floor(rng()*(IH-5));
+          if(gt(px,py)===0) sol(px,py,pw,1);
+        }
+        break;
+      }
+
+      case 'gauntlet_end': {
+        // Tight finale — walls closer in, some spikes, narrow platforms
+        // Build inner walls to narrow the corridor
+        const narrowW = 3+Math.floor(rng()*3);
+        const narrowX = bx + Math.floor((IW-narrowW)/2);
+        // Add ceiling platforms to narrow path
+        const numCeilP = 1+Math.floor(rng()*2);
+        for(let i=0;i<numCeilP;i++){
+          const pw=4+Math.floor(rng()*4);
+          const px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
+          const py=by+Math.floor(rng()*IH*0.4)+1;
+          if(gt(px,py)===0) sol(px,py,pw,2);
+        }
+        // Wall spikes (validated)
+        if(diff.spikeChance>0){
+          const cnt=2+Math.floor(rng()*4);
+          for(let i=0;i<cnt;i++){
+            const sy=by+2+Math.floor(rng()*(IH-4));
+            const side=rng()<0.5;
+            const sx = side ? gx*CHUNK_W+WALL_T : (gx+1)*CHUNK_W-WALL_T-1;
+            const dir = side ? 'right' : 'left';
+            if(validSpikeWall(sx,sy,dir)) spikes.push({x:sx,y:sy,dir});
+          }
+        }
+        // Floor spike gauntlet (validated)
+        if(diff.spikeChance>0){
+          for(let sx=bx+2;sx<bx+IW-2;sx+=2+Math.floor(rng()*3)){
+            if(validSpikeUp(sx,floorY) && rng()<diff.spikeChance*1.5)
+              spikes.push({x:sx,y:floorY,dir:'up'});
+          }
+        }
+        break;
+      }
+
+      default: { // 'normal'
+        const subroll=rng();
+        if(subroll<0.20){
+          /* open — nothing */
+        } else if(subroll<0.48){
+          // Platforms
+          const numP=1+Math.floor(rng()*2);
+          for(let i=0;i<numP;i++){
+            const pw=4+Math.floor(rng()*5);
+            const px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
+            const py=by+2+Math.floor(rng()*(IH-5));
+            if(gt(px,py)===0) sol(px,py,pw,1);
+          }
+        } else if(subroll<0.65){
+          // Floor spikes (validated)
+          const cnt=1+Math.floor(rng()*3);
+          for(let i=0;i<cnt;i++){
+            const sx=bx+1+Math.floor(rng()*(IW-2));
+            if(validSpikeUp(sx,floorY)) spikes.push({x:sx,y:floorY,dir:'up'});
+          }
+        } else if(subroll<0.80&&diff.spikeChance>0){
+          // Wall spikes (validated)
+          const side=rng()<0.5;
+          const cnt=1+Math.floor(rng()*3);
+          for(let i=0;i<cnt;i++){
+            const sy=by+2+Math.floor(rng()*(IH-4));
+            const sx = side ? gx*CHUNK_W+WALL_T : (gx+1)*CHUNK_W-WALL_T-1;
+            const dir = side ? 'right' : 'left';
+            if(validSpikeWall(sx,sy,dir)) spikes.push({x:sx,y:sy,dir});
+          }
+        } else {
+          // Mixed
+          const pw=3+Math.floor(rng()*4);
+          const px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
+          const py=by+2+Math.floor(rng()*(IH-5));
+          if(gt(px,py)===0) sol(px,py,pw,1);
+          if(rng()<0.4) speedRamps.push({tx:bx+2+Math.floor(rng()*Math.max(1,IW-4)), ty:floorY, dir:rng()<0.5?'right':'left'});
+        }
+        // Moving platform chance
+        if(rng()<0.18){
+          const mx=bx+1+Math.floor(rng()*Math.max(1,IW-5));
+          const my=by+2+Math.floor(rng()*(IH-5));
+          if(gt(mx,my)===0){
+            movingPlats.push({x:mx,y:my,origX:mx,origY:my,w:3+Math.floor(rng()*3),
+              range:6+Math.floor(rng()*10),speed:0.4+rng()*0.8,vert:rng()<0.3,t:rng()*Math.PI*2});
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  // Extra bounce pads
+  for(let i=0;i<1+Math.floor(rng()*2);i++){
+    if(path.length<3) break;
+    const pi=1+Math.floor(rng()*(path.length-2));
+    const {gx,gy}=path[pi];
+    const bpx=gx*CHUNK_W+WALL_T+1+Math.floor(rng()*Math.max(1,IW-2));
+    const bpy=gy*CHUNK_H+CHUNK_H-WALL_T-1;
+    if(bpy>0&&bpy<TH&&tiles[bpy*TW+bpx]===0&&bpy+1<TH&&tiles[(bpy+1)*TW+bpx]===1)
+      bouncePads.push({x:bpx,y:bpy});
+  }
+
+  // Extra movers
+  const numMovers=Math.max(0,diff.movingPlats-movingPlats.length);
+  for(let i=0;i<numMovers;i++){
+    if(path.length<3) break;
+    const pi=1+Math.floor(rng()*(path.length-2));
+    const {gx,gy}=path[pi];
+    const mx=gx*CHUNK_W+WALL_T+1+Math.floor(rng()*Math.max(1,IW-5));
+    const my=gy*CHUNK_H+WALL_T+2+Math.floor(rng()*Math.max(1,IH-5));
+    if(my>0&&my<TH&&tiles[my*TW+mx]===0){
+      movingPlats.push({x:mx,y:my,origX:mx,origY:my,w:3+Math.floor(rng()*4),
+        range:6+Math.floor(rng()*10),speed:0.4+rng()*0.9,vert:rng()<0.35,t:rng()*Math.PI*2});
+    }
+  }
+
+  // Checkpoints
+  const checkpoints=[];
+  for(let cp=1;cp<=3;cp++){
+    const pi=Math.max(0,Math.min(Math.floor(path.length*cp/4),path.length-2));
+    const {gx,gy}=path[pi];
+    checkpoints.push({x:gx*CHUNK_W+WALL_T+Math.floor(IW/2), y:gy*CHUNK_H+CHUNK_H-WALL_T-1, hit:[]});
+  }
+
+  // ── BUILD AI WAYPOINTS from path ─────────────────────────────
+  // C: Smart AI uses these waypoints to navigate
+  const aiWaypoints = path.map(({gx,gy})=>({
+    px: (gx*CHUNK_W + WALL_T + Math.floor(IW/2)) * TILE,  // center of chunk in pixels
+    py: (gy*CHUNK_H + CHUNK_H - WALL_T - 2) * TILE,
+    // Store the chunk floor y for bots to target
+    floorTY: gy*CHUNK_H + CHUNK_H - WALL_T - 1,
+    chunkType: chunkType[`${gx},${gy}`] || 'normal',
+  }));
+  // Add finish as last waypoint — point bots to the floor of the finish chunk
+  aiWaypoints.push({ px: finishTX*TILE, py: finFloorTY*TILE, floorTY: finFloorTY, chunkType:'finish' });
+
+  return {
+    tiles, W:TW, H:TH, biome, diff,
+    finish:      {x:finishTX, y:finishTY},   // FIX A: always from this map
+    spawn:       {x:spawnTX,  y:spawnTY-1},
+    checkpoints, spikes, bouncePads, movingPlats,
+    speedRamps,
+    glitchTiles:[], _teleporters:[],
+    waitDoors,
+    aiWaypoints,  // C: bot pathfinding
+    chunkTypes: chunkType,
+    _path:path, _SC:SC, _FC:FC,
+  };
+}
+
+// ── TILE LOOKUP ────────────────────────────────────────────────
+function tileAt(map,tx,ty){
+  if(!map) return 0;
+  if(tx<0||tx>=map.W) return 1;
+  if(ty<0) return 1;
+  if(ty>=map.H) return GS.voidFloor ? 0 : 1;
+  for(const mp of map.movingPlats){
+    const mx=Math.floor(mp.x), my=Math.floor(mp.y);
+    if(ty===my && tx>=mx && tx<mx+mp.w) return 1;
+  }
+  return map.tiles[ty*map.W+tx];
+}
+
+// Bot tile check: treat active wait-door tiles as passable (bots walk through them)
+function botTileAt(map,tx,ty){
+  if(!map) return 0;
+  if(tx<0||tx>=map.W) return 1;
+  if(ty<0) return 1;
+  if(ty>=map.H) return GS.voidFloor ? 0 : 1;
+  // Wait doors: if this tile is inside an active wait door, treat as air
+  if(map.waitDoors){
+    for(const wd of map.waitDoors){
+      if(wd.active && tx>=wd.tx && tx<wd.tx+wd.tw && ty>=wd.ty && ty<wd.ty+wd.th)
+        return 0;
+    }
+  }
+  for(const mp of map.movingPlats){
+    const mx=Math.floor(mp.x), my=Math.floor(mp.y);
+    if(ty===my && tx>=mx && tx<mx+mp.w) return 1;
+  }
+  return map.tiles[ty*map.W+tx];
+}
+
+// ── PLAYER FACTORY ─────────────────────────────────────────────
+function createPlayer(idx, isBot, ctrl){
+  return {
+    idx, isBot, ctrl,
+    x:0, y:0, vx:0, vy:0,
+    w:PLAYER_W, h:NORMAL_H,
+    onGround:false, wasOnGround:false,
+    coyoteTimer:0, jumpBuffer:0,
+    jumpHeld:false, jumpHoldFrames:0,
+    onWall:0, wallLockTimer:0,
+    doubleJump:true,
+    vaultCooldown:0,
+    fastFalling:false,
+    bhopTimer:0, _bhopStack:0,
+    sliding:false, slideTimer:0,
+    onSlope:false, slopeDir:0,  // v6: slope state
+    flow:0, flowInvincible:false,
+    alive:true, eliminated:false, finished:false, finishTime:0,
+    respawnTimer:0,
+    lastCheckpoint:-1, checkpointPos:null,
+    facing:1, deathCount:0,
+    powerup:null, reverseTimer:0,
+    trail:[], dustParts:[],
+    glowFrames:0, hitFlash:0,
+    landSquish:0, runFrame:0,
+    _prevDown:false,
+    // Bot state
+    _botJump:false, _botJumpCD:0,
+    _botWaypointIdx:1,
+    _botStuckTimer:0,
+    _stuckSamples:[],
+    _botPersonality: isBot ? ['rusher','avoider','balanced'][idx % 3] : 'none',
+    color: PLAYER_COLORS[idx],
+    name:  PLAYER_NAMES[idx],
+    _airBraking: false,
+  };
+}
+
+// ── CAMERA ─────────────────────────────────────────────────────
+const cam = {x:0, y:0, zoom:1, shakeX:0, shakeY:0, shakeF:0};
+
+function updateCamera(){
+  if(!GS.map) return;
+  const mapW=GS.map.W*TILE, mapH=GS.map.H*TILE;
+  // Always zoom-to-fit the entire map — no dynamic zoom
+  cam.zoom = Math.min(canvas.width/mapW, canvas.height/mapH);
+  cam.x = 0; cam.y = 0;  // centering handled by offX/offY in render
+  if(cam.shakeF>0){
+    cam.shakeX=(Math.random()-.5)*4*(cam.shakeF/10);
+    cam.shakeY=(Math.random()-.5)*4*(cam.shakeF/10);
+    cam.shakeF--;
+  } else { cam.shakeX=0; cam.shakeY=0; }
+}
+function shake(f){ cam.shakeF=Math.max(cam.shakeF,f); }
+
+// ── PLAYER PHYSICS ─────────────────────────────────────────────
+function updatePlayer(p){
+  if(!p.alive||!GS.map) return;
+  if(p.respawnTimer>0){ p.respawnTimer--; return; }
+
+  const ctrl=p.ctrl;
+  const rev=p.reverseTimer>0;
+  if(p.reverseTimer>0) p.reverseTimer--;
+
+  let goL,goR,goU,goD,jumpPress,slidePress,powerPress;
+  if(p.isBot){
+    const bi=botInput(p);
+    goL=bi.left; goR=bi.right; goU=bi.up; goD=bi.down;
+    jumpPress=p._botJump; slidePress=false; powerPress=false;
+    p._botJump=false;
+  } else {
+    goL  =ctrl?(rev?keys[ctrl.right]:keys[ctrl.left]):false;
+    goR  =ctrl?(rev?keys[ctrl.left]:keys[ctrl.right]):false;
+    goU  =ctrl?keys[ctrl.up]:false;
+    goD  =ctrl?keys[ctrl.down]:false;
+    jumpPress =ctrl?just[ctrl.up]:false;
+    powerPress=ctrl&&ctrl.powerup?just[ctrl.powerup]:false;
+    const downJust=ctrl?(just[ctrl.down]||(!p._prevDown&&keys[ctrl.down])):false;
+    slidePress=downJust&&goD&&p.onGround&&!p.sliding;
+    p._prevDown=goD;
+  }
+
+  if(powerPress&&p.powerup) usePowerup(p);
+
+  const fl=p.flow/FLOW_MAX;
+  const spBonus=fl*FLOW_SPD_BONUS*(GS._speedDemon?1.5:1);
+  const grav=GS._gravityFlip
+    ? -(GS._lowGravity?GRAVITY*0.4:GRAVITY)
+    : (GS._lowGravity?GRAVITY*0.4:GRAVITY);
+  const gravFall=GS._gravityFlip
+    ? -(GS._lowGravity?GRAVITY_FALL*0.4:GRAVITY_FALL)
+    : (GS._lowGravity?GRAVITY_FALL*0.4:GRAVITY_FALL);
+
+  // ── SLIDE ────────────────────────────────────────────────────
+  if(slidePress&&Math.abs(p.vx)>=SLIDE_MIN_SPD){
+    p.sliding=true; p.slideTimer=SLIDE_FRAMES;
+    p.vx=p.facing*SLIDE_VX*(GS.map.diff.slideBoost||1);
+    p.y+=NORMAL_H-SLIDE_H; p.h=SLIDE_H;
+    gainFlow(p,12); dust(p,6);
+  }
+
+  if(p.sliding){
+    p.vx*=SLIDE_FRIC; p.slideTimer--;
+    const ceilOk=!tileAt(GS.map,Math.floor(p.x/TILE),Math.floor((p.y-(NORMAL_H-SLIDE_H)-1)/TILE))&&
+                 !tileAt(GS.map,Math.floor((p.x+p.w-1)/TILE),Math.floor((p.y-(NORMAL_H-SLIDE_H)-1)/TILE));
+    if((p.slideTimer<=0||!p.onGround||Math.abs(p.vx)<0.9)&&ceilOk){
+      p.y-=NORMAL_H-SLIDE_H; p.h=NORMAL_H; p.sliding=false;
+    } else if(!ceilOk&&p.slideTimer<=0){ p.slideTimer=3; }
+  } else {
+    // ── HORIZONTAL MOVEMENT ──────────────────────────────────
+    const topSpd=Math.min(WALK_SPEED+spBonus,SPEED_CAP);
+    const inputDir=goR?1:goL?-1:0;
+    if(p.onGround){
+      const target=inputDir*topSpd;
+      if(inputDir!==0) p.vx+=(target-p.vx)*ACCEL_GROUND;
+      else p.vx*=FRIC_GROUND;
+    } else {
+      // Air: moving same direction = gentle nudge toward air-cap, no drag
+      // Air: opposite direction = lose only 50% of current momentum, then nudge
+      const sameDir=(inputDir>0&&p.vx>0)||(inputDir<0&&p.vx<0);
+      const oppDir=(inputDir>0&&p.vx<0)||(inputDir<0&&p.vx>0);
+      if(oppDir){
+        // Air brake: bleed 50% of speed toward zero, keep the rest
+        p.vx *= 0.50;
+        p._airBraking = true;
+        // Small nudge in new direction
+        p.vx += inputDir * JUMP_AIR_ACCEL * 2;
+        if((inputDir>0&&p.vx>0)||(inputDir<0&&p.vx<0)) p._airBraking=false;
+      } else if(sameDir){
+        // Same dir: gently push toward air cap, no friction
+        const airCap = Math.min(Math.max(Math.abs(p.vx), topSpd * 1.5), SPEED_CAP);
+        const target = inputDir * airCap;
+        p.vx += (target - p.vx) * JUMP_AIR_ACCEL;
+        p._airBraking = false;
+      } else if(inputDir !== 0){
+        p.vx += inputDir * JUMP_AIR_ACCEL * 1.5;
+        p._airBraking = false;
+      }
+      // AIR_FRIC = 1.0 so no decay applied
+    }
+    p.vx = Math.max(-SPEED_CAP, Math.min(SPEED_CAP, p.vx));
+    if(goR) p.facing=1;
+    if(goL) p.facing=-1;
+  }
+
+  // ── SPEED RAMP / SLOPE ───────────────────────────────────────
+  p.onSlope=false; p.slopeDir=0;
+  if(p.onGround&&!p.sliding&&GS.map.speedRamps){
+    const pcTileX=Math.floor((p.x+p.w/2)/TILE);
+    const pcTileY=Math.floor((p.y+p.h)/TILE);
+    for(const ramp of GS.map.speedRamps){
+      if(Math.abs(ramp.tx-pcTileX)<=1&&Math.abs(ramp.ty-pcTileY)<=1){
+        p.onSlope=true; p.slopeDir=ramp.dir==='right'?1:-1;
+        const slopeBoost=SLOPE_ACCEL*(1+(p.flow/FLOW_MAX)*0.8);
+        p.vx+=p.slopeDir*slopeBoost;
+        p.vx=Math.max(-SPEED_CAP,Math.min(SPEED_CAP,p.vx));
+        gainFlow(p,FLOW_SLOPE_GAIN);
+        break;
+      }
+    }
+  }
+
+  // ── JUMP BUFFER & COYOTE ─────────────────────────────────────
+  if(jumpPress) p.jumpBuffer=JUMP_BUF_FRAMES;
+  else if(p.jumpBuffer>0) p.jumpBuffer--;
+  if(p.onGround) p.coyoteTimer=COYOTE_FRAMES;
+  else if(p.coyoteTimer>0) p.coyoteTimer--;
+  if(p.bhopTimer>0) p.bhopTimer--;
+
+  // ── WALL CHECK ───────────────────────────────────────────────
+  const wyT=Math.floor((p.y+2)/TILE), wyB=Math.floor((p.y+p.h-2)/TILE);
+  const hitL=tileAt(GS.map,Math.floor((p.x-1)/TILE),wyT)||tileAt(GS.map,Math.floor((p.x-1)/TILE),wyB);
+  const hitR=tileAt(GS.map,Math.floor((p.x+p.w)/TILE),wyT)||tileAt(GS.map,Math.floor((p.x+p.w)/TILE),wyB);
+  p.onWall=0;
+  if(!p.sliding&&!p.onGround&&p.wallLockTimer<=0){
+    if(hitL&&goL) p.onWall=-1;
+    if(hitR&&goR) p.onWall=1;
+  }
+  if(p.wallLockTimer>0) p.wallLockTimer--;
+  if(p.onWall!==0&&p.vy>0){ p.vy=Math.min(p.vy,WALL_SLIDE_MAX); p.fastFalling=false; }
+
+  // ── JUMP ─────────────────────────────────────────────────────
+  const canGround=(p.coyoteTimer>0||p.onGround)&&!p.sliding;
+  const canWall=p.onWall!==0&&!p.onGround;
+  if(p.jumpBuffer>0&&(canGround||canWall||p.doubleJump)&&p.vy>=(!p.onGround?-1:-99)){
+    if(canWall){
+      // Wall hop: PRESERVE existing speed magnitude, ADD launch away from wall
+      // This lets wall hops rocket you if you hit the wall at speed
+      const existingSpd = Math.abs(p.vx);
+      const launchDir = -p.onWall;
+      p.vx = launchDir * (existingSpd + WALL_ADD_X);
+      p.vx = Math.max(-SPEED_CAP, Math.min(SPEED_CAP, p.vx));
+      p.vy = WALL_LAUNCH_Y;
+      p.wallLockTimer=WALL_LOCK; p.onWall=0; p.doubleJump=true;
+      gainFlow(p,FLOW_WALL_GAIN); shake(4); dust(p,5);
+    } else if(canGround){
+      const spdCarry=Math.abs(p.vx)*JUMP_SPD_CARRY;
+      p.vy=Math.max(JUMP_VY_CAP, JUMP_VY_BASE-spdCarry);
+      if(p.bhopTimer>0&&Math.abs(p.vx)>WALK_SPEED*0.5){
+        // Bhop: multiply speed, each chain stacks
+        const stack = Math.min(p._bhopStack||0, BHOP_MAX_STACK);
+        const boost = 1 + (BHOP_BOOST-1) * (1 + stack*0.15);
+        p.vx *= boost;
+        p.vx = Math.max(-SPEED_CAP, Math.min(SPEED_CAP, p.vx));
+        p._bhopStack = (p._bhopStack||0) + 1;
+        gainFlow(p, FLOW_BHOP_GAIN + stack*3);
+      } else {
+        p._bhopStack = 0;
+      }
+      dust(p,4);
+    } else if(p.doubleJump){
+      const spdCarry=Math.abs(p.vx)*DJUMP_SPD_CARRY;
+      p.vy=Math.max(JUMP_VY_CAP, DJUMP_VY_BASE-spdCarry);
+      p.doubleJump=false; dust(p,5); shake(2);
+    }
+    p.jumpBuffer=0; p.coyoteTimer=0;
+    p.jumpHeld=true; p.jumpHoldFrames=JUMP_HOLD_MAX;
+  }
+  if(p.jumpHeld&&goU&&p.jumpHoldFrames>0){
+    p.vy+=JUMP_HOLD_BOOST; p.jumpHoldFrames--;
+  } else if(!goU){ p.jumpHeld=false; p.jumpHoldFrames=0; }
+
+  // Fast fall: aggressive downward accel, kills horizontal on landing (handled below)
+  if(goD&&!p.onGround&&!p.sliding&&p.vy>-2){
+    p.fastFalling=true;
+    p.vy=Math.min(p.vy+FF_ACCEL, FF_MAX);
+  }
+  if(p.onGround) p.fastFalling=false;
+
+  // Vault
+  if(!p.sliding&&p.vaultCooldown<=0&&!p.onGround&&Math.abs(p.vx)>=VAULT_SPD_MIN&&p.vy>=-1){
+    const ax=p.vx>0?p.x+p.w+1:p.x-1;
+    const ftY=Math.floor((p.y+p.h-1)/TILE);
+    const knY=Math.floor((p.y+p.h-TILE-1)/TILE);
+    if(tileAt(GS.map,Math.floor(ax/TILE),ftY)&&!tileAt(GS.map,Math.floor(ax/TILE),knY)){
+      const spdCarry=Math.abs(p.vx)*JUMP_SPD_CARRY*0.7;
+      p.vy=Math.max(JUMP_VY_CAP,VAULT_VY-spdCarry);
+      p.vx+=p.facing*VAULT_VX_BOOST;
+      p.vaultCooldown=VAULT_CD;
+      gainFlow(p,FLOW_VAULT_GAIN); dust(p,4);
+    }
+  }
+  if(p.vaultCooldown>0) p.vaultCooldown--;
+
+  // Gravity
+  p.vy+=p.vy>0?gravFall:grav;
+  p.vy=Math.min(p.vy,MAX_FALL);
+
+  p.wasOnGround=p.onGround;
+  moveAndCollide(p);
+
+  if(p.onGround&&!p.wasOnGround){
+    p.doubleJump=true; p.bhopTimer=BHOP_WINDOW;
+    if(p.fastFalling){
+      // Fast fall: slam into ground, lose ALL horizontal momentum
+      p.vx = 0;
+      p._bhopStack = 0;
+      gainFlow(p, FLOW_LAND_GAIN * 1.8);
+      p.landSquish=10; dust(p,8); shake(4);
+    } else if(Math.abs(p.vy)>3){
+      // Normal hard landing: preserve speed for bhop
+      gainFlow(p, FLOW_LAND_GAIN);
+      p.landSquish=6; dust(p,5);
+    }
+    p.fastFalling=false;
+  }
+
+  p.flow=Math.max(0,p.flow-FLOW_DECAY);
+  if(Math.abs(p.vx)>WALK_SPEED*0.9) gainFlow(p,FLOW_SPD_GAIN);
+  if(p.flow>=FLOW_MAX&&!p.flowInvincible){ p.flowInvincible=true; p.glowFrames=9999; shake(7); }
+  if(p.flow<FLOW_MAX-5){ p.flowInvincible=false; if(p.flow<=0) p.glowFrames=0; }
+
+  const spd=Math.hypot(p.vx,p.vy);
+  if(spd>2.5&&p.flow>15) p.trail.push({x:p.x+p.w/2,y:p.y+p.h/2,age:0});
+  p.trail.forEach(t=>t.age++);
+  p.trail=p.trail.filter(t=>t.age<10);
+  p.dustParts.forEach(d=>{d.x+=d.vx;d.y+=d.vy;d.vy+=0.18;d.age++;});
+  p.dustParts=p.dustParts.filter(d=>d.age<d.life);
+
+  if(p.landSquish>0) p.landSquish--;
+  if(p.hitFlash>0)   p.hitFlash--;
+  if(p.glowFrames>0&&!p.flowInvincible) p.glowFrames--;
+  if(p.onGround&&Math.abs(p.vx)>0.5) p.runFrame=(p.runFrame+Math.abs(p.vx)*0.13)%4;
+  else if(!p.onGround) p.runFrame=0;
+
+  // Hazard checks
+  const pcx=p.x+p.w/2, pcy=p.y+p.h/2;
+  for(const sp of GS.map.spikes){
+    let hit=false;
+    if(sp.dir==='up'){
+      hit=Math.abs(pcx-(sp.x+.5)*TILE)<TILE*.55&&Math.abs(pcy-(sp.y+.5)*TILE)<TILE*.55;
+    } else if(sp.dir==='right'){
+      hit=p.x<(sp.x+1)*TILE+3&&p.x+p.w>sp.x*TILE&&pcy>sp.y*TILE+2&&pcy<(sp.y+1)*TILE-2;
+    } else if(sp.dir==='left'){
+      hit=p.x+p.w>(sp.x+1)*TILE-3&&p.x<(sp.x+1)*TILE&&pcy>sp.y*TILE+2&&pcy<(sp.y+1)*TILE-2;
+    }
+    if(hit) killPlayer(p,false);
+  }
+  for(const bp of GS.map.bouncePads){
+    if(Math.abs(pcx-(bp.x+.5)*TILE)<TILE*.85&&
+       p.y+p.h>bp.y*TILE-3&&p.y+p.h<bp.y*TILE+TILE&&p.vy>0){
+      p.vy=JUMP_VY_BASE*1.9; p.doubleJump=true;
+      gainFlow(p,FLOW_VAULT_GAIN*1.2); dust(p,6);
+    }
+  }
+  if(GS.map._teleporters){
+    for(const tp of GS.map._teleporters){
+      if(Math.abs(pcx-(tp.ax+.5)*TILE)<TILE*1.3&&Math.abs(pcy-tp.ay*TILE)<TILE*1.5){
+        p.x=tp.bx*TILE; p.y=(tp.by-1)*TILE; p.vx*=.5; p.vy=0;
+      }
+    }
+  }
+
+  // Wait doors
+  if(GS.map.waitDoors){
+    for(const wd of GS.map.waitDoors){
+      if(!wd.active) continue;
+      const wx1=wd.tx*TILE,wy1=wd.ty*TILE,wx2=wx1+wd.tw*TILE,wy2=wy1+wd.th*TILE;
+      const near=p.x+p.w>wx1-TILE&&p.x<wx2+TILE&&p.y+p.h>wy1-TILE&&p.y<wy2+TILE;
+      const inside=p.x+p.w>wx1+1&&p.x<wx2-1&&p.y+p.h>wy1+1&&p.y<wy2-1;
+      if(near){
+        if(wd.timer<0) wd.timer=180;
+        if(inside){
+          const dcx=(wx1+wx2)/2,dcy=(wy1+wy2)/2;
+          const pcxd=p.x+p.w/2;
+          if(wd.horiz){ p.vx=pcxd<dcx?-2.5:2.5; p.x+=pcxd<dcx?-2:2; }
+          else { p.vy=Math.min(p.vy,-1.5); p.y-=2; }
+        }
+      }
+    }
+    if(GS.players.find(pl=>pl.alive)===p){
+      for(const wd of GS.map.waitDoors){
+        if(!wd.active||wd.timer<0) continue;
+        wd.timer--;
+        if(wd.timer<=0){
+          wd.active=false; shake(4);
+          const map=GS.map;
+          for(let dy=0;dy<wd.th;dy++) for(let dx=0;dx<wd.tw;dx++){
+            const tx=wd.tx+dx,ty=wd.ty+dy;
+            if(tx>=0&&tx<map.W&&ty>=0&&ty<map.H) map.tiles[ty*map.W+tx]=0;
+          }
+        }
+      }
+    }
+  }
+
+  if(GS.suddenDeath&&p.y+p.h>GS.lavaY) killPlayer(p,true);
+  if(p.y>GS.map.H*TILE+200) killPlayer(p,false);
+  if(!p.finished){
+    const fin=GS.map.finish;
+    // fin.y is the floor tile — player feet (pcy) should be near that floor
+    if(Math.abs(pcx-(fin.x+.5)*TILE)<TILE*5 && Math.abs(pcy-fin.y*TILE)<TILE*6)
+      playerFinished(p);
+  }
+  GS.map.checkpoints.forEach((cp,ci)=>{
+    if(!cp.hit.includes(p.idx)&&
+       Math.abs(pcx-(cp.x+.5)*TILE)<TILE*1.8&&
+       Math.abs(pcy-cp.y*TILE)<TILE*2){
+      cp.hit.push(p.idx); p.lastCheckpoint=ci;
+      p.checkpointPos={x:cp.x*TILE,y:(cp.y-1)*TILE};
+    }
+  });
+}
+
+// ── MOVE AND COLLIDE ───────────────────────────────────────────
+function moveAndCollide(p){
+  const map=GS.map;
+  if(!map) return;
+  p.x+=p.vx;
+  const tyT=Math.floor(p.y/TILE), tyB=Math.floor((p.y+p.h-1)/TILE);
+  if(p.vx<0){
+    const txL=Math.floor(p.x/TILE);
+    for(let ty=tyT;ty<=tyB;ty++){
+      if(tileAt(map,txL,ty)){ p.x=(txL+1)*TILE; p.vx=0; break; }
+    }
+  } else if(p.vx>0){
+    const txR=Math.floor((p.x+p.w-1)/TILE);
+    for(let ty=tyT;ty<=tyB;ty++){
+      if(tileAt(map,txR,ty)){ p.x=txR*TILE-p.w; p.vx=0; break; }
+    }
+  }
+  p.onGround=false;
+  let remainVy=p.vy;
+  const MAX_STEP=TILE-1;
+  while(Math.abs(remainVy)>0.001){
+    const step=Math.sign(remainVy)*Math.min(Math.abs(remainVy),MAX_STEP);
+    remainVy-=step; p.y+=step;
+    const txL2=Math.floor(p.x/TILE), txC=Math.floor((p.x+p.w/2)/TILE), txR2=Math.floor((p.x+p.w-1)/TILE);
+    if(step<0){
+      const tyTop=Math.floor(p.y/TILE);
+      for(const tx of [txL2,txC,txR2]){
+        if(tileAt(map,tx,tyTop)){ p.y=(tyTop+1)*TILE; p.vy=0; remainVy=0; p.jumpHeld=false; break; }
+      }
+    } else {
+      const tyBot=Math.floor((p.y+p.h-1)/TILE);
+      let landed=false;
+      for(const tx of [txL2,txC,txR2]){
+        if(tileAt(map,tx,tyBot)){ p.y=tyBot*TILE-p.h; p.vy=0; remainVy=0; p.onGround=true; landed=true; break; }
+      }
+      if(!landed){
+        for(const mp of map.movingPlats){
+          const mx=mp.x*TILE,my=mp.y*TILE,mw=mp.w*TILE;
+          if(p.x+p.w>mx&&p.x<mx+mw&&p.y+p.h>my&&p.y+p.h<my+TILE+6&&p.vy>=0){
+            p.y=my-p.h; p.vy=0; remainVy=0; p.onGround=true;
+            if(!mp.vert) p.vx+=Math.sin(mp.t)*mp.speed*0.25;
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+
+function gainFlow(p,a){ p.flow=Math.min(FLOW_MAX,p.flow+a); }
+function dust(p,n){
+  for(let i=0;i<n;i++) p.dustParts.push({
+    x:p.x+p.w/2+(Math.random()-.5)*p.w,y:p.y+p.h,
+    vx:(Math.random()-.5)*2.2,vy:-(Math.random()*1.8+.3),
+    age:0,life:10+Math.floor(Math.random()*8)
+  });
+}
+
+function killPlayer(p,lava){
+  if(!p.alive) return;
+  if(p.flowInvincible){ p.flow=0; p.flowInvincible=false; p.glowFrames=0; p.hitFlash=20; shake(5); return; }
+  if(lava){ p.eliminated=true; p.alive=false; p.flow=0; shake(8); return; }
+  p.alive=false; p.flow=0; p.flowInvincible=false; p.deathCount++;
+  p.respawnTimer=90;
+  setTimeout(()=>{
+    if(!GS.running) return;
+    p.alive=true; p.eliminated=false;
+    if(p.checkpointPos){ p.x=p.checkpointPos.x; p.y=p.checkpointPos.y; }
+    else spawnPlayer(p);
+    p.vx=0; p.vy=0; p.sliding=false; p.h=NORMAL_H;
+    p.coyoteTimer=0; p.jumpBuffer=0;
+  },1500);
+}
+
+function spawnPlayer(p){
+  if(!GS.map) return;
+  const sp=GS.map.spawn;
+  p.x=(sp.x+p.idx*2)*TILE; p.y=(sp.y-1)*TILE;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  C: SMART BOT AI — WAYPOINT PATHFINDING + PERSONALITIES
+//
+//  Each bot follows GS.map.aiWaypoints[] in order.
+//  They advance to the next waypoint when close enough.
+//  Three personalities:
+//    RUSHER  (BYTE):   Charges straight to finish, ignores spikes,
+//                      loves speed ramps, higher air accel
+//    AVOIDER (GLITCH): Detects spikes ahead and goes around,
+//                      more cautious, takes extra jumps
+//    BALANCED(VOID):   Default behavior, reads the room
+//
+//  All bots: stuck detection → force jump if hasn't moved in a while
+// ════════════════════════════════════════════════════════════════
+function botInput(p){
+  if(!GS.map||!GS.map.aiWaypoints) return {left:false,right:false,up:false,down:false};
+
+  const wps = GS.map.aiWaypoints;
+  let wpIdx = p._botWaypointIdx;
+  if(wpIdx >= wps.length) wpIdx = wps.length-1;
+
+  // Advance waypoint when close enough
+  const wp = wps[wpIdx];
+  const distX = Math.abs((p.x+p.w/2) - wp.px);
+  const distY = (p.y+p.h) - wp.py;
+  if(distX < CHUNK_W*TILE*0.55 && distY > -CHUNK_H*TILE*0.5 && wpIdx < wps.length-1){
+    p._botWaypointIdx++;
+    wpIdx = p._botWaypointIdx;
+  }
+
+  const targetWp = wps[Math.min(wpIdx, wps.length-1)];
+  const tx = targetWp.px, ty = targetWp.py;
+  const pcx = p.x+p.w/2, pcy = p.y+p.h;
+  const dx = tx-pcx, dy = ty-pcy;
+
+  const goingRight = dx >  TILE*0.5;
+  const goingLeft  = dx < -TILE*0.5;
+  const left  = goingLeft;
+  const right = goingRight;
+  const moveDir = goingRight ? 1 : goingLeft ? -1 : (p.facing||1);
+
+  // Stuck detection: only flag after 60 frames of tiny movement
+  if(!p._stuckSamples) p._stuckSamples = [];
+  p._stuckSamples.push(p.x);
+  if(p._stuckSamples.length > 60) p._stuckSamples.shift();
+  const rangeX = p._stuckSamples.length >= 30
+    ? Math.max(...p._stuckSamples) - Math.min(...p._stuckSamples)
+    : 999;
+  const stuck = rangeX < TILE * 0.6 && p._stuckSamples.length >= 30;
+
+  // Look-ahead (botTileAt ignores wait doors)
+  const aheadPx  = moveDir > 0 ? p.x+p.w+2 : p.x-2;
+  const aheadTX  = Math.floor(aheadPx/TILE);
+  const midTY    = Math.floor((p.y+p.h*0.5)/TILE);
+  const groundTY = Math.floor((p.y+p.h+2)/TILE);
+
+  // Wall: only count if we're actually moving toward it
+  const wallAhead = (left||right) && botTileAt(GS.map, aheadTX, midTY) !== 0;
+
+  // Gap: floor missing ahead, only when moving
+  const stepTX = Math.floor((p.x + moveDir*(p.w + TILE*1.5))/TILE);
+  const gapAhead = p.onGround && (left||right) && !botTileAt(GS.map, stepTX, groundTY);
+  let pitDepth = 0;
+  if(gapAhead){
+    for(let d=1; d<=5; d++){
+      if(!botTileAt(GS.map, stepTX, groundTY+d)) pitDepth++;
+      else break;
+    }
+  }
+  const deepPit = pitDepth >= 3;
+
+  // Jump only when clearly necessary, with generous cooldown to prevent spam
+  const needUp = dy < -TILE*2;
+  const mustJump = (needUp || wallAhead || deepPit) && p._botJumpCD <= 0;
+  const stuckJump = stuck && p.onGround && p._botJumpCD <= 0;
+
+  if(p.onGround && (mustJump || stuckJump)){
+    p._botJump = true;
+    p._botJumpCD = wallAhead ? 30 : deepPit ? 35 : stuck ? 45 : 28;
+  }
+  if(p._botJumpCD > 0) p._botJumpCD--;
+
+  const personality = p._botPersonality || 'balanced';
+  let downPress = false;
+
+  if(personality === 'rusher'){
+    if(!p.onGround && p.vy > 0 && dy > TILE*2) downPress = true;
+  } else if(personality === 'avoider'){
+    const spikeNear = GS.map.spikes.some(sp=>{
+      if(sp.dir !== 'up') return false;
+      return Math.abs((sp.x+0.5)*TILE - pcx) < TILE*4 && Math.abs(sp.y*TILE - pcy) < TILE*3;
+    });
+    if(spikeNear && p.onGround && p._botJumpCD <= 0){
+      p._botJump = true; p._botJumpCD = 25;
+    }
+  } else {
+    if(!p.onGround && p.vy > 0 && dy > TILE*3 && Math.random() < 0.2) downPress = true;
+  }
+
+  // Air stuck recovery: double jump once
+  if(stuck && !p.onGround && p.doubleJump && Math.abs(p.vy) < 3 && p._botJumpCD <= 0){
+    p._botJump = true; p.doubleJump = false; p._botJumpCD = 20;
+  }
+
+  return {left, right, up:false, down:downPress};
+}
+
+// ── POWERUPS ───────────────────────────────────────────────────
+function usePowerup(p){
+  if(!p.powerup) return;
+  const pu=p.powerup; p.powerup=null;
+  switch(pu.id){
+    case 'triple_jump': p.doubleJump=true; p._tripleJump=true; break;
+    case 'speed_burst': p.vx=p.facing*SPEED_CAP; gainFlow(p,50); break;
+    case 'reverse':
+      GS.players.filter(q=>q!==p&&q.alive&&!q.finished)
+        .sort((a,b)=>(GS.wins[b.idx]||0)-(GS.wins[a.idx]||0))
+        .slice(0,1).forEach(q=>{ q.reverseTimer=180; });
+      break;
+    case 'ghost': p.flowInvincible=true; p.glowFrames=360; break;
+    case 'trap_immune': p.flowInvincible=true; p.glowFrames=120; break;
+  }
+}
+
+// ── MOVING PLATFORMS ──────────────────────────────────────────
+function updateMovingPlats(){
+  if(!GS.map) return;
+  GS.map.movingPlats.forEach(mp=>{
+    mp.t+=mp.speed*0.016;
+    if(mp.vert) mp.y=mp.origY+Math.sin(mp.t)*(mp.range/TILE/2);
+    else        mp.x=mp.origX+Math.sin(mp.t)*(mp.range/TILE/2);
+  });
+}
+
+// ── SUDDEN DEATH ──────────────────────────────────────────────
+function activateSuddenDeath(){
+  GS.suddenDeath=true; GS.lavaY=GS.map.H*TILE+60;
+  document.getElementById('sdBanner').style.display='block';
+  GS._glitchIv=setInterval(()=>{
+    if(!GS.map) return;
+    const tx=Math.floor(rng()*GS.map.W), ty=Math.floor(rng()*GS.map.H);
+    if(GS.map.tiles[ty*GS.map.W+tx]===1){ GS.map.tiles[ty*GS.map.W+tx]=0; GS.map.glitchTiles.push({x:tx,y:ty,age:0}); }
+  },300);
+}
+function updateSuddenDeath(){
+  if(!GS.suddenDeath||!GS.map) return;
+  GS.lavaY-=LAVA_RISE;
+  if(GS.lavaY<0) endRound(null);
+  GS.map.glitchTiles.forEach(g=>g.age++);
+  GS.map.glitchTiles=GS.map.glitchTiles.filter(g=>g.age<30);
+}
+
+// ── RENDER ─────────────────────────────────────────────────────
+function render(){
+  if(!GS.map) return;
+  const W=canvas.width, H=canvas.height;
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
+  const offX=Math.floor((W-GS.map.W*TILE*cam.zoom)/2)+cam.shakeX;
+  const offY=Math.floor((H-GS.map.H*TILE*cam.zoom)/2)+cam.shakeY;
+  ctx.save();
+  ctx.translate(offX,offY);
+  ctx.scale(cam.zoom,cam.zoom);
+  ctx.fillStyle=GS.map.biome.bg;
+  ctx.fillRect(0,0,GS.map.W*TILE,GS.map.H*TILE);
+  drawFog();
+  drawTiles();
+  drawSpeedRamps();
+  drawMovingPlatsDraw();
+  drawObjects();
+  GS.players.forEach(p=>drawTrail(p));
+  GS.players.forEach(p=>drawPlayer(p));
+  if(GS.suddenDeath) drawLava();
+  ctx.restore();
+  if(GS._darkMap) drawDarkness(offX,offY);
+  drawHUD();
+}
+
+function drawFog(){
+  const f=GS.frame*.015;
+  ctx.save(); ctx.globalAlpha=0.12;
+  ctx.fillStyle=GS.map.biome.fogCol||GS.map.biome.bg;
+  for(let i=0;i<3;i++){
+    const x=((i*400+f*20)%(GS.map.W*TILE+400))-200;
+    ctx.beginPath(); ctx.ellipse(x,GS.map.H*TILE*.7,220,60,0,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawTiles(){
+  const map=GS.map, b=map.biome;
+  for(let ty=0;ty<map.H;ty++){
+    for(let tx=0;tx<map.W;tx++){
+      if(map.tiles[ty*map.W+tx]===0) continue;
+      const px=tx*TILE, py=ty*TILE;
+      const topOpen=ty>0&&map.tiles[(ty-1)*map.W+tx]===0;
+      ctx.fillStyle=topOpen?b.tileCol:b.groundCol;
+      ctx.fillRect(px,py,TILE,TILE);
+      if(topOpen){
+        ctx.fillStyle='rgba(255,255,255,0.14)'; ctx.fillRect(px,py,TILE,2);
+        ctx.fillStyle='rgba(0,0,0,0.22)';       ctx.fillRect(px,py+TILE-2,TILE,2);
+        ctx.fillStyle=b.accent+'33';             ctx.fillRect(px,py,TILE,1);
+      }
+    }
+  }
+  map.glitchTiles.forEach(g=>{
+    const a=1-g.age/30;
+    ctx.save(); ctx.globalAlpha=a*.9;
+    ctx.fillStyle=`hsl(${g.age*14%360},100%,60%)`;
+    ctx.fillRect(g.x*TILE+(Math.random()-.5)*3,g.y*TILE+(Math.random()-.5)*3,TILE,TILE);
+    ctx.restore();
+  });
+}
+
+// v6: Draw speed ramps as diagonal wedges
+function drawSpeedRamps(){
+  if(!GS.map.speedRamps) return;
+  const t=GS.frame;
+  GS.map.speedRamps.forEach(ramp=>{
+    const px=ramp.tx*TILE, py=ramp.ty*TILE;
+    // Glowing orange wedge
+    const pulse=0.7+Math.sin(t*0.08+ramp.tx)*0.3;
+    ctx.save();
+    ctx.globalAlpha=pulse;
+    // Draw ramp wedge
+    ctx.fillStyle='#ff8800';
+    ctx.beginPath();
+    if(ramp.dir==='right'){
+      ctx.moveTo(px,py+TILE); ctx.lineTo(px+TILE,py+TILE); ctx.lineTo(px+TILE,py);
+    } else {
+      ctx.moveTo(px,py); ctx.lineTo(px,py+TILE); ctx.lineTo(px+TILE,py+TILE);
+    }
+    ctx.closePath(); ctx.fill();
+    // Arrow indicator
+    ctx.globalAlpha=1;
+    ctx.fillStyle='#ffdd00';
+    ctx.font=`${TILE-2}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(ramp.dir==='right'?'→':'←', px+TILE/2, py+TILE*0.7);
+    ctx.restore();
+  });
+}
+
+function drawMovingPlatsDraw(){
+  GS.map.movingPlats.forEach(mp=>{
+    const px=mp.x*TILE,py=mp.y*TILE,pw=mp.w*TILE;
+    ctx.fillStyle='#664422'; ctx.fillRect(px,py,pw,TILE);
+    ctx.fillStyle='rgba(255,180,60,0.38)'; ctx.fillRect(px,py,pw,3);
+  });
+}
+
+function drawObjects(){
+  const map=GS.map, t=GS.frame;
+  map.checkpoints.forEach(cp=>{
+    const px=cp.x*TILE,py=cp.y*TILE;
+    ctx.fillStyle='#335533'; ctx.fillRect(px+TILE/2-1,py-TILE*1.5,2,TILE*1.5);
+    ctx.fillStyle=cp.hit.length?'#224422':'#55ffaa';
+    ctx.fillRect(px+TILE/2+1,py-TILE*1.5,TILE*.6,TILE*.5);
+  });
+
+  const fin=map.finish;
+  const fpx=fin.x*TILE, fpy=fin.y*TILE;  // fpy is floor tile y → draw flag pole upward
+  const wv=Math.sin(t*.09)*2;
+  ctx.save();
+  ctx.globalAlpha=0.3+Math.sin(t*.07)*.15;
+  ctx.fillStyle='#ffdd00';
+  ctx.beginPath(); ctx.arc(fpx+TILE/2,fpy-TILE*2,TILE*2.5,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+  ctx.fillStyle='#ccc'; ctx.fillRect(fpx+TILE/2,fpy-TILE*4,2,TILE*4);
+  ctx.fillStyle='#ffdd00';
+  ctx.beginPath();
+  ctx.moveTo(fpx+TILE/2+2,fpy-TILE*4);
+  ctx.lineTo(fpx+TILE*1.8+wv,fpy-TILE*3.5);
+  ctx.lineTo(fpx+TILE/2+2,fpy-TILE*3);
+  ctx.fill();
+
+  // Spikes (directional)
+  map.spikes.forEach(sp=>{
+    const sx=sp.x*TILE, sy=sp.y*TILE;
+    if(!sp.dir||sp.dir==='up'){
+      ctx.fillStyle='#993333';
+      ctx.beginPath(); ctx.moveTo(sx+TILE/2,sy); ctx.lineTo(sx+TILE,sy+TILE); ctx.lineTo(sx,sy+TILE); ctx.fill();
+      ctx.fillStyle='#ff5555';
+      ctx.beginPath(); ctx.moveTo(sx+TILE/2,sy+2); ctx.lineTo(sx+TILE*.72,sy+TILE-2); ctx.lineTo(sx+TILE*.28,sy+TILE-2); ctx.fill();
+    } else if(sp.dir==='right'){
+      ctx.fillStyle='#993333';
+      ctx.beginPath(); ctx.moveTo(sx+TILE,sy+TILE/2); ctx.lineTo(sx,sy+TILE); ctx.lineTo(sx,sy); ctx.fill();
+      ctx.fillStyle='#ff5555';
+      ctx.beginPath(); ctx.moveTo(sx+TILE-2,sy+TILE/2); ctx.lineTo(sx+2,sy+TILE*.72); ctx.lineTo(sx+2,sy+TILE*.28); ctx.fill();
+    } else if(sp.dir==='left'){
+      ctx.fillStyle='#993333';
+      ctx.beginPath(); ctx.moveTo(sx,sy+TILE/2); ctx.lineTo(sx+TILE,sy+TILE); ctx.lineTo(sx+TILE,sy); ctx.fill();
+      ctx.fillStyle='#ff5555';
+      ctx.beginPath(); ctx.moveTo(sx+2,sy+TILE/2); ctx.lineTo(sx+TILE-2,sy+TILE*.72); ctx.lineTo(sx+TILE-2,sy+TILE*.28); ctx.fill();
+    }
+  });
+
+  map.bouncePads.forEach(bp=>{
+    const bx=bp.x*TILE,by=bp.y*TILE,bob=Math.sin(t*.1)*1;
+    ctx.fillStyle='#22bb77'; ctx.fillRect(bx,by+TILE-5+bob,TILE,5);
+    ctx.fillStyle='#88ffcc'; ctx.fillRect(bx+2,by+TILE-5+bob,TILE-4,2);
+  });
+
+  (map._teleporters||[]).forEach(tp=>{
+    [[tp.ax,tp.ay],[tp.bx,tp.by]].forEach(([x,y])=>{
+      ctx.save(); ctx.globalAlpha=.65+Math.sin(t*.12)*.3;
+      ctx.fillStyle='#9900ff';
+      ctx.beginPath(); ctx.arc((x+.5)*TILE,(y+.5)*TILE,TILE*.8,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    });
+  });
+
+  (map.waitDoors||[]).forEach(wd=>{
+    if(!wd.active) return;
+    const wx=wd.tx*TILE,wy=wd.ty*TILE,ww=wd.tw*TILE,wh=wd.th*TILE;
+    const counting=wd.timer>0;
+    const pulse=Math.sin(GS.frame*(counting?0.25:0.06))*0.2+0.6;
+    ctx.save();
+    ctx.globalAlpha=counting?pulse*.85:.55;
+    const grad=ctx.createLinearGradient(wx,wy,wx+ww,wy+wh);
+    if(counting){ grad.addColorStop(0,'#ff9900'); grad.addColorStop(.5,'#ffdd00'); grad.addColorStop(1,'#ff6600'); }
+    else { grad.addColorStop(0,'#00aaff'); grad.addColorStop(.5,'#88ddff'); grad.addColorStop(1,'#0066cc'); }
+    ctx.fillStyle=grad; ctx.fillRect(wx,wy,ww,wh);
+    ctx.globalAlpha=.9; ctx.strokeStyle=counting?'#ffdd00':'#88ddff';
+    ctx.lineWidth=2; ctx.strokeRect(wx+1,wy+1,ww-2,wh-2);
+    if(counting){
+      const secs=Math.ceil(wd.timer/60);
+      ctx.globalAlpha=1; ctx.fillStyle='#fff';
+      ctx.font=`bold ${Math.floor(wh*.65)}px monospace`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.shadowColor='#ff6600'; ctx.shadowBlur=8;
+      ctx.fillText(secs,wx+ww/2,wy+wh/2); ctx.shadowBlur=0;
+    }
+    ctx.restore();
+  });
+}
+
+function drawTrail(p){
+  if(!p.trail.length) return;
+  ctx.save();
+  p.trail.forEach(tr=>{
+    const a=(1-tr.age/10)*(p.flow/FLOW_MAX)*.5;
+    if(a<=0) return;
+    ctx.globalAlpha=a; ctx.fillStyle=p.color;
+    const s=4*(1-tr.age/10);
+    ctx.fillRect(tr.x-s/2,tr.y-s/2,s,s);
+  });
+  ctx.restore();
+}
+
+function drawPlayer(p){
+  if(!p.alive) return;
+  const px=Math.round(p.x), py=Math.round(p.y);
+  const w=p.w, h=p.h, fc=p.facing;
+
+  p.dustParts.forEach(d=>{
+    const a=1-d.age/d.life;
+    ctx.save(); ctx.globalAlpha=a*.55; ctx.fillStyle='#ccc';
+    ctx.fillRect(d.x-1.5,d.y-1.5,3,3); ctx.restore();
+  });
+
+  if(p.flowInvincible||p.glowFrames>0){
+    ctx.save(); ctx.globalAlpha=.38+Math.sin(GS.frame*.2)*.22;
+    ctx.shadowColor=p.color; ctx.shadowBlur=20; ctx.fillStyle=p.color;
+    ctx.fillRect(px-6,py-6,w+12,h+12); ctx.restore();
+  }
+  if(p.reverseTimer>0){
+    ctx.save(); ctx.globalAlpha=.45+Math.sin(GS.frame*.25)*.3;
+    ctx.fillStyle='#ff00ff'; ctx.fillRect(px-4,py-4,w+8,h+8); ctx.restore();
+  }
+  if(p.hitFlash>0&&p.hitFlash%4<2){
+    ctx.save(); ctx.globalAlpha=.85; ctx.fillStyle='#fff';
+    ctx.fillRect(px,py,w,h); ctx.restore(); return;
+  }
+
+  // Speed ramp aura (v6)
+  if(p.onSlope&&p.onGround){
+    ctx.save(); ctx.globalAlpha=.35+Math.sin(GS.frame*.15)*.2;
+    ctx.fillStyle='#ff8800'; ctx.fillRect(px-4,py-4,w+8,h+8); ctx.restore();
+  }
+
+  const sq=p.landSquish;
+  const scX=1+sq*.09, scY=1-sq*.09;
+  ctx.save();
+  ctx.translate(px+w/2,py+h); ctx.scale(scX,scY); ctx.translate(-(px+w/2),-(py+h));
+
+  if(p.sliding){
+    ctx.fillStyle=p.color; ctx.fillRect(px,py+h-7,w+3,7);
+    ctx.fillStyle='#f4b886'; ctx.fillRect(px+(fc>0?w-4:1),py+h-10,6,5);
+    ctx.fillStyle='#000'; ctx.fillRect(px+(fc>0?w:2),py+h-9,2,2);
+    ctx.fillStyle='#334466'; ctx.fillRect(px+(fc>0?0:w-4),py+h-5,4,5);
+  } else if(!p.onGround){
+    ctx.fillStyle=p.color; ctx.fillRect(px+1,py+4,w-2,h-6);
+    ctx.fillStyle='#f4b886'; ctx.fillRect(px+2,py,w-4,6);
+    ctx.fillStyle='#000'; ctx.fillRect(px+(fc>0?5:3),py+2,3,3);
+    ctx.fillStyle='#553300'; ctx.fillRect(px+1,py,w-2,2);
+    ctx.fillStyle='#334466';
+    ctx.fillRect(px+1,py+h-5,4,5); ctx.fillRect(px+w-5,py+h-5,4,5);
+    ctx.fillStyle='#f4b886'; ctx.fillRect(px+(fc>0?w-1:-3),py+6,3,5);
+  } else {
+    const rf=Math.floor(p.runFrame)%4;
+    const la=rf<2?0:1, lb=1-la;
+    ctx.fillStyle=p.color; ctx.fillRect(px+1,py+5,w-2,h-8);
+    ctx.fillStyle='#f4b886'; ctx.fillRect(px+2,py,w-4,6);
+    ctx.fillStyle='#000'; ctx.fillRect(px+(fc>0?5:3),py+2,3,3);
+    ctx.fillStyle='#553300'; ctx.fillRect(px+1,py,w-2,2);
+    ctx.fillStyle='#334466';
+    ctx.fillRect(px+1,py+h-5,4,5+la); ctx.fillRect(px+w-5,py+h-5,4,5+lb);
+    if(p.bhopTimer>0){
+      ctx.save(); ctx.globalAlpha=p.bhopTimer/BHOP_WINDOW*.7;
+      ctx.fillStyle='#ffff00'; ctx.fillRect(px,py+h,w,2); ctx.restore();
+    }
+    ctx.fillStyle='#f4b886'; ctx.fillRect(px+(fc>0?w-1:-3),py+6,3,5);
+  }
+  ctx.restore();
+
+  if(p.onWall!==0){
+    ctx.fillStyle='rgba(255,200,100,.5)';
+    ctx.fillRect(p.onWall>0?px+w:px-4,py+2,4,h-4);
+  }
+
+  ctx.font='6px "Press Start 2P"'; ctx.fillStyle='#fff'; ctx.textAlign='center';
+  ctx.shadowColor='#000'; ctx.shadowBlur=4;
+  // Show personality label for bots
+  const label = p.isBot ? `${p.name}` : p.name;
+  ctx.fillText(label,px+w/2,py-5); ctx.shadowBlur=0;
+
+  if(p.powerup){
+    ctx.fillStyle='#0088ff'; ctx.fillRect(px+w-1,py-7,10,8);
+    ctx.fillStyle='#fff'; ctx.font='5px sans-serif'; ctx.fillText('★',px+w+4,py-1);
+  }
+
+  // Speed dots
+  const spd=Math.abs(p.vx);
+  if(spd>WALK_SPEED*1.5&&!p.onGround){
+    const numDots=Math.floor((spd/SPEED_CAP)*5);
+    ctx.save(); ctx.globalAlpha=0.6;
+    for(let i=0;i<numDots;i++){
+      ctx.fillStyle=p.color;
+      const dotX=px+(fc<0?w+2+i*4:-4-i*4);
+      ctx.fillRect(dotX,py+h/2-1,2,2);
+    }
+    ctx.restore();
+  }
+}
+
+function drawLava(){
+  const mW=GS.map.W*TILE, t=GS.frame*.06;
+  ctx.save(); ctx.shadowColor='#ff4400'; ctx.shadowBlur=36;
+  ctx.fillStyle='#bb1e00';
+  ctx.fillRect(-10,GS.lavaY,mW+20,GS.map.H*TILE-GS.lavaY+200);
+  ctx.fillStyle='#ff5500';
+  ctx.beginPath(); ctx.moveTo(-10,GS.lavaY);
+  for(let x=-10;x<mW+10;x+=7)
+    ctx.lineTo(x,GS.lavaY+Math.sin(x*.045+t)*4+Math.cos(x*.07+t*1.4)*3);
+  ctx.lineTo(mW+10,GS.lavaY+20); ctx.lineTo(-10,GS.lavaY+20); ctx.fill();
+  ctx.restore();
+}
+
+function drawDarkness(offX,offY){
+  const oc=document.createElement('canvas');
+  oc.width=canvas.width; oc.height=canvas.height;
+  const oc2=oc.getContext('2d');
+  oc2.fillStyle='rgba(0,0,0,.96)'; oc2.fillRect(0,0,oc.width,oc.height);
+  oc2.globalCompositeOperation='destination-out';
+  GS.players.forEach(p=>{
+    if(!p.alive) return;
+    const sx=(p.x+p.w/2)*cam.zoom+offX, sy=(p.y+p.h/2)*cam.zoom+offY;
+    const g=oc2.createRadialGradient(sx,sy,0,sx,sy,110);
+    g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    oc2.fillStyle=g; oc2.beginPath(); oc2.arc(sx,sy,110,0,Math.PI*2); oc2.fill();
+  });
+  ctx.drawImage(oc,0,0);
+}
+
+function drawHUD(){
+  const W=canvas.width, H=canvas.height;
+  const bW=Math.min(140,(W-16)/Math.max(GS.players.length,1)-6);
+  const totW=GS.players.length*(bW+6);
+  const sx=(W-totW)/2;
+  GS.players.forEach((p,i)=>{
+    const bx=sx+i*(bW+6), by=H-30;
+    ctx.font='6px "Press Start 2P"'; ctx.textAlign='center';
+    ctx.fillStyle=p.eliminated?'#444':p.color;
+    ctx.fillText(p.name,bx+bW/2,by-10);
+    if(p.eliminated){ctx.fillStyle='#ff2200';ctx.fillText('LAVA',bx+bW/2,by+2);return;}
+    if(p.finished){ctx.fillStyle='#ffdd00';ctx.fillText('DONE!',bx+bW/2,by+2);return;}
+    ctx.fillStyle='#111'; ctx.fillRect(bx,by,bW,10);
+    ctx.strokeStyle=p.color; ctx.lineWidth=1; ctx.strokeRect(bx,by,bW,10);
+    const fw=(p.flow/FLOW_MAX)*(bW-2);
+    if(fw>0){
+      const g=ctx.createLinearGradient(bx+1,0,bx+bW-1,0);
+      g.addColorStop(0,'#ff6600'); g.addColorStop(.6,'#ffdd00'); g.addColorStop(1,'#fff');
+      ctx.fillStyle=g; ctx.fillRect(bx+1,by+1,fw,8);
+    }
+    if(p.flowInvincible){
+      ctx.save(); ctx.globalAlpha=.5+Math.sin(GS.frame*.2)*.35;
+      ctx.fillStyle=p.color; ctx.fillRect(bx,by,bW,10); ctx.restore();
+      ctx.font='4px "Press Start 2P"'; ctx.fillStyle='#000';
+      ctx.fillText('INVINCIBLE',bx+bW/2,by+7);
+    }
+    if(p.powerup){ctx.fillStyle='#0088ff';ctx.font='5px "Press Start 2P"';ctx.fillText('★',bx+bW/2,by+21);}
+    if(p.reverseTimer>0){ctx.fillStyle='#ff00ff';ctx.font='5px "Press Start 2P"';ctx.fillText('REV!',bx+bW/2,by+21);}
+    // Show bot personality label
+    if(p.isBot){
+      const icons={'rusher':'⚡','avoider':'🛡','balanced':'⚖'};
+      ctx.fillStyle='#888'; ctx.font='4px "Press Start 2P"';
+      ctx.fillText((icons[p._botPersonality]||'?'),bx+bW/2,by+22);
+    }
+  });
+
+  if(GS.running){
+    const td=document.getElementById('timerHud');
+    td.style.display='block';
+    const m=Math.floor(GS.roundTime/60), s=Math.floor(GS.roundTime%60);
+    td.textContent=`${m}:${s.toString().padStart(2,'0')}`;
+    td.className='timer-hud'+(GS.roundTime<30?' danger':'');
+  }
+  if(GS.running&&GS.players.length>1){
+    const ph=document.getElementById('placeHud'); ph.style.display='block';
+    const alive=GS.players.filter(p=>p.alive&&!p.finished).sort((a,b)=>b.x-a.x);
+    ph.innerHTML=alive.slice(0,3).map((p,i)=>`<span style="color:${p.color}">${['1ST','2ND','3RD'][i]} ${p.name}</span>`).join('<br>');
+  }
+
+  if(GS.running&&GS.players[0]&&!GS.players[0].isBot){
+    const p=GS.players[0], spd=Math.abs(p.vx);
+    if(spd>3.0){
+      ctx.save(); ctx.font='5px "Press Start 2P"'; ctx.textAlign='left';
+      ctx.fillStyle=`rgba(${Math.floor(spd/SPEED_CAP*255)},${Math.floor((1-spd/SPEED_CAP)*200)},50,0.8)`;
+      ctx.fillText(`SPD ${Math.floor(spd*10)/10}`,10,H-42); ctx.restore();
+    }
+  }
+
+  const dbg=document.getElementById('debugOverlay');
+  if(dbg.style.display!=='none'&&GS.players[0]){
+    const p=GS.players[0];
+    dbg.textContent=`vx:${p.vx.toFixed(2)} vy:${p.vy.toFixed(2)} gnd:${p.onGround?1:0} wall:${p.onWall} flow:${Math.floor(p.flow)} slope:${p.onSlope?p.slopeDir:0} wp:${p._botWaypointIdx||'-'}`;
+  }
+
+  ctx.font='5px "Press Start 2P"'; ctx.textAlign='left';
+  ctx.fillStyle='rgba(0,0,0,.65)';
+  ctx.fillRect(6,6,100,GS.players.length*13+14);
+  GS.players.forEach((p,i)=>{
+    ctx.fillStyle=p.color;
+    ctx.fillText(`${p.isBot?'🤖':''}${p.name}:${GS.wins[i]||0}W`,12,18+i*13);
+  });
+  ctx.fillStyle='#555';
+  ctx.fillText(`ERA ${Math.floor(GS.eraWins/5)+1}·${(GS.map?.diff?.name||'').toUpperCase()}`,12,18+GS.players.length*13+4);
+}
+
+// ── GAME LOOP ──────────────────────────────────────────────────
+let lastTime=0, rafId=null;
+function gameLoop(ts){
+  rafId=requestAnimationFrame(gameLoop);
+  const dt=Math.min((ts-lastTime)/16.667,3);
+  lastTime=ts;
+  if(!GS.running||GS.paused){ updateCamera(); render(); clearJust(); return; }
+  GS.frame++;
+  GS.roundTime-=dt/60;
+  if(GS.roundTime<=0&&!GS.suddenDeath){ GS.roundTime=0; activateSuddenDeath(); }
+  updateMovingPlats();
+  updateSuddenDeath();
+  GS.players.forEach(p=>updatePlayer(p));
+  updateCamera();
+  render();
+  clearJust();
+}
+
+// ── POWERUPS & CORRUPTIONS ─────────────────────────────────────
+const POWERUPS=[
+  {id:'triple_jump', name:'TRIPLE JUMP', desc:'Jump 3× in the air'},
+  {id:'speed_burst', name:'SPEED BURST', desc:'+80% speed instantly'},
+  {id:'ghost',       name:'GHOST',       desc:'Invincible briefly'},
+  {id:'reverse',     name:'REVERSE',     desc:'Flip 1st place 3s'},
+  {id:'trap_immune', name:'IMMUNITY',    desc:'Ignore 1 trap'},
+  {id:'redraw_maze', name:'REDRAW MAZE', desc:'Regen the whole map!'},
+];
+const CORRUPTIONS=[
+  {id:'add_spike',    name:'ADD SPIKES',  desc:'Spikes near route'},
+  {id:'remove_block', name:'ERASE TILES', desc:'Remove platforms'},
+  {id:'add_moving',   name:'MOVING PLAT', desc:'New mover'},
+  {id:'add_bounce',   name:'BOUNCE PAD',  desc:'Add bounce pads'},
+  {id:'add_teleport', name:'TELEPORTER',  desc:'Random teleporter'},
+];
+const SPECIAL_EVENTS=[
+  {id:'low_gravity',  name:'MOON GRAVITY', desc:'Float like the moon!', icon:'🌙'},
+  {id:'speed_demon',  name:'SPEED DEMON',  desc:'1.8× speed this round!',icon:'⚡'},
+  {id:'dark_map',     name:'DARKNESS',     desc:'Small light only.',     icon:'🌑'},
+  {id:'gravity_flip', name:'FLIP GRAVITY', desc:'Up is down!',           icon:'🔄'},
+];
+
+function applySpecialEvent(e){
+  if(e.id==='low_gravity')  GS._lowGravity=true;
+  if(e.id==='speed_demon')  GS._speedDemon=true;
+  if(e.id==='dark_map')     GS._darkMap=true;
+  if(e.id==='gravity_flip') GS._gravityFlip=true;
+}
+
+function applyCorruption(c){
+  if(!GS.map) return;
+  const r2=mulberry32(Date.now())();
+  switch(c.id){
+    case 'add_spike':
+      for(let i=0;i<6;i++){
+        const fin=GS.map.finish;
+        const sx=fin.x-10+Math.floor(r2*20);
+        const sy=Math.floor(r2*GS.map.H*.7);
+        if(sx>0&&sx<GS.map.W&&sy>0&&sy<GS.map.H&&GS.map.tiles[sy*GS.map.W+sx]===0
+           &&sy+1<GS.map.H&&GS.map.tiles[(sy+1)*GS.map.W+sx]===1)
+          GS.map.spikes.push({x:sx,y:sy,dir:'up'});
+      }
+      break;
+    case 'remove_block':
+      for(let i=0;i<10;i++){
+        const rx=Math.floor(GS.map.W*.3+r2*GS.map.W*.5);
+        const ry=Math.floor(r2*GS.map.H*.7);
+        if(rx<GS.map.W&&ry<GS.map.H){ GS.map.tiles[ry*GS.map.W+rx]=0; GS.map.glitchTiles.push({x:rx,y:ry,age:0}); }
+      }
+      break;
+    case 'add_moving':
+      const fin2=GS.map.finish;
+      GS.map.movingPlats.push({x:fin2.x-15,y:10,origX:fin2.x-15,origY:10,w:4,range:40,speed:.9,vert:false,t:0});
+      break;
+    case 'add_bounce':
+      for(let i=0;i<4;i++)
+        GS.map.bouncePads.push({x:Math.floor(GS.map.W*.2+r2*GS.map.W*.6),y:Math.floor(r2*GS.map.H*.7)});
+      break;
+    case 'add_teleport':
+      const fin3=GS.map.finish;
+      GS.map._teleporters.push({ax:8,ay:20,bx:fin3.x-5,by:15});
+      break;
+  }
+}
+
+// ── ROUND MANAGEMENT ──────────────────────────────────────────
+function startRound(){
+  GS.running=true; GS.roundTime=ROUND_TIME;
+  GS.suddenDeath=false; GS.lavaY=99999; GS.roundWinner=null;
+  GS._lowGravity=false; GS._speedDemon=false; GS._darkMap=false; GS._gravityFlip=false;
+  clearInterval(GS._glitchIv);
+  document.getElementById('sdBanner').style.display='none';
+  document.getElementById('timerHud').style.display='block';
+
+  // Always regenerate the map for each new round (fresh maze every match)
+  GS.seed = (GS.seed + 1337 + GS.round * 7919) >>> 0;
+  GS.map = generateMap(GS.seed, GS.currentBiome, GS.difficulty);
+
+  GS.players.forEach(p=>{
+    spawnPlayer(p);
+    p.vx=0; p.vy=0; p.alive=true; p.eliminated=false; p.finished=false;
+    p.flow=0; p.flowInvincible=false; p.lastCheckpoint=-1; p.checkpointPos=null;
+    p.trail=[]; p.dustParts=[]; p.reverseTimer=0; p.respawnTimer=0;
+    p.sliding=false; p.h=NORMAL_H; p.w=PLAYER_W;
+    p.coyoteTimer=0; p.jumpBuffer=0; p.jumpHeld=false; p.jumpHoldFrames=0;
+    p.onWall=0; p.wallLockTimer=0; p.vaultCooldown=0; p.fastFalling=false;
+    p.doubleJump=true; p.bhopTimer=0; p._bhopStack=0; p._prevDown=false; p._airBraking=false;
+    p._botJump=false; p._botJumpCD=0;
+    p._botWaypointIdx=1; p._botStuckTimer=0; p._prevX=p.x; p._stuckSamples=[];
+    p.landSquish=0; p.hitFlash=0; p.onSlope=false;
+  });
+}
+
+function playerFinished(p){
+  p.finished=true;
+  if(!GS.roundWinner){ GS.roundWinner=p; setTimeout(()=>endRound(p),1000); }
+}
+
+function endRound(winner){
+  GS.running=false;
+  clearInterval(GS._glitchIv);
+  if(winner){
+    GS.wins[winner.idx]=(GS.wins[winner.idx]||0)+1;
+    GS.totalWins[winner.idx]=(GS.totalWins[winner.idx]||0)+1;
+    GS.eraWins++;
+    if(GS.eraWins>=5){ setTimeout(showEraShift,800); return; }
+    setTimeout(()=>showChoiceScreen(winner),600);
+  } else {
+    setTimeout(()=>showWinScreen(null),500);
+  }
+}
+
+function nextRound(){
+  document.getElementById('winScreen').style.display='none';
+  document.getElementById('timerHud').style.display='none';
+  document.getElementById('placeHud').style.display='none';
+  startRound();
+}
+
+// ── CHOICE / CORRUPTION ────────────────────────────────────────
+function showChoiceScreen(winner){
+  const sc=document.getElementById('choiceScreen');
+  sc.style.display='flex';
+  document.getElementById('choiceTitle').textContent=`${winner.name} WINS ROUND ${GS.round+1}!`;
+  document.getElementById('choiceTitle').style.color=winner.color;
+  const opts=document.getElementById('choiceOptions'); opts.innerHTML='';
+  let choices=[];
+  if(Math.random()<0.15) choices.push({type:'special',data:SPECIAL_EVENTS[Math.floor(Math.random()*SPECIAL_EVENTS.length)]});
+  const sc2=[...CORRUPTIONS].sort(()=>Math.random()-.5);
+  choices.push({type:'corrupt',data:sc2[0]});
+  choices.push({type:'corrupt',data:sc2[1]});
+  choices.push({type:'powerup',data:[...POWERUPS].sort(()=>Math.random()-.5)[0]});
+  choices.forEach(c=>{
+    const btn=document.createElement('button');
+    btn.className='choice-btn'+(c.type==='powerup'?' pw':'')+(c.type==='special'?' sp':'');
+    btn.innerHTML=`${c.type==='special'?c.data.icon+' SPECIAL<br>':''}${c.data.name}<br><span style="font-size:.75em;opacity:.7">${c.data.desc}</span>`;
+    btn.onclick=()=>{
+      sc.style.display='none'; clearInterval(GS.choiceTimeout);
+      if(c.type==='powerup'){
+        if(c.data.id==='redraw_maze'){
+          // Regenerate map immediately then go to win screen; startRound will re-gen again but that's fine
+          // The key is the seed advances so next round is truly fresh
+          triggerCorruption(()=>{
+            GS.seed = (Date.now() ^ (Math.random()*0x7fffffff)) >>> 0;
+            showWinScreen(winner);
+          });
+        } else {
+          winner.powerup=c.data; showWinScreen(winner);
+        }
+      } else if(c.type==='special'){
+        triggerCorruption(()=>{applySpecialEvent(c.data);showWinScreen(winner);});
+      } else {
+        triggerCorruption(()=>{applyCorruption(c.data);showWinScreen(winner);});
+      }
+    };
+    opts.appendChild(btn);
+  });
+  let tl=20;
+  document.getElementById('choiceTimer').textContent=`Auto in ${tl}s`;
+  GS.choiceTimeout=setInterval(()=>{
+    tl--;
+    document.getElementById('choiceTimer').textContent=`Auto in ${tl}s`;
+    if(tl<=0){ clearInterval(GS.choiceTimeout); sc.style.display='none'; showWinScreen(winner); }
+  },1000);
+}
+
+function triggerCorruption(cb){
+  const sc=document.getElementById('corruptionScreen');
+  const bar=document.getElementById('simBar');
+  const pct=document.getElementById('simPercent');
+  sc.style.display='flex'; let prog=0;
+  const titles=['REALITY UNSTABLE','SIMULATION ERROR','PATCHING VOID','INJECTING CODE','CORRUPTING...'];
+  const tEl=document.getElementById('corruptTitle');
+  const iv=setInterval(()=>{
+    prog+=3+Math.random()*7; if(prog>100) prog=100;
+    bar.style.width=prog+'%'; pct.textContent=Math.floor(prog)+'%';
+    if(Math.random()<.18) tEl.textContent=titles[Math.floor(Math.random()*titles.length)];
+    if(prog>=100){ clearInterval(iv); setTimeout(()=>{ sc.style.display='none'; bar.style.width='0%'; cb(); },240); }
+  },35);
+}
+
+function showWinScreen(winner){
+  GS.round++;
+  const sc=document.getElementById('winScreen'); sc.style.display='flex';
+  if(winner){
+    document.getElementById('winTitle').textContent=`${winner.name} WINS!`;
+    document.getElementById('winTitle').style.color=winner.color;
+    document.getElementById('winSub').textContent=`Round ${GS.round} · Era ${GS.eraWins}/5`;
+  } else {
+    document.getElementById('winTitle').textContent='NO WINNER';
+    document.getElementById('winTitle').style.color='#ff4444';
+    document.getElementById('winSub').textContent='The lava claimed all...';
+  }
+  const sorted=[...GS.players].sort((a,b)=>(GS.wins[b.idx]||0)-(GS.wins[a.idx]||0));
+  document.getElementById('scoreboard').innerHTML=sorted.map(p=>
+    `<div class="score-row"><span style="color:${p.color}">${p.isBot?`🤖${['⚡','🛡','⚖'][p.idx%3]||''}`:''} ${p.name}</span><span>${GS.wins[p.idx]||0} wins</span></div>`
+  ).join('');
+}
+
+function showEraShift(){
+  GS.eraWins=0;
+  const sc=document.getElementById('eraShift'); sc.style.display='flex';
+  const me=document.getElementById('eraMaps'); me.innerHTML='';
+  const seeds=[Date.now(),Date.now()+1,Date.now()+2];
+  const opts=[...BIOMES].sort(()=>Math.random()-.5).slice(0,3);
+  opts.forEach((biome,i)=>{
+    const btn=document.createElement('button'); btn.className='era-map-btn';
+    btn.innerHTML=`<span style="font-size:28px">${biome.icon}</span><span>${biome.name}</span>`;
+    btn.onclick=()=>{
+      sc.style.display='none';
+      GS.seed=seeds[i]; GS.currentBiome=BIOMES.indexOf(biome);
+      GS.wins={}; nextRound();
+    };
+    me.appendChild(btn);
+  });
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────
+const DIFF_KEYS=['zen','easy','normal','hard','brutal'];
+const VOID_OPTS=[{k:true,l:'ON'},{k:false,l:'OFF'}];
+function buildSettings(diffId,voidId,styleId){
+  function makeGroup(containerId,opts,getActive,onSet){
+    const el=document.getElementById(containerId); if(!el) return;
+    el.innerHTML='';
+    opts.forEach(o=>{
+      const btn=document.createElement('button');
+      btn.className='sett-btn'+(getActive()===o.k?' active':'');
+      btn.textContent=o.l||o.name;
+      btn.onclick=()=>{ onSet(o.k); buildSettings(diffId,voidId,styleId); };
+      el.appendChild(btn);
+    });
+  }
+  makeGroup(diffId,DIFF_KEYS.map(k=>({k,l:DIFFICULTIES[k].name})),()=>GS.difficulty,v=>{GS.difficulty=v;});
+  makeGroup(voidId,VOID_OPTS,()=>GS.voidFloor,v=>{GS.voidFloor=v;});
+  if(styleId) makeGroup(styleId,BIOMES.map((b,i)=>({k:i,l:b.icon})),()=>GS.currentBiome,v=>{GS.currentBiome=v;});
+}
+
+// ── LOCAL LOBBY ────────────────────────────────────────────────
+let lobbyPlayers=[false,false,false];
+function tryJoinLobby(idx){
+  if(lobbyPlayers[idx]) return;
+  lobbyPlayers[idx]=true; renderLobby();
+  const n=lobbyPlayers.filter(Boolean).length;
+  document.getElementById('lobbyStatus').textContent=`${n} player${n>1?'s':''} ready`;
+  if(n>=1) document.getElementById('startLocalBtn').style.display='block';
+}
+function renderLobby(){
+  const cn=['WASD+F','IJKL+H','ARROWS+-'];
+  document.getElementById('playerSlots').innerHTML=['P1','P2','P3'].map((n,i)=>`
+    <div class="player-slot ${lobbyPlayers[i]?'ready':''}">
+      <div class="slot-char">${lobbyPlayers[i]?'🧍':'⬜'}</div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:${PLAYER_COLORS[i]}">${n}</div>
+      <div style="font-family:'VT323',monospace;font-size:13px;color:#888">${cn[i]}</div>
+      <div style="font-family:'VT323',monospace;font-size:11px;color:${lobbyPlayers[i]?'#44ff44':'#555'}">${lobbyPlayers[i]?'READY':'press jump'}</div>
+    </div>`).join('');
+}
+
+function startLocal(){
+  document.getElementById('modeSelect').style.display='none';
+  lobbyPlayers=[false,false,false]; renderLobby();
+  buildSettings('diffBtns','voidBtns','styleBtns');
+  document.getElementById('lobbyScreen').style.display='flex';
+  document.getElementById('startLocalBtn').style.display='none';
+}
+function launchLocal(){
+  document.getElementById('lobbyScreen').style.display='none';
+  GS.mode='local'; GS.players=[]; GS.wins={}; GS.totalWins={}; GS.eraWins=0; GS.round=0;
+  lobbyPlayers.forEach((j,i)=>{ if(j) GS.players.push(createPlayer(GS.players.length,false,PLAYER_CTRLS[i])); });
+  GS.seed = Date.now() >>> 0;
+  startRound(); startGameLoop();
+}
+
+function startSinglePlayer(){
+  document.getElementById('modeSelect').style.display='none';
+  GS.mode='solo'; GS.players=[]; GS.wins={}; GS.totalWins={}; GS.eraWins=0; GS.round=0;
+  GS.players.push(createPlayer(0,false,PLAYER_CTRLS[0]));
+  const botDefs=[
+    {name:'BYTE',  idx:1},
+    {name:'GLITCH',idx:2},
+    {name:'VOID',  idx:3},
+  ];
+  botDefs.forEach(({name,idx})=>{
+    const b=createPlayer(idx,true,null);
+    b.name=name;
+    b._botPersonality = name==='BYTE'?'rusher' : name==='GLITCH'?'avoider' : 'balanced';
+    GS.players.push(b);
+  });
+  GS.seed = Date.now() >>> 0;
+  startRound(); startGameLoop();
+}
+
+function startGameLoop(){
+  if(rafId) cancelAnimationFrame(rafId);
+  lastTime=performance.now();
+  rafId=requestAnimationFrame(gameLoop);
+}
+
+// ── PEER / ONLINE ──────────────────────────────────────────────
+let peerInst=null, peerConns=[], isHost=false, onlineIdx=0;
+
+function showPeerHost(){
+  document.getElementById('modeSelect').style.display='none';
+  document.getElementById('peerLobby').style.display='flex';
+  document.getElementById('peerTitle').textContent='HOST LOBBY';
+  document.getElementById('peerStatus').textContent='Creating room...';
+  document.getElementById('peerStartBtn').style.display='none';
+  document.getElementById('peerJoinInput').style.display='none';
+  document.getElementById('peerJoinBtn').style.display='none';
+  document.getElementById('peerSettings').style.display='flex';
+  buildSettings('peerDiffBtns','peerVoidBtns',null);
+  isHost=true; onlineIdx=0;
+  const code=Math.random().toString(36).substring(2,8).toUpperCase();
+  try{
+    peerInst=new Peer('MERA_'+code);
+    peerInst.on('open',()=>{
+      document.getElementById('peerCode').style.display='block';
+      document.getElementById('peerCode').textContent=code;
+      document.getElementById('peerStatus').textContent='Share code!';
+      document.getElementById('peerStartBtn').style.display='block';
+    });
+    peerInst.on('connection',conn=>{
+      peerConns.push(conn);
+      conn.on('data',d=>handlePeerData(d,conn));
+      conn.on('open',()=>{ updatePeerList(); conn.send({type:'welcome',idx:peerConns.length,total:peerConns.length+1}); });
+    });
+    peerInst.on('error',()=>document.getElementById('peerStatus').textContent='PeerJS unavailable');
+  }catch(e){ document.getElementById('peerStatus').textContent='PeerJS not available'; }
+}
+function showPeerJoin(){
+  document.getElementById('modeSelect').style.display='none';
+  document.getElementById('peerLobby').style.display='flex';
+  document.getElementById('peerTitle').textContent='JOIN LOBBY';
+  document.getElementById('peerJoinInput').style.display='block';
+  document.getElementById('peerJoinBtn').style.display='block';
+  document.getElementById('peerStartBtn').style.display='none';
+  document.getElementById('peerCode').style.display='none';
+  document.getElementById('peerSettings').style.display='none';
+  isHost=false;
+}
+function peerDoJoin(){
+  const code=document.getElementById('peerJoinInput').value.toUpperCase();
+  if(!code) return;
+  document.getElementById('peerStatus').textContent='Connecting...';
+  try{
+    peerInst=new Peer();
+    peerInst.on('open',()=>{
+      const conn=peerInst.connect('MERA_'+code);
+      peerConns=[conn];
+      conn.on('open',()=>{ document.getElementById('peerStatus').textContent='Connected!'; conn.send({type:'joined'}); });
+      conn.on('data',d=>handlePeerData(d,conn));
+    });
+  }catch(e){ document.getElementById('peerStatus').textContent='PeerJS not available'; }
+}
+function peerStartGame(){
+  const total=peerConns.length+1;
+  peerConns.forEach((c,i)=>c.send({type:'start',total,yourIdx:i+1,seed:GS.seed,biome:GS.currentBiome,diff:GS.difficulty,voidFloor:GS.voidFloor}));
+  startOnlineGame(total,0);
+}
+function handlePeerData(data,conn){
+  if(data.type==='welcome'){ onlineIdx=data.idx; document.getElementById('peerStatus').textContent=`You are P${data.idx+1}`; updatePeerList(); }
+  if(data.type==='start'){ GS.difficulty=data.diff||'normal'; GS.voidFloor=data.voidFloor!==false; startOnlineGame(data.total,data.yourIdx); }
+}
+function updatePeerList(){ document.getElementById('peerPlayerList').textContent=`Players: ${peerConns.length+1}/8`; }
+function startOnlineGame(total,myIdx){
+  document.getElementById('peerLobby').style.display='none';
+  GS.mode='online'; GS.players=[]; GS.wins={}; GS.totalWins={}; GS.eraWins=0; GS.round=0;
+  onlineIdx=myIdx;
+  for(let i=0;i<total;i++){
+    const isMe=i===myIdx;
+    const p=createPlayer(i,false,isMe?ONLINE_CTRL:null);
+    if(!isMe) p._isRemote=true;
+    GS.players.push(p);
+  }
+  GS.map=generateMap(GS.seed,GS.currentBiome,GS.difficulty);
+  startRound(); startGameLoop();
+}
+
+// ── MENU ──────────────────────────────────────────────────────
+function showMenu(){
+  hideAll(); document.getElementById('menuScreen').style.display='flex';
+  if(rafId){ cancelAnimationFrame(rafId); rafId=null; }
+  GS.running=false;
+  if(peerInst){ try{peerInst.destroy();}catch(e){} peerInst=null; }
+  peerConns=[];
+  startMenuBg();
+}
+function showModeSelect(){ hideAll(); document.getElementById('modeSelect').style.display='flex'; }
+function hideAll(){
+  ['menuScreen','modeSelect','lobbyScreen','peerLobby','winScreen','choiceScreen','eraShift','corruptionScreen']
+    .forEach(id=>document.getElementById(id).style.display='none');
+}
+function toggleControls(){
+  const h=document.getElementById('controlsHelp');
+  h.style.display=h.style.display==='none'?'block':'none';
+}
+
+// ── ANIMATED MENU BG ──────────────────────────────────────────
+let menuRafId=null;
+function startMenuBg(){
+  if(menuRafId) cancelAnimationFrame(menuRafId);
+  const bgCanvas=document.getElementById('menuBgCanvas');
+  const bgCtx=bgCanvas.getContext('2d');
+  let frame=0;
+  const clouds=[], trees=[], bushes=[], grassBlades=[];
+  for(let i=0;i<12;i++) clouds.push({x:Math.random()*2000,y:40+Math.random()*160,w:80+Math.random()*160,h:30+Math.random()*50,speed:0.4+Math.random()*0.6,layer:Math.random()<0.4?0:1});
+  for(let i=0;i<20;i++) trees.push({x:Math.random()*2000,speed:1.2+Math.random()*1.0,h:40+Math.random()*50,w:14+Math.random()*10});
+  for(let i=0;i<14;i++) bushes.push({x:Math.random()*2000,speed:2.2+Math.random()*0.8,r:8+Math.random()*12});
+  for(let i=0;i<60;i++) grassBlades.push({x:Math.random()*2000,speed:1.8+Math.random()*0.6,h:6+Math.random()*10});
+  function resizeBg(){ bgCanvas.width=window.innerWidth; bgCanvas.height=window.innerHeight; }
+  resizeBg(); window.addEventListener('resize',resizeBg);
+  function wrapX(obj,W){ obj.x-=obj.speed; if(obj.x+300<0) obj.x=W+Math.random()*300; }
+  function drawCloud(ctx2,x,y,w,h){
+    const r=h*.55;
+    [[x,y,.38,.65],[x+w*.28,y-h*.2,.32,.8],[x+w*.55,y-h*.15,.3,.7],[x+w*.78,y,.28,.55]].forEach(([cx,cy,wx,hy])=>{
+      ctx2.beginPath(); ctx2.ellipse(cx,cy,w*wx,r*hy,0,0,Math.PI*2); ctx2.fill();
+    });
+    ctx2.fillRect(x,y,w*.78,r*.5);
+  }
+  function loop(){
+    if(document.getElementById('menuScreen').style.display==='none'){ menuRafId=null; return; }
+    menuRafId=requestAnimationFrame(loop); frame++;
+    const W=bgCanvas.width, H=bgCanvas.height;
+    bgCtx.clearRect(0,0,W,H);
+    const groundY=H*0.62, grassY=H*0.65;
+    bgCtx.save(); bgCtx.globalAlpha=0.55; bgCtx.fillStyle='#ffffffcc';
+    clouds.filter(c=>c.layer===0).forEach(c=>{ drawCloud(bgCtx,c.x,c.y,c.w,c.h); wrapX(c,W); });
+    bgCtx.restore();
+    bgCtx.save(); bgCtx.globalAlpha=0.92; bgCtx.fillStyle='#ffffff';
+    clouds.filter(c=>c.layer===1).forEach(c=>{ drawCloud(bgCtx,c.x,c.y,c.w,c.h); wrapX(c,W); });
+    bgCtx.restore();
+    trees.forEach(t=>{
+      bgCtx.fillStyle='#3a6b20'; bgCtx.fillRect(t.x+t.w*.35,groundY-t.h*.3,t.w*.3,t.h*.3);
+      bgCtx.fillStyle='#4a8a28'; bgCtx.beginPath(); bgCtx.arc(t.x+t.w/2,groundY-t.h*.65,t.w*.6,0,Math.PI*2); bgCtx.fill();
+      bgCtx.fillStyle='#5aaa32'; bgCtx.beginPath(); bgCtx.arc(t.x+t.w*.6,groundY-t.h*.75,t.w*.45,0,Math.PI*2); bgCtx.fill();
+      wrapX(t,W);
+    });
+    bgCtx.fillStyle='#5a9b32'; bgCtx.fillRect(0,grassY,W,H-grassY);
+    bgCtx.fillStyle='#3d7020'; bgCtx.fillRect(0,grassY+H*.08,W,H-grassY);
+    bgCtx.save(); bgCtx.fillStyle='#6abc38';
+    grassBlades.forEach(g=>{ bgCtx.fillRect(g.x,grassY-g.h,2,g.h); wrapX(g,W); });
+    bgCtx.restore();
+    bgCtx.save(); bgCtx.globalAlpha=0.9;
+    bushes.forEach(b=>{
+      bgCtx.fillStyle='#3a7820'; bgCtx.beginPath(); bgCtx.arc(b.x,grassY,b.r,0,Math.PI*2); bgCtx.fill();
+      bgCtx.fillStyle='#4a9828'; bgCtx.beginPath(); bgCtx.arc(b.x+b.r*.4,grassY-b.r*.3,b.r*.65,0,Math.PI*2); bgCtx.fill();
+      wrapX(b,W);
+    });
+    bgCtx.restore();
+    const sunX=W*.82, sunY=H*.12, sunR=28+Math.sin(frame*.02)*2;
+    bgCtx.save(); bgCtx.globalAlpha=0.18; bgCtx.fillStyle='#ffee44';
+    bgCtx.beginPath(); bgCtx.arc(sunX,sunY,sunR*2.5,0,Math.PI*2); bgCtx.fill();
+    bgCtx.globalAlpha=1; bgCtx.fillStyle='#ffee44';
+    bgCtx.beginPath(); bgCtx.arc(sunX,sunY,sunR,0,Math.PI*2); bgCtx.fill();
+    bgCtx.restore();
+  }
+  loop();
+}
+
+// ── RESIZE ─────────────────────────────────────────────────────
+function resize(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
+window.addEventListener('resize',resize); resize();
+
+// ── INIT ──────────────────────────────────────────────────────
+showMenu();
+GS.map=generateMap(GS.seed,0,'normal');
+updateCamera();
+(function idleRender(){
+  if(document.getElementById('menuScreen').style.display!=='none'||
+     document.getElementById('modeSelect').style.display!=='none'){
+    GS.frame++; updateCamera();
+    if(GS.map) render();
+    requestAnimationFrame(idleRender);
+  }
+})();
+
+console.log('%c MOMENTUM ERA v6 ','background:#0a0a0f;color:#ff4444;font-size:13px;font-weight:bold;border:2px solid #ff4444;padding:6px 14px;font-family:monospace;');
+</script>
+</body>
+</html>
