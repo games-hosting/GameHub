@@ -48,7 +48,7 @@ canvas { display: block; }
 <body>
 <div id="overlay">
   <h1>VOID<br>ARCHITECT</h1>
-  <p>Grab asteroids. Throw them at each other.<br>Build orbital structures. Survive the void.</p>
+  <p>Point your beam at asteroids. Grip to grab. Throw them at each other.<br>Build orbital structures. Survive the void.</p>
   <button id="vr-btn">Enter VR</button>
   <button id="desktop-btn">Play on Desktop (Mouse)</button>
   <div id="status"></div>
@@ -134,12 +134,9 @@ window.addEventListener('resize', () => {
 // ═══════════════════════════════════════════════════
 const ambient = new THREE.AmbientLight(0x111133, 0.4);
 scene.add(ambient);
-
 const sun = new THREE.DirectionalLight(0x4466ff, 0.8);
 sun.position.set(50, 100, 50);
 scene.add(sun);
-
-// Nebula point lights
 const nebulaPts = [
   { color: 0x4422ff, pos: [80, 20, -60], intensity: 2 },
   { color: 0xff2244, pos: [-60, -20, 80], intensity: 1.5 },
@@ -158,45 +155,34 @@ function buildStars() {
   const count = 3000;
   const pos = new Float32Array(count * 3);
   const col = new Float32Array(count * 3);
-  const pal = [[1, 1, 1], [0.7, 0.8, 1], [1, 0.8, 0.7], [0.8, 1, 0.9]];
+  const pal = [[1,1,1],[0.7,0.8,1],[1,0.8,0.7],[0.8,1,0.9]];
   for (let i = 0; i < count; i++) {
     const r = 150 + Math.random() * 200;
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.acos(2 * Math.random() - 1);
-    pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-    pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-    pos[i * 3 + 2] = r * Math.cos(phi);
-    const c = pal[Math.floor(Math.random() * pal.length)];
-    const bright = 0.4 + Math.random() * 0.6;
-    col[i * 3] = c[0] * bright; col[i * 3 + 1] = c[1] * bright; col[i * 3 + 2] = c[2] * bright;
+    pos[i*3] = r*Math.sin(phi)*Math.cos(theta);
+    pos[i*3+1] = r*Math.sin(phi)*Math.sin(theta);
+    pos[i*3+2] = r*Math.cos(phi);
+    const c = pal[Math.floor(Math.random()*pal.length)];
+    const bright = 0.4 + Math.random()*0.6;
+    col[i*3]=c[0]*bright; col[i*3+1]=c[1]*bright; col[i*3+2]=c[2]*bright;
   }
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  const mat = new THREE.PointsMaterial({ size: 0.3, vertexColors: true, sizeAttenuation: true });
-  scene.add(new THREE.Points(geo, mat));
+  scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ size: 0.3, vertexColors: true, sizeAttenuation: true })));
 }
 buildStars();
 
-// ═══════════════════════════════════════════════════
-// NEBULA BACKGROUND (billboard clouds)
-// ═══════════════════════════════════════════════════
 function buildNebula() {
   const colors = [0x220066, 0x660022, 0x002266, 0x114422];
   for (let i = 0; i < 8; i++) {
-    const geo = new THREE.PlaneGeometry(60 + Math.random() * 60, 40 + Math.random() * 40);
-    const mat = new THREE.MeshBasicMaterial({
-      color: colors[i % colors.length],
-      transparent: true,
-      opacity: 0.04 + Math.random() * 0.06,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
+    const geo = new THREE.PlaneGeometry(60+Math.random()*60, 40+Math.random()*40);
+    const mat = new THREE.MeshBasicMaterial({ color: colors[i%colors.length], transparent: true, opacity: 0.04+Math.random()*0.06, side: THREE.DoubleSide, depthWrite: false });
     const mesh = new THREE.Mesh(geo, mat);
-    const dist = 100 + Math.random() * 80;
-    const angle = (i / 8) * Math.PI * 2;
-    mesh.position.set(Math.cos(angle) * dist, (Math.random() - 0.5) * 60, Math.sin(angle) * dist);
-    mesh.lookAt(0, 0, 0);
+    const dist = 100+Math.random()*80, angle = (i/8)*Math.PI*2;
+    mesh.position.set(Math.cos(angle)*dist, (Math.random()-0.5)*60, Math.sin(angle)*dist);
+    mesh.lookAt(0,0,0);
     scene.add(mesh);
   }
 }
@@ -206,62 +192,105 @@ buildNebula();
 // GAME STATE
 // ═══════════════════════════════════════════════════
 const G = {
-  score: 0,
-  wave: 1,
-  asteroids: [],
-  fragments: [],
-  structures: [],
-  particles: [],
+  score: 0, wave: 1,
+  asteroids: [], fragments: [], structures: [], particles: [],
   controllers: [],
   grabbed: [null, null],
-  grabPos: [new THREE.Vector3(), new THREE.Vector3()],
-  grabRot: [new THREE.Quaternion(), new THREE.Quaternion()],
-  grabVel: [new THREE.Vector3(), new THREE.Vector3()],
-  lastGrabPos: [new THREE.Vector3(), new THREE.Vector3()],
-  waveTimer: 0,
-  waveInterval: 5,
-  maxAsteroids: 6,
+  grabDist: [0, 0],        // locked beam distance per controller
+  triggerHeld: [false, false], // whether trigger is held (reel-in)
+  // Velocity history buffer for accurate throw detection
+  velHistory: [[], []],
+  velHistorySize: 8,
+  lastControllerPos: [new THREE.Vector3(), new THREE.Vector3()],
+  waveTimer: 0, waveInterval: 5, maxAsteroids: 6,
   spawnRadius: 12,
-  isVR: false,
-  desktopMode: false,
+  isVR: false, desktopMode: false,
   clock: new THREE.Clock(),
-  combo: 0,
-  comboTimer: 0,
+  combo: 0, comboTimer: 0,
 };
 
 // ═══════════════════════════════════════════════════
-// PROCEDURAL ASTEROID GEOMETRY
+// MANIPULATOR BEAM — the glowing tether line
+// ═══════════════════════════════════════════════════
+// Creates a segmented, animated beam resembling a dev manipulator
+function createManipulatorBeam() {
+  // Use a series of points for the beam — we'll update them each frame
+  const segments = 20;
+  const points = [];
+  for (let i = 0; i <= segments; i++) points.push(new THREE.Vector3());
+  const geo = new THREE.BufferGeometry().setFromPoints(points);
+
+  // Core bright line
+  const coreMat = new THREE.LineBasicMaterial({
+    color: 0xffdd88,
+    transparent: true,
+    opacity: 0.95,
+    linewidth: 2, // note: only works in WebGL1 on some platforms
+  });
+  const coreLine = new THREE.Line(geo.clone(), coreMat);
+
+  // Outer glow line (slightly wider/dimmer)
+  const glowMat = new THREE.LineBasicMaterial({
+    color: 0xff8800,
+    transparent: true,
+    opacity: 0.35,
+  });
+  const glowLine = new THREE.Line(geo.clone(), glowMat);
+
+  const group = new THREE.Group();
+  group.add(glowLine);
+  group.add(coreLine);
+  group.visible = false;
+  scene.add(group);
+
+  return { group, coreLine, glowLine, segments };
+}
+
+function updateBeam(beam, fromWorld, toWorld, t = 0) {
+  // Animate a slightly wobbly/electric path between two world points
+  const { coreLine, glowLine, segments } = beam;
+  const updateGeo = (line) => {
+    const pos = line.geometry.attributes.position;
+    for (let i = 0; i <= segments; i++) {
+      const alpha = i / segments;
+      const x = fromWorld.x + (toWorld.x - fromWorld.x) * alpha;
+      const y = fromWorld.y + (toWorld.y - fromWorld.y) * alpha;
+      const z = fromWorld.z + (toWorld.z - fromWorld.z) * alpha;
+      // Add jitter in middle portion for electricity effect
+      const jitter = Math.sin(alpha * Math.PI) * 0.04;
+      const noise = Math.sin(alpha * 18 + t * 15) * jitter;
+      const noise2 = Math.cos(alpha * 13 + t * 12) * jitter;
+      pos.setXYZ(i, x + noise, y + noise2, z + noise * 0.5);
+    }
+    pos.needsUpdate = true;
+    line.geometry.computeBoundingSphere();
+  };
+  updateGeo(coreLine);
+  updateGeo(glowLine);
+}
+
+// ═══════════════════════════════════════════════════
+// ASTEROID GEOMETRY
 // ═══════════════════════════════════════════════════
 function makeAsteroidGeo(radius, detail = 1) {
   const geo = new THREE.IcosahedronGeometry(radius, detail);
   const pos = geo.attributes.position;
   const noise = radius * 0.3;
   for (let i = 0; i < pos.count; i++) {
-    pos.setXYZ(i,
-      pos.getX(i) + (Math.random() - 0.5) * noise,
-      pos.getY(i) + (Math.random() - 0.5) * noise,
-      pos.getZ(i) + (Math.random() - 0.5) * noise
-    );
+    pos.setXYZ(i, pos.getX(i)+(Math.random()-0.5)*noise, pos.getY(i)+(Math.random()-0.5)*noise, pos.getZ(i)+(Math.random()-0.5)*noise);
   }
   geo.computeVertexNormals();
   return geo;
 }
-
 const ASTEROID_COLORS = [0x6655aa, 0x556644, 0x885533, 0x446688, 0x775544];
 
 function spawnAsteroid(size = null) {
   const r = size || (0.3 + Math.random() * 0.9);
   const geo = makeAsteroidGeo(r, r > 0.8 ? 2 : 1);
-  const color = ASTEROID_COLORS[Math.floor(Math.random() * ASTEROID_COLORS.length)];
-  const mat = new THREE.MeshStandardMaterial({
-    color,
-    roughness: 0.85,
-    metalness: 0.2,
-    emissive: new THREE.Color(color).multiplyScalar(0.05),
-  });
+  const color = ASTEROID_COLORS[Math.floor(Math.random()*ASTEROID_COLORS.length)];
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.2, emissive: new THREE.Color(color).multiplyScalar(0.05) });
   const mesh = new THREE.Mesh(geo, mat);
 
-  // Spawn on a sphere around the player
   const angle = Math.random() * Math.PI * 2;
   const elev = (Math.random() - 0.5) * Math.PI * 0.6;
   const dist = G.spawnRadius + Math.random() * 4;
@@ -271,265 +300,254 @@ function spawnAsteroid(size = null) {
     Math.sin(angle) * Math.cos(elev) * dist
   );
 
-  // Drift toward player origin
-  const vel = new THREE.Vector3(0, 1.6, 0).sub(mesh.position).normalize();
-  vel.multiplyScalar(0.5 + Math.random() * 0.8 + G.wave * 0.1);
-  vel.add(new THREE.Vector3((Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3));
+  // FIX: Random drift direction instead of always toward player
+  // Pick a random direction in a cone that's roughly "inward" but has a LOT of spread
+  const randomDir = new THREE.Vector3(
+    (Math.random() - 0.5) * 2,
+    (Math.random() - 0.5) * 1,
+    (Math.random() - 0.5) * 2
+  ).normalize();
 
-  const rotVel = new THREE.Vector3(
-    (Math.random() - 0.5) * 0.02,
-    (Math.random() - 0.5) * 0.02,
-    (Math.random() - 0.5) * 0.02
-  );
+  // Mix between fully random and slightly toward center (60% random, 40% inward)
+  const inward = new THREE.Vector3(0, 1.6, 0).sub(mesh.position).normalize();
+  const vel = randomDir.lerp(inward, 0.4).normalize();
+  vel.multiplyScalar(0.4 + Math.random() * 0.6 + G.wave * 0.08);
 
+  const rotVel = new THREE.Vector3((Math.random()-0.5)*0.02, (Math.random()-0.5)*0.02, (Math.random()-0.5)*0.02);
   scene.add(mesh);
-  const asteroid = { mesh, vel, rotVel, radius: r, grabbed: false, grabIdx: -1, spawned: Date.now() };
+  const asteroid = { mesh, vel, rotVel, radius: r, grabbed: false, grabIdx: -1 };
   G.asteroids.push(asteroid);
   return asteroid;
 }
 
 // ═══════════════════════════════════════════════════
-// FRAGMENTS
+// FRAGMENTS & PARTICLES
 // ═══════════════════════════════════════════════════
 function spawnFragments(position, count, color) {
   for (let i = 0; i < count; i++) {
     const size = 0.04 + Math.random() * 0.1;
     const geo = new THREE.OctahedronGeometry(size, 0);
-    const mat = new THREE.MeshStandardMaterial({
-      color,
-      roughness: 0.4,
-      metalness: 0.8,
-      emissive: new THREE.Color(color).multiplyScalar(0.3),
-    });
+    const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.8, emissive: new THREE.Color(color).multiplyScalar(0.3) });
     const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.copy(position).add(new THREE.Vector3(
-      (Math.random() - 0.5) * 0.5,
-      (Math.random() - 0.5) * 0.5,
-      (Math.random() - 0.5) * 0.5
-    ));
-    const vel = new THREE.Vector3(
-      (Math.random() - 0.5) * 2,
-      (Math.random() - 0.5) * 2 + 0.5,
-      (Math.random() - 0.5) * 2
-    );
+    mesh.position.copy(position).add(new THREE.Vector3((Math.random()-0.5)*0.5,(Math.random()-0.5)*0.5,(Math.random()-0.5)*0.5));
+    const vel = new THREE.Vector3((Math.random()-0.5)*2,(Math.random()-0.5)*2+0.5,(Math.random()-0.5)*2);
     const life = 6 + Math.random() * 4;
     scene.add(mesh);
     G.fragments.push({ mesh, vel, life, maxLife: life, color });
   }
 }
 
-// ═══════════════════════════════════════════════════
-// PARTICLES
-// ═══════════════════════════════════════════════════
 function spawnParticles(pos, count, color, speed = 3) {
   for (let i = 0; i < count; i++) {
-    const geo = new THREE.SphereGeometry(0.02 + Math.random() * 0.04, 4, 4);
+    const geo = new THREE.SphereGeometry(0.02+Math.random()*0.04, 4, 4);
     const mat = new THREE.MeshBasicMaterial({ color });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.copy(pos);
-    const vel = new THREE.Vector3(
-      (Math.random() - 0.5) * speed,
-      (Math.random() - 0.5) * speed + 1,
-      (Math.random() - 0.5) * speed
-    );
+    const vel = new THREE.Vector3((Math.random()-0.5)*speed,(Math.random()-0.5)*speed+1,(Math.random()-0.5)*speed);
     G.particles.push({ mesh, vel, life: 1.5, maxLife: 1.5 });
     scene.add(mesh);
   }
 }
 
-// ═══════════════════════════════════════════════════
-// EXPLOSION
-// ═══════════════════════════════════════════════════
 function explode(pos, sizeA, sizeB, colorA, colorB) {
-  const score = Math.round((sizeA + sizeB) * 100 * (1 + G.combo * 0.2));
+  const score = Math.round((sizeA+sizeB)*100*(1+G.combo*0.2));
   G.score += score;
-  G.combo++;
-  G.comboTimer = 3;
+  G.combo++; G.comboTimer = 3;
   document.getElementById('score-val').textContent = G.score.toLocaleString();
-
-  impact(Math.min(sizeA + sizeB, 1), 1 / (sizeA + sizeB));
-  spawnFragments(pos, Math.round((sizeA + sizeB) * 20), colorA);
-  spawnParticles(pos, 15, 0xffaa44, (sizeA + sizeB) * 4);
-
-  // Flash ring
-  const ringGeo = new THREE.RingGeometry(0.1, sizeA + sizeB + 0.2, 32);
-  const ringMat = new THREE.MeshBasicMaterial({
-    color: 0xffcc66, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false,
-  });
+  impact(Math.min(sizeA+sizeB,1), 1/(sizeA+sizeB));
+  spawnFragments(pos, Math.round((sizeA+sizeB)*20), colorA);
+  spawnParticles(pos, 15, 0xffaa44, (sizeA+sizeB)*4);
+  const ringGeo = new THREE.RingGeometry(0.1, sizeA+sizeB+0.2, 32);
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0xffcc66, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false });
   const ring = new THREE.Mesh(ringGeo, ringMat);
-  ring.position.copy(pos);
-  ring.lookAt(camera.position);
+  ring.position.copy(pos); ring.lookAt(camera.position);
   scene.add(ring);
-  G.particles.push({ mesh: ring, vel: new THREE.Vector3(), life: 0.5, maxLife: 0.5, isRing: true, startScale: 1 });
-
+  G.particles.push({ mesh: ring, vel: new THREE.Vector3(), life: 0.5, maxLife: 0.5, isRing: true });
   showFloatingScore(pos, score, G.combo);
 }
 
-// ═══════════════════════════════════════════════════
-// FLOATING SCORE TEXT (canvas sprite)
-// ═══════════════════════════════════════════════════
 function showFloatingScore(pos, score, combo) {
   const canvas = document.createElement('canvas');
   canvas.width = 256; canvas.height = 128;
   const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, 256, 128);
-  ctx.font = 'bold 48px monospace';
-  ctx.textAlign = 'center';
-  const hue = Math.min(combo * 20, 60);
+  ctx.clearRect(0,0,256,128);
+  ctx.font = 'bold 48px monospace'; ctx.textAlign = 'center';
+  const hue = Math.min(combo*20, 60);
   ctx.fillStyle = `hsl(${hue}, 100%, 70%)`;
   ctx.fillText(`+${score}`, 128, 60);
   if (combo > 1) {
-    ctx.font = '28px monospace';
-    ctx.fillStyle = '#ffaaff';
+    ctx.font = '28px monospace'; ctx.fillStyle = '#ffaaff';
     ctx.fillText(`×${combo} COMBO`, 128, 95);
   }
   const tex = new THREE.CanvasTexture(canvas);
   const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
   const sprite = new THREE.Sprite(mat);
-  sprite.position.copy(pos).add(new THREE.Vector3(0, 0.5, 0));
+  sprite.position.copy(pos).add(new THREE.Vector3(0,0.5,0));
   sprite.scale.set(1.5, 0.75, 1);
   scene.add(sprite);
-  G.particles.push({ mesh: sprite, vel: new THREE.Vector3(0, 1.5, 0), life: 1.8, maxLife: 1.8, isSprite: true });
+  G.particles.push({ mesh: sprite, vel: new THREE.Vector3(0,1.5,0), life: 1.8, maxLife: 1.8, isSprite: true });
 }
 
-// ═══════════════════════════════════════════════════
-// ORBITAL STRUCTURES (buildable from fragment clusters)
-// ═══════════════════════════════════════════════════
 function buildStructure(pos) {
   sparkle(0.5);
-  const types = ['shield', 'multiplier', 'attractor'];
+  const types = ['shield','multiplier','attractor'];
   const type = types[G.structures.length % types.length];
   const colors = { shield: 0x4488ff, multiplier: 0xffaa00, attractor: 0xff4488 };
-
   const group = new THREE.Group();
   group.position.copy(pos);
-
-  // Core
-  const core = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.15, 2),
-    new THREE.MeshStandardMaterial({ color: colors[type], emissive: new THREE.Color(colors[type]).multiplyScalar(0.5), metalness: 0.8 })
-  );
+  const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.15,2),
+    new THREE.MeshStandardMaterial({ color: colors[type], emissive: new THREE.Color(colors[type]).multiplyScalar(0.5), metalness: 0.8 }));
   group.add(core);
-
-  // Orbiting rings
   for (let i = 0; i < 3; i++) {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(0.3 + i * 0.12, 0.02, 8, 32),
-      new THREE.MeshBasicMaterial({ color: colors[type], transparent: true, opacity: 0.6 })
-    );
-    ring.rotation.x = (i / 3) * Math.PI;
-    ring.rotation.y = (i / 3) * Math.PI * 0.7;
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.3+i*0.12, 0.02, 8, 32),
+      new THREE.MeshBasicMaterial({ color: colors[type], transparent: true, opacity: 0.6 }));
+    ring.rotation.x = (i/3)*Math.PI; ring.rotation.y = (i/3)*Math.PI*0.7;
     group.add(ring);
   }
-
   scene.add(group);
-  G.structures.push({ group, type, rotVel: new THREE.Vector3(0.01, 0.02, 0.005), pos });
+  G.structures.push({ group, type, rotVel: new THREE.Vector3(0.01,0.02,0.005), pos });
   showFloatingScore(pos, 500, 1);
   G.score += 500;
   document.getElementById('score-val').textContent = G.score.toLocaleString();
 }
 
 // ═══════════════════════════════════════════════════
-// CONTROLLER SETUP (VR)
+// RAY CASTING HELPER
+// ═══════════════════════════════════════════════════
+const _raycaster = new THREE.Raycaster();
+
+function raycastAsteroids(originWorld, dirWorld, maxDist = 25) {
+  _raycaster.set(originWorld, dirWorld.clone().normalize());
+  _raycaster.far = maxDist;
+  const meshes = G.asteroids.filter(a => !a.grabbed).map(a => a.mesh);
+  const hits = _raycaster.intersectObjects(meshes);
+  if (hits.length > 0) {
+    const hitMesh = hits[0].object;
+    return G.asteroids.find(a => a.mesh === hitMesh) || null;
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════════════════
+// VR CONTROLLER SETUP
 // ═══════════════════════════════════════════════════
 function setupControllers() {
   for (let i = 0; i < 2; i++) {
     const controller = renderer.xr.getController(i);
     scene.add(controller);
 
-    // Controller model — custom glowing hand shape
     const handGeo = new THREE.SphereGeometry(0.04, 8, 8);
-    const handMat = new THREE.MeshStandardMaterial({
-      color: 0x4488ff, emissive: 0x224466, metalness: 0.5,
-    });
+    const handMat = new THREE.MeshStandardMaterial({ color: 0x4488ff, emissive: 0x224466, metalness: 0.5 });
     const hand = new THREE.Mesh(handGeo, handMat);
     controller.add(hand);
 
-    // Laser pointer
-    const laserGeo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -3)
-    ]);
-    const laser = new THREE.Line(laserGeo, new THREE.LineBasicMaterial({
-      color: 0x4488ff, transparent: true, opacity: 0.3
-    }));
-    controller.add(laser);
+    // Default idle laser (thin, dim)
+    const idleLaserGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,-20)]);
+    const idleLaser = new THREE.Line(idleLaserGeo, new THREE.LineBasicMaterial({ color: 0x4488ff, transparent: true, opacity: 0.2 }));
+    controller.add(idleLaser);
 
-    // Grab sphere (visual feedback)
-    const grabGeo = new THREE.SphereGeometry(0.08, 16, 16);
-    const grabMat = new THREE.MeshBasicMaterial({
-      color: 0x88ccff, transparent: true, opacity: 0.2, wireframe: false,
-    });
-    const grabSphere = new THREE.Mesh(grabGeo, grabMat);
-    controller.add(grabSphere);
-    hand._grabSphere = grabSphere;
-    hand._laser = laser;
+    // Hover dot (shows when laser hits asteroid)
+    const dotGeo = new THREE.SphereGeometry(0.04, 8, 8);
+    const dotMat = new THREE.MeshBasicMaterial({ color: 0xffdd88, transparent: true, opacity: 0 });
+    const dot = new THREE.Mesh(dotGeo, dotMat);
+    scene.add(dot);
 
-    G.controllers.push({ controller, hand, grabSphere, idx: i });
+    // Manipulator beam (world-space, shown while grabbed)
+    const beam = createManipulatorBeam();
 
-    controller.addEventListener('selectstart', () => onTrigger(i, true));
-    controller.addEventListener('selectend', () => onTrigger(i, false));
+    G.controllers.push({ controller, hand, idleLaser, dot, beam, idx: i, hovered: null });
+    G.lastControllerPos[i] = new THREE.Vector3();
+    G.velHistory[i] = [];
+
     controller.addEventListener('squeezestart', () => onGrip(i, true));
     controller.addEventListener('squeezeend', () => onGrip(i, false));
+    controller.addEventListener('selectstart', () => onTrigger(i, true));
+    controller.addEventListener('selectend', () => onTrigger(i, false));
   }
 }
 
 function onGrip(idx, pressed) {
-  if (pressed) tryGrab(idx);
+  if (pressed) tryGrabRay(idx);
   else releaseGrab(idx);
 }
-
 function onTrigger(idx, pressed) {
-  if (!pressed) return;
-  // Trigger: try to build structure from nearby fragments
-  tryBuild(idx);
+  G.triggerHeld[idx] = pressed;
+  // If not grabbing, use trigger to build structure from fragments
+  if (pressed && !G.grabbed[idx]) tryBuild(idx);
 }
 
-function tryGrab(idx) {
-  if (!G.controllers[idx]) return;
+function tryGrabRay(idx) {
+  const ctrl = G.controllers[idx];
+  if (!ctrl) return;
   const pos = new THREE.Vector3();
-  G.controllers[idx].controller.getWorldPosition(pos);
-  const GRAB_DIST = 0.5;
+  const dir = new THREE.Vector3();
+  ctrl.controller.getWorldPosition(pos);
+  ctrl.controller.getWorldDirection(dir);
+  dir.negate(); // controller faces -Z
 
-  // Find nearest asteroid
-  let nearest = null, nearDist = GRAB_DIST;
-  for (const ast of G.asteroids) {
-    if (ast.grabbed) continue;
-    const d = pos.distanceTo(ast.mesh.position);
-    if (d < ast.radius + GRAB_DIST && d < nearDist) { nearest = ast; nearDist = d; }
-  }
-  if (nearest) {
-    nearest.grabbed = true;
-    nearest.grabIdx = idx;
-    G.grabbed[idx] = nearest;
-    G.lastGrabPos[idx].copy(pos);
-    G.grabVel[idx].set(0, 0, 0);
-    nearest.mesh.material.emissiveIntensity = 0.4;
-    G.controllers[idx].grabSphere.material.opacity = 0.5;
+  const ast = raycastAsteroids(pos, dir, 25);
+  if (ast) {
+    ast.grabbed = true;
+    ast.grabIdx = idx;
+    G.grabbed[idx] = ast;
+    // Lock the distance at the moment of grab
+    G.grabDist[idx] = pos.distanceTo(ast.mesh.position);
+    G.velHistory[idx] = [];
+    G.lastControllerPos[idx].copy(pos);
+    ast.vel.set(0,0,0);
+    ast.mesh.material.emissiveIntensity = 0.4;
+    // Show beam
+    ctrl.beam.group.visible = true;
+    ctrl.idleLaser.visible = false;
     whoosh();
   }
 }
 
 function releaseGrab(idx) {
   const ast = G.grabbed[idx];
+  const ctrl = G.controllers[idx];
   if (!ast) return;
+
   ast.grabbed = false;
   ast.grabIdx = -1;
-  // Transfer velocity from hand movement to asteroid
-  const throwVel = G.grabVel[idx].clone().multiplyScalar(8);
-  ast.vel.copy(throwVel);
-  // Cap velocity
-  if (ast.vel.length() > 15) ast.vel.normalize().multiplyScalar(15);
   ast.mesh.material.emissiveIntensity = 0.05;
-  if (G.controllers[idx]) G.controllers[idx].grabSphere.material.opacity = 0.2;
+
+  // FIX: Use averaged velocity history for reliable throw
+  const history = G.velHistory[idx];
+  if (history.length > 0) {
+    const avgVel = new THREE.Vector3();
+    // Weight recent samples more heavily
+    let totalWeight = 0;
+    history.forEach((v, i) => {
+      const w = (i + 1);
+      avgVel.addScaledVector(v, w);
+      totalWeight += w;
+    });
+    avgVel.divideScalar(totalWeight);
+    // Scale up — hands move slowly in world space, asteroids should fly
+    ast.vel.copy(avgVel).multiplyScalar(60);
+  } else {
+    ast.vel.set(0, 0, 0);
+  }
+
+  // Cap velocity
+  const maxSpeed = 20;
+  if (ast.vel.length() > maxSpeed) ast.vel.normalize().multiplyScalar(maxSpeed);
+
+  if (ctrl) {
+    ctrl.beam.group.visible = false;
+    ctrl.idleLaser.visible = true;
+  }
   G.grabbed[idx] = null;
+  G.velHistory[idx] = [];
   whoosh();
 }
 
 function tryBuild(idx) {
-  if (!G.controllers[idx]) return;
+  const ctrl = G.controllers[idx];
+  if (!ctrl) return;
   const pos = new THREE.Vector3();
-  G.controllers[idx].controller.getWorldPosition(pos);
-  // Check fragment cluster nearby
+  ctrl.controller.getWorldPosition(pos);
   const nearby = G.fragments.filter(f => f.mesh.position.distanceTo(pos) < 1.5);
   if (nearby.length >= 5) {
     const center = new THREE.Vector3();
@@ -542,33 +560,38 @@ function tryBuild(idx) {
 }
 
 // ═══════════════════════════════════════════════════
-// DESKTOP MODE (mouse + WASD)
+// DESKTOP MODE
 // ═══════════════════════════════════════════════════
 let desktop = {
-  yaw: 0, pitch: 0, locked: false,
-  keys: {},
-  virtualHand: null,
+  yaw: 0, pitch: 0, locked: false, keys: {},
+  virtualHand: null, beam: null, dot: null,
   handPos: new THREE.Vector3(0, 1.4, -1.5),
-  grabbed: null,
-  vel: new THREE.Vector3(),
-  lastHandPos: new THREE.Vector3(),
+  grabbed: null, grabDist: 0, reelIn: false,
+  velHistory: [], lastHandPos: new THREE.Vector3(),
 };
 
 function initDesktop() {
   G.desktopMode = true;
-  // Virtual hand
   const geo = new THREE.SphereGeometry(0.06, 16, 16);
   const mat = new THREE.MeshStandardMaterial({ color: 0x4488ff, emissive: 0x224466 });
   desktop.virtualHand = new THREE.Mesh(geo, mat);
   desktop.virtualHand.position.copy(desktop.handPos);
   scene.add(desktop.virtualHand);
 
-  // Laser from hand
-  const laserGeo = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,-4)
-  ]);
-  const laser = new THREE.Line(laserGeo, new THREE.LineBasicMaterial({ color: 0x4488ff, transparent: true, opacity: 0.4 }));
+  // Idle laser
+  const laserGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,-20)]);
+  const laser = new THREE.Line(laserGeo, new THREE.LineBasicMaterial({ color: 0x4488ff, transparent: true, opacity: 0.3 }));
   desktop.virtualHand.add(laser);
+  desktop.idleLaser = laser;
+
+  // Manipulator beam
+  desktop.beam = createManipulatorBeam();
+
+  // Hover dot
+  const dotGeo = new THREE.SphereGeometry(0.05, 8, 8);
+  const dotMat = new THREE.MeshBasicMaterial({ color: 0xffdd88, transparent: true, opacity: 0 });
+  desktop.dot = new THREE.Mesh(dotGeo, dotMat);
+  scene.add(desktop.dot);
 
   renderer.domElement.addEventListener('click', () => renderer.domElement.requestPointerLock());
   document.addEventListener('pointerlockchange', () => { desktop.locked = document.pointerLockElement === renderer.domElement; });
@@ -582,29 +605,32 @@ function initDesktop() {
     if (e.code === 'KeyG') tryGrabDesktop();
     if (e.code === 'KeyF') releaseGrabDesktop();
     if (e.code === 'KeyB') tryBuildDesktop();
+    if (e.code === 'KeyR') desktop.reelIn = true;
   });
-  document.addEventListener('keyup', e => desktop.keys[e.code] = false);
-
-  // Update desktop instructions
+  document.addEventListener('keyup', e => {
+    desktop.keys[e.code] = false;
+    if (e.code === 'KeyR') desktop.reelIn = false;
+  });
   document.getElementById('instructions').innerHTML =
-    'CLICK to capture mouse &nbsp;|&nbsp; WASD: move &nbsp;|&nbsp; G: grab &nbsp;|&nbsp; F: throw &nbsp;|&nbsp; B: build structure &nbsp;|&nbsp; QE: hand up/down';
+    'CLICK to capture mouse &nbsp;|&nbsp; WASD: move &nbsp;|&nbsp; G: grab (raycast) &nbsp;|&nbsp; hold R: reel in &nbsp;|&nbsp; F: throw &nbsp;|&nbsp; B: build structure';
   document.getElementById('instructions').style.display = 'block';
 }
 
 function tryGrabDesktop() {
-  const pos = desktop.virtualHand.position;
-  let nearest = null, nearDist = 1.5;
-  for (const ast of G.asteroids) {
-    if (ast.grabbed) continue;
-    const d = pos.distanceTo(ast.mesh.position);
-    if (d < ast.radius + 1.5 && d < nearDist) { nearest = ast; nearDist = d; }
-  }
-  if (nearest) {
-    nearest.grabbed = true;
-    desktop.grabbed = nearest;
-    desktop.lastHandPos.copy(pos);
-    desktop.vel.set(0,0,0);
-    nearest.mesh.material.emissiveIntensity = 0.4;
+  // Raycast from hand along forward direction
+  const handPos = desktop.virtualHand.position.clone();
+  const handDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+  const ast = raycastAsteroids(handPos, handDir, 25);
+  if (ast) {
+    ast.grabbed = true;
+    desktop.grabbed = ast;
+    desktop.grabDist = handPos.distanceTo(ast.mesh.position);
+    desktop.velHistory = [];
+    desktop.lastHandPos.copy(handPos);
+    ast.vel.set(0,0,0);
+    ast.mesh.material.emissiveIntensity = 0.4;
+    desktop.beam.group.visible = true;
+    desktop.idleLaser.visible = false;
     whoosh();
   }
 }
@@ -613,10 +639,33 @@ function releaseGrabDesktop() {
   if (!desktop.grabbed) return;
   const ast = desktop.grabbed;
   ast.grabbed = false;
-  ast.vel.copy(desktop.vel).multiplyScalar(10);
-  if (ast.vel.length() > 18) ast.vel.normalize().multiplyScalar(18);
+
+  // velHistory now tracks the asteroid's actual per-frame displacement — scale up for throw
+  const history = desktop.velHistory;
+  if (history.length > 0) {
+    const avgVel = new THREE.Vector3();
+    let totalWeight = 0;
+    history.forEach((v, i) => {
+      const w = i + 1;
+      avgVel.addScaledVector(v, w);
+      totalWeight += w;
+    });
+    avgVel.divideScalar(totalWeight);
+    // Asteroid displacement is already in world units/frame at ~60fps, scale to units/sec
+    ast.vel.copy(avgVel).multiplyScalar(60);
+  } else {
+    // Fallback: throw in look direction
+    const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+    ast.vel.copy(dir).multiplyScalar(8);
+  }
+
+  if (ast.vel.length() > 22) ast.vel.normalize().multiplyScalar(22);
   ast.mesh.material.emissiveIntensity = 0.05;
   desktop.grabbed = null;
+  desktop.grabDist = 0;
+  desktop.velHistory = [];
+  desktop.beam.group.visible = false;
+  desktop.idleLaser.visible = true;
   whoosh();
 }
 
@@ -635,136 +684,187 @@ function tryBuildDesktop() {
 
 function updateDesktop(dt) {
   if (!G.desktopMode) return;
-  // Camera rotation
   camera.rotation.order = 'YXZ';
   camera.rotation.y = desktop.yaw;
   camera.rotation.x = desktop.pitch;
 
-  // Camera movement
   const speed = 4;
   const fwd = new THREE.Vector3(-Math.sin(desktop.yaw), 0, -Math.cos(desktop.yaw));
   const right = new THREE.Vector3(Math.cos(desktop.yaw), 0, -Math.sin(desktop.yaw));
-  if (desktop.keys['KeyW']) camera.position.addScaledVector(fwd, speed * dt);
-  if (desktop.keys['KeyS']) camera.position.addScaledVector(fwd, -speed * dt);
-  if (desktop.keys['KeyA']) camera.position.addScaledVector(right, -speed * dt);
-  if (desktop.keys['KeyD']) camera.position.addScaledVector(right, speed * dt);
+  if (desktop.keys['KeyW']) camera.position.addScaledVector(fwd, speed*dt);
+  if (desktop.keys['KeyS']) camera.position.addScaledVector(fwd, -speed*dt);
+  if (desktop.keys['KeyA']) camera.position.addScaledVector(right, -speed*dt);
+  if (desktop.keys['KeyD']) camera.position.addScaledVector(right, speed*dt);
 
-  // Hand moves with camera forward direction, slightly right and down
-  const camFwd = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-  const camRight = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-  const camUp = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+  const camFwd = new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+  const camRight = new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
+  const camUp = new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion);
   const handTarget = camera.position.clone()
     .addScaledVector(camFwd, 1.2)
     .addScaledVector(camRight, 0.3)
     .addScaledVector(camUp, -0.2);
 
-  if (desktop.keys['KeyQ']) handTarget.y += 1;
-  if (desktop.keys['KeyE']) handTarget.y -= 1;
-
-  desktop.lastHandPos.copy(desktop.virtualHand.position);
+  const prevPos = desktop.virtualHand.position.clone();
   desktop.virtualHand.position.lerp(handTarget, 0.15);
-  desktop.vel.subVectors(desktop.virtualHand.position, desktop.lastHandPos);
 
-  // Update grabbed
+  // If grabbing, keep asteroid at locked beam distance along look direction; reel in with R
   if (desktop.grabbed) {
-    desktop.grabbed.mesh.position.copy(desktop.virtualHand.position);
+    if (desktop.reelIn) {
+      desktop.grabDist = Math.max(0.5, desktop.grabDist - 6 * dt);
+    }
+    const handPos2 = desktop.virtualHand.position.clone();
+    const lookDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+    const targetPos = handPos2.clone().addScaledVector(lookDir, desktop.grabDist);
+
+    // Track velocity of the asteroid's target point for throw
+    const prevTarget = desktop.grabbed.mesh.position.clone();
+    desktop.grabbed.mesh.position.lerp(targetPos, 0.3);
+    const astFrameVel = desktop.grabbed.mesh.position.clone().sub(prevTarget);
+    desktop.velHistory.push(astFrameVel);
+    if (desktop.velHistory.length > 8) desktop.velHistory.shift();
+  }
+
+  // Raycast for hover dot
+  const handPos = desktop.virtualHand.position.clone();
+  const handDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+  const hovered = desktop.grabbed ? null : raycastAsteroids(handPos, handDir, 25);
+  if (hovered) {
+    const hitPoint = hovered.mesh.position.clone();
+    desktop.dot.position.copy(hitPoint);
+    desktop.dot.material.opacity = 0.9;
+  } else {
+    desktop.dot.material.opacity = 0;
+  }
+
+  // Update beam
+  if (desktop.grabbed && desktop.beam.group.visible) {
+    const t = performance.now() * 0.001;
+    const handPos = desktop.virtualHand.position.clone();
+    updateBeam(desktop.beam, handPos, desktop.grabbed.mesh.position, t);
+    desktop.beam.coreLine.material.color.setHex(desktop.reelIn ? 0x88ddff : 0xffdd88);
+    desktop.beam.glowLine.material.color.setHex(desktop.reelIn ? 0x2266ff : 0xff8800);
   }
 }
 
 // ═══════════════════════════════════════════════════
-// COLLISION DETECTION
+// VR CONTROLLER UPDATE (per-frame)
+// ═══════════════════════════════════════════════════
+function updateVRControllers(t) {
+  for (const ctrl of G.controllers) {
+    const idx = ctrl.idx;
+    const pos = new THREE.Vector3();
+    ctrl.controller.getWorldPosition(pos);
+    const dir = new THREE.Vector3();
+    ctrl.controller.getWorldDirection(dir);
+    dir.negate();
+
+    // Velocity history for throw
+    if (G.grabbed[idx]) {
+      const frameVel = pos.clone().sub(G.lastControllerPos[idx]);
+      G.velHistory[idx].push(frameVel);
+      if (G.velHistory[idx].length > G.velHistorySize) G.velHistory[idx].shift();
+      G.lastControllerPos[idx].copy(pos);
+
+      // Reel in with trigger, otherwise keep at locked distance
+      if (G.triggerHeld[idx]) {
+        G.grabDist[idx] = Math.max(0.5, G.grabDist[idx] - 6 * (1/72)); // pull ~6 units/sec
+      }
+      // Position asteroid along controller ray at locked distance
+      const targetPos = pos.clone().addScaledVector(dir, G.grabDist[idx]);
+      G.grabbed[idx].mesh.position.lerp(targetPos, 0.3);
+
+      // Update manipulator beam
+      if (ctrl.beam.group.visible) {
+        updateBeam(ctrl.beam, pos, G.grabbed[idx].mesh.position, t);
+        // Tint beam blue when reeling in
+        ctrl.beam.coreLine.material.color.setHex(G.triggerHeld[idx] ? 0x88ddff : 0xffdd88);
+        ctrl.beam.glowLine.material.color.setHex(G.triggerHeld[idx] ? 0x2266ff : 0xff8800);
+      }
+    } else {
+      G.lastControllerPos[idx].copy(pos);
+
+      // Hover detection for idle laser — highlight targeted asteroid
+      const hovered = raycastAsteroids(pos, dir, 25);
+      ctrl.hovered = hovered;
+      if (hovered) {
+        ctrl.dot.position.copy(hovered.mesh.position);
+        ctrl.dot.material.opacity = 0.9;
+      } else {
+        ctrl.dot.material.opacity = 0;
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// COLLISION & STRUCTURE EFFECTS
 // ═══════════════════════════════════════════════════
 function checkCollisions() {
   for (let i = 0; i < G.asteroids.length; i++) {
     const a = G.asteroids[i];
     if (a.grabbed) continue;
-    for (let j = i + 1; j < G.asteroids.length; j++) {
+    for (let j = i+1; j < G.asteroids.length; j++) {
       const b = G.asteroids[j];
       if (b.grabbed) continue;
-      // Only collide if one is moving fast enough
       const speed = Math.max(a.vel.length(), b.vel.length());
       if (speed < 0.3) continue;
       const dist = a.mesh.position.distanceTo(b.mesh.position);
-      const minDist = a.radius + b.radius;
-      if (dist < minDist) {
+      if (dist < a.radius + b.radius) {
         const midpoint = a.mesh.position.clone().add(b.mesh.position).multiplyScalar(0.5);
-        explode(midpoint, a.radius, b.radius,
-          a.mesh.material.color, b.mesh.material.color);
-        // Remove both
+        explode(midpoint, a.radius, b.radius, a.mesh.material.color, b.mesh.material.color);
         scene.remove(a.mesh); a.mesh.geometry.dispose();
         scene.remove(b.mesh); b.mesh.geometry.dispose();
         G.asteroids.splice(j, 1);
         G.asteroids.splice(i, 1);
-        i--;
-        break;
+        i--; break;
       }
     }
   }
 }
 
-// ═══════════════════════════════════════════════════
-// ATTRACTOR STRUCTURE EFFECT
-// ═══════════════════════════════════════════════════
 function applyStructureEffects(dt) {
   for (const struct of G.structures) {
     if (struct.type === 'attractor') {
-      // Pull nearby asteroids
       for (const ast of G.asteroids) {
         if (ast.grabbed) continue;
         const diff = struct.pos.clone().sub(ast.mesh.position);
         const dist = diff.length();
-        if (dist < 8 && dist > 0.5) {
-          diff.normalize().multiplyScalar(1.5 / dist * dt);
-          ast.vel.add(diff);
-        }
+        if (dist < 8 && dist > 0.5) diff.normalize().multiplyScalar(1.5/dist*dt), ast.vel.add(diff);
       }
     }
   }
 }
 
 // ═══════════════════════════════════════════════════
-// WAVE MANAGEMENT
+// WAVES
 // ═══════════════════════════════════════════════════
 function updateWaves(dt) {
   G.waveTimer += dt;
   if (G.waveTimer > G.waveInterval && G.asteroids.length < G.maxAsteroids) {
     G.waveTimer = 0;
-    const toSpawn = Math.min(2 + Math.floor(G.wave * 0.5), 4);
+    const toSpawn = Math.min(2+Math.floor(G.wave*0.5), 4);
     for (let i = 0; i < toSpawn; i++) spawnAsteroid();
     if (G.asteroids.length > G.maxAsteroids * 0.8) {
       G.wave++;
-      G.maxAsteroids = Math.min(6 + G.wave, 14);
-      G.waveInterval = Math.max(2, 5 - G.wave * 0.3);
+      G.maxAsteroids = Math.min(6+G.wave, 14);
+      G.waveInterval = Math.max(2, 5-G.wave*0.3);
     }
   }
 }
 
 // ═══════════════════════════════════════════════════
-// UPDATE LOOP
+// MAIN UPDATE
 // ═══════════════════════════════════════════════════
 function update(dt) {
   updateDesktop(dt);
   updateWaves(dt);
   applyStructureEffects(dt);
 
-  // Combo decay
-  if (G.comboTimer > 0) {
-    G.comboTimer -= dt;
-    if (G.comboTimer <= 0) G.combo = 0;
-  }
+  if (G.comboTimer > 0) { G.comboTimer -= dt; if (G.comboTimer <= 0) G.combo = 0; }
 
-  // Asteroids
-  for (let i = G.asteroids.length - 1; i >= 0; i--) {
+  for (let i = G.asteroids.length-1; i >= 0; i--) {
     const ast = G.asteroids[i];
     if (ast.grabbed) {
-      // In VR: snap to controller
-      if (G.isVR && G.controllers[ast.grabIdx]) {
-        const pos = new THREE.Vector3();
-        G.controllers[ast.grabIdx].controller.getWorldPosition(pos);
-        G.grabVel[ast.grabIdx].subVectors(pos, G.lastGrabPos[ast.grabIdx]);
-        G.lastGrabPos[ast.grabIdx].copy(pos);
-        ast.mesh.position.lerp(pos, 0.35);
-      }
       ast.mesh.rotation.x += ast.rotVel.x;
       ast.mesh.rotation.y += ast.rotVel.y;
       continue;
@@ -774,53 +874,44 @@ function update(dt) {
     ast.mesh.rotation.y += ast.rotVel.y;
     ast.mesh.rotation.z += ast.rotVel.z;
 
-    // Gravity toward origin (very gentle)
-    const toOrigin = new THREE.Vector3(0, 1.6, 0).sub(ast.mesh.position);
+    // Very gentle gravity toward origin
+    const toOrigin = new THREE.Vector3(0,1.6,0).sub(ast.mesh.position);
     const d = toOrigin.length();
-    if (d > 1) ast.vel.addScaledVector(toOrigin.normalize(), 0.02 * dt);
-
-    // Out of bounds — respawn
-    if (d > 30) {
-      scene.remove(ast.mesh); ast.mesh.geometry.dispose();
-      G.asteroids.splice(i, 1);
-    }
+    if (d > 1) ast.vel.addScaledVector(toOrigin.normalize(), 0.015*dt);
+    if (d > 30) { scene.remove(ast.mesh); ast.mesh.geometry.dispose(); G.asteroids.splice(i,1); }
   }
 
-  // Fragments
-  for (let i = G.fragments.length - 1; i >= 0; i--) {
+  for (let i = G.fragments.length-1; i >= 0; i--) {
     const f = G.fragments[i];
     f.life -= dt;
-    if (f.life <= 0) { scene.remove(f.mesh); f.mesh.geometry.dispose(); G.fragments.splice(i, 1); continue; }
+    if (f.life <= 0) { scene.remove(f.mesh); f.mesh.geometry.dispose(); G.fragments.splice(i,1); continue; }
     f.mesh.position.addScaledVector(f.vel, dt);
     f.vel.multiplyScalar(0.97);
-    f.vel.y -= 0.5 * dt; // gentle drift
-    f.mesh.material.opacity = Math.min(1, f.life / f.maxLife * 3);
+    f.vel.y -= 0.5*dt;
+    f.mesh.material.opacity = Math.min(1, f.life/f.maxLife*3);
     f.mesh.material.transparent = true;
     f.mesh.rotation.x += 0.03; f.mesh.rotation.y += 0.04;
   }
 
-  // Particles
-  for (let i = G.particles.length - 1; i >= 0; i--) {
+  for (let i = G.particles.length-1; i >= 0; i--) {
     const p = G.particles[i];
     p.life -= dt;
-    if (p.life <= 0) { scene.remove(p.mesh); G.particles.splice(i, 1); continue; }
+    if (p.life <= 0) { scene.remove(p.mesh); G.particles.splice(i,1); continue; }
     p.mesh.position.addScaledVector(p.vel, dt);
-    if (!p.isRing) p.vel.y -= 2 * dt;
-    const t = p.life / p.maxLife;
+    if (!p.isRing) p.vel.y -= 2*dt;
+    const t = p.life/p.maxLife;
     if (p.isRing) {
-      const s = 1 + (1 - t) * 4;
-      p.mesh.scale.setScalar(s);
-      p.mesh.material.opacity = t * 0.8;
+      p.mesh.scale.setScalar(1+(1-t)*4);
+      p.mesh.material.opacity = t*0.8;
       p.mesh.lookAt(camera.position);
     } else if (p.isSprite) {
-      p.mesh.material.opacity = Math.min(1, t * 3);
+      p.mesh.material.opacity = Math.min(1, t*3);
     } else {
       p.mesh.material.opacity = t;
       p.mesh.material.transparent = true;
     }
   }
 
-  // Structures
   for (const s of G.structures) {
     s.group.rotation.x += s.rotVel.x;
     s.group.rotation.y += s.rotVel.y;
@@ -831,47 +922,28 @@ function update(dt) {
 }
 
 // ═══════════════════════════════════════════════════
-// VR CONTROLLER UPDATE
-// ═══════════════════════════════════════════════════
-function updateVRControllers() {
-  for (const ctrl of G.controllers) {
-    const pos = new THREE.Vector3();
-    ctrl.controller.getWorldPosition(pos);
-    const idx = ctrl.idx;
-    if (G.grabbed[idx]) {
-      G.grabVel[idx].subVectors(pos, G.lastGrabPos[idx]);
-      G.lastGrabPos[idx].copy(pos);
-      G.grabbed[idx].mesh.position.lerp(pos, 0.4);
-    }
-  }
-}
-
-// ═══════════════════════════════════════════════════
-// MAIN LOOP
+// RENDER LOOP
 // ═══════════════════════════════════════════════════
 renderer.setAnimationLoop((time) => {
   const dt = Math.min(G.clock.getDelta(), 0.05);
-  if (G.isVR) updateVRControllers();
+  const t = time * 0.001;
+  if (G.isVR) updateVRControllers(t);
   update(dt);
   renderer.render(scene, camera);
 });
 
 // ═══════════════════════════════════════════════════
-// INITIAL ASTEROIDS
+// INITIAL SPAWN & ENTRY
 // ═══════════════════════════════════════════════════
 function spawnInitialAsteroids() {
   for (let i = 0; i < 4; i++) setTimeout(() => spawnAsteroid(), i * 600);
 }
 
-// ═══════════════════════════════════════════════════
-// VR BUTTON
-// ═══════════════════════════════════════════════════
 async function initVR() {
   const status = document.getElementById('status');
   if (!navigator.xr) { status.textContent = 'WebXR not supported in this browser.'; return; }
   const supported = await navigator.xr.isSessionSupported('immersive-vr').catch(() => false);
   if (!supported) { status.textContent = 'VR not available. Try the desktop mode.'; return; }
-
   document.getElementById('vr-btn').addEventListener('click', async () => {
     try { getAC(); } catch(e) {}
     const session = await navigator.xr.requestSession('immersive-vr', {
@@ -884,11 +956,10 @@ async function initVR() {
     document.getElementById('overlay').style.display = 'none';
     document.getElementById('score-hud').style.display = 'block';
     document.getElementById('instructions').style.display = 'block';
+    document.getElementById('instructions').innerHTML =
+      'AIM beam at asteroid &nbsp;|&nbsp; GRIP: grab at distance &nbsp;|&nbsp; hold TRIGGER: reel in &nbsp;|&nbsp; Release GRIP: throw';
     spawnInitialAsteroids();
-    session.addEventListener('end', () => {
-      G.isVR = false;
-      document.getElementById('overlay').style.display = 'flex';
-    });
+    session.addEventListener('end', () => { G.isVR = false; document.getElementById('overlay').style.display = 'flex'; });
   });
   status.textContent = 'VR headset detected. Ready to enter.';
   document.getElementById('vr-btn').disabled = false;
