@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>VOID ARCHITECT</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; overflow: hidden; font-family: monospace; }
+canvas { display: block; }
+#overlay {
+  position: fixed; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 20px;
+  background: radial-gradient(ellipse at 50% 50%, #0a0a2a 0%, #000 70%);
+  z-index: 10;
+}
+#overlay h1 {
+  font-family: 'Courier New', monospace; font-size: clamp(2rem, 6vw, 4rem);
+  color: #88ccff; letter-spacing: .3em; text-shadow: 0 0 40px #4488ff;
+  text-align: center;
+}
+#overlay p { color: #6699cc; font-size: clamp(.8rem, 1.5vw, 1rem); text-align: center; max-width: 500px; line-height: 1.8; letter-spacing: .05em; }
+#vr-btn {
+  background: transparent; border: 2px solid #4488ff; color: #88ccff;
+  font-family: monospace; font-size: 1rem; padding: 14px 40px; cursor: pointer;
+  letter-spacing: .2em; transition: all .2s; text-transform: uppercase;
+}
+#vr-btn:hover { background: #4488ff22; box-shadow: 0 0 30px #4488ff44; }
+#vr-btn:disabled { opacity: .4; cursor: not-allowed; }
+#desktop-btn {
+  background: transparent; border: 1px solid #336688; color: #6699cc;
+  font-family: monospace; font-size: .8rem; padding: 8px 24px; cursor: pointer;
+  letter-spacing: .15em; transition: all .2s;
+}
+#desktop-btn:hover { border-color: #88ccff; color: #88ccff; }
+#status { color: #4488ff; font-size: .75rem; letter-spacing: .15em; min-height: 20px; }
+#score-hud {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  color: #88ccff; font-family: monospace; font-size: 1.5rem; letter-spacing: .2em;
+  text-shadow: 0 0 20px #4488ff; pointer-events: none; display: none;
+}
+#instructions {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  color: #446688; font-family: monospace; font-size: .75rem; text-align: center;
+  letter-spacing: .1em; pointer-events: none; display: none;
+}
+</style>
+</head>
+<body>
+<div id="overlay">
+  <h1>VOID<br>ARCHITECT</h1>
+  <p>Grab asteroids. Throw them at each other.<br>Build orbital structures. Survive the void.</p>
+  <button id="vr-btn">Enter VR</button>
+  <button id="desktop-btn">Play on Desktop (Mouse)</button>
+  <div id="status"></div>
+</div>
+<div id="score-hud">SCORE: <span id="score-val">0</span></div>
+<div id="instructions">GRAB: Grip Button &nbsp;|&nbsp; THROW: Release Grip &nbsp;|&nbsp; BUILD: Trigger on Fragment Cluster</div>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+// ═══════════════════════════════════════════════════
+// AUDIO
+// ═══════════════════════════════════════════════════
+let AC;
+function getAC() { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); return AC; }
+function impact(vol = 0.3, pitch = 1) {
+  try {
+    const a = getAC(), buf = a.createBuffer(1, a.sampleRate * 0.3, a.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (a.sampleRate * 0.08));
+    const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    f.type = 'lowpass'; f.frequency.value = 200 * pitch;
+    g.gain.setValueAtTime(vol, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.3);
+    src.buffer = buf; src.connect(f); f.connect(g); g.connect(a.destination);
+    src.start(); src.stop(a.currentTime + 0.3);
+  } catch (e) {}
+}
+function sparkle(vol = 0.2) {
+  try {
+    const a = getAC(), o = a.createOscillator(), g = a.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(800 + Math.random() * 400, a.currentTime);
+    o.frequency.exponentialRampToValueAtTime(200, a.currentTime + 0.4);
+    g.gain.setValueAtTime(vol, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.4);
+    o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.4);
+  } catch (e) {}
+}
+function whoosh() {
+  try {
+    const a = getAC(), buf = a.createBuffer(1, a.sampleRate * 0.2, a.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(i / d.length * Math.PI);
+    const src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    f.type = 'bandpass'; f.frequency.value = 600;
+    g.gain.setValueAtTime(0.15, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.2);
+    src.buffer = buf; src.connect(f); f.connect(g); g.connect(a.destination);
+    src.start(); src.stop(a.currentTime + 0.2);
+  } catch (e) {}
+}
+
+// ═══════════════════════════════════════════════════
+// SCENE SETUP
+// ═══════════════════════════════════════════════════
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.xr.enabled = true;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000005);
+scene.fog = new THREE.FogExp2(0x000010, 0.015);
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 500);
+camera.position.set(0, 1.6, 0);
+scene.add(camera);
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ═══════════════════════════════════════════════════
+// LIGHTING
+// ═══════════════════════════════════════════════════
+const ambient = new THREE.AmbientLight(0x111133, 0.4);
+scene.add(ambient);
+
+const sun = new THREE.DirectionalLight(0x4466ff, 0.8);
+sun.position.set(50, 100, 50);
+scene.add(sun);
+
+// Nebula point lights
+const nebulaPts = [
+  { color: 0x4422ff, pos: [80, 20, -60], intensity: 2 },
+  { color: 0xff2244, pos: [-60, -20, 80], intensity: 1.5 },
+  { color: 0x22ffaa, pos: [0, -80, -40], intensity: 1 },
+];
+nebulaPts.forEach(({ color, pos, intensity }) => {
+  const light = new THREE.PointLight(color, intensity, 200);
+  light.position.set(...pos);
+  scene.add(light);
+});
+
+// ═══════════════════════════════════════════════════
+// STARFIELD
+// ═══════════════════════════════════════════════════
+function buildStars() {
+  const count = 3000;
+  const pos = new Float32Array(count * 3);
+  const col = new Float32Array(count * 3);
+  const pal = [[1, 1, 1], [0.7, 0.8, 1], [1, 0.8, 0.7], [0.8, 1, 0.9]];
+  for (let i = 0; i < count; i++) {
+    const r = 150 + Math.random() * 200;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+    pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+    pos[i * 3 + 2] = r * Math.cos(phi);
+    const c = pal[Math.floor(Math.random() * pal.length)];
+    const bright = 0.4 + Math.random() * 0.6;
+    col[i * 3] = c[0] * bright; col[i * 3 + 1] = c[1] * bright; col[i * 3 + 2] = c[2] * bright;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  const mat = new THREE.PointsMaterial({ size: 0.3, vertexColors: true, sizeAttenuation: true });
+  scene.add(new THREE.Points(geo, mat));
+}
+buildStars();
+
+// ═══════════════════════════════════════════════════
+// NEBULA BACKGROUND (billboard clouds)
+// ═══════════════════════════════════════════════════
+function buildNebula() {
+  const colors = [0x220066, 0x660022, 0x002266, 0x114422];
+  for (let i = 0; i < 8; i++) {
+    const geo = new THREE.PlaneGeometry(60 + Math.random() * 60, 40 + Math.random() * 40);
+    const mat = new THREE.MeshBasicMaterial({
+      color: colors[i % colors.length],
+      transparent: true,
+      opacity: 0.04 + Math.random() * 0.06,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    const dist = 100 + Math.random() * 80;
+    const angle = (i / 8) * Math.PI * 2;
+    mesh.position.set(Math.cos(angle) * dist, (Math.random() - 0.5) * 60, Math.sin(angle) * dist);
+    mesh.lookAt(0, 0, 0);
+    scene.add(mesh);
+  }
+}
+buildNebula();
+
+// ═══════════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════════
+const G = {
+  score: 0,
+  wave: 1,
+  asteroids: [],
+  fragments: [],
+  structures: [],
+  particles: [],
+  controllers: [],
+  grabbed: [null, null],
+  grabPos: [new THREE.Vector3(), new THREE.Vector3()],
+  grabRot: [new THREE.Quaternion(), new THREE.Quaternion()],
+  grabVel: [new THREE.Vector3(), new THREE.Vector3()],
+  lastGrabPos: [new THREE.Vector3(), new THREE.Vector3()],
+  waveTimer: 0,
+  waveInterval: 5,
+  maxAsteroids: 6,
+  spawnRadius: 12,
+  isVR: false,
+  desktopMode: false,
+  clock: new THREE.Clock(),
+  combo: 0,
+  comboTimer: 0,
+};
+
+// ═══════════════════════════════════════════════════
+// PROCEDURAL ASTEROID GEOMETRY
+// ═══════════════════════════════════════════════════
+function makeAsteroidGeo(radius, detail = 1) {
+  const geo = new THREE.IcosahedronGeometry(radius, detail);
+  const pos = geo.attributes.position;
+  const noise = radius * 0.3;
+  for (let i = 0; i < pos.count; i++) {
+    pos.setXYZ(i,
+      pos.getX(i) + (Math.random() - 0.5) * noise,
+      pos.getY(i) + (Math.random() - 0.5) * noise,
+      pos.getZ(i) + (Math.random() - 0.5) * noise
+    );
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
+const ASTEROID_COLORS = [0x6655aa, 0x556644, 0x885533, 0x446688, 0x775544];
+
+function spawnAsteroid(size = null) {
+  const r = size || (0.3 + Math.random() * 0.9);
+  const geo = makeAsteroidGeo(r, r > 0.8 ? 2 : 1);
+  const color = ASTEROID_COLORS[Math.floor(Math.random() * ASTEROID_COLORS.length)];
+  const mat = new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.85,
+    metalness: 0.2,
+    emissive: new THREE.Color(color).multiplyScalar(0.05),
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+
+  // Spawn on a sphere around the player
+  const angle = Math.random() * Math.PI * 2;
+  const elev = (Math.random() - 0.5) * Math.PI * 0.6;
+  const dist = G.spawnRadius + Math.random() * 4;
+  mesh.position.set(
+    Math.cos(angle) * Math.cos(elev) * dist,
+    1.6 + Math.sin(elev) * dist * 0.5,
+    Math.sin(angle) * Math.cos(elev) * dist
+  );
+
+  // Drift toward player origin
+  const vel = new THREE.Vector3(0, 1.6, 0).sub(mesh.position).normalize();
+  vel.multiplyScalar(0.5 + Math.random() * 0.8 + G.wave * 0.1);
+  vel.add(new THREE.Vector3((Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3));
+
+  const rotVel = new THREE.Vector3(
+    (Math.random() - 0.5) * 0.02,
+    (Math.random() - 0.5) * 0.02,
+    (Math.random() - 0.5) * 0.02
+  );
+
+  scene.add(mesh);
+  const asteroid = { mesh, vel, rotVel, radius: r, grabbed: false, grabIdx: -1, spawned: Date.now() };
+  G.asteroids.push(asteroid);
+  return asteroid;
+}
+
+// ═══════════════════════════════════════════════════
+// FRAGMENTS
+// ═══════════════════════════════════════════════════
+function spawnFragments(position, count, color) {
+  for (let i = 0; i < count; i++) {
+    const size = 0.04 + Math.random() * 0.1;
+    const geo = new THREE.OctahedronGeometry(size, 0);
+    const mat = new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.4,
+      metalness: 0.8,
+      emissive: new THREE.Color(color).multiplyScalar(0.3),
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(position).add(new THREE.Vector3(
+      (Math.random() - 0.5) * 0.5,
+      (Math.random() - 0.5) * 0.5,
+      (Math.random() - 0.5) * 0.5
+    ));
+    const vel = new THREE.Vector3(
+      (Math.random() - 0.5) * 2,
+      (Math.random() - 0.5) * 2 + 0.5,
+      (Math.random() - 0.5) * 2
+    );
+    const life = 6 + Math.random() * 4;
+    scene.add(mesh);
+    G.fragments.push({ mesh, vel, life, maxLife: life, color });
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// PARTICLES
+// ═══════════════════════════════════════════════════
+function spawnParticles(pos, count, color, speed = 3) {
+  for (let i = 0; i < count; i++) {
+    const geo = new THREE.SphereGeometry(0.02 + Math.random() * 0.04, 4, 4);
+    const mat = new THREE.MeshBasicMaterial({ color });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(pos);
+    const vel = new THREE.Vector3(
+      (Math.random() - 0.5) * speed,
+      (Math.random() - 0.5) * speed + 1,
+      (Math.random() - 0.5) * speed
+    );
+    G.particles.push({ mesh, vel, life: 1.5, maxLife: 1.5 });
+    scene.add(mesh);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// EXPLOSION
+// ═══════════════════════════════════════════════════
+function explode(pos, sizeA, sizeB, colorA, colorB) {
+  const score = Math.round((sizeA + sizeB) * 100 * (1 + G.combo * 0.2));
+  G.score += score;
+  G.combo++;
+  G.comboTimer = 3;
+  document.getElementById('score-val').textContent = G.score.toLocaleString();
+
+  impact(Math.min(sizeA + sizeB, 1), 1 / (sizeA + sizeB));
+  spawnFragments(pos, Math.round((sizeA + sizeB) * 20), colorA);
+  spawnParticles(pos, 15, 0xffaa44, (sizeA + sizeB) * 4);
+
+  // Flash ring
+  const ringGeo = new THREE.RingGeometry(0.1, sizeA + sizeB + 0.2, 32);
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: 0xffcc66, transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false,
+  });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.position.copy(pos);
+  ring.lookAt(camera.position);
+  scene.add(ring);
+  G.particles.push({ mesh: ring, vel: new THREE.Vector3(), life: 0.5, maxLife: 0.5, isRing: true, startScale: 1 });
+
+  showFloatingScore(pos, score, G.combo);
+}
+
+// ═══════════════════════════════════════════════════
+// FLOATING SCORE TEXT (canvas sprite)
+// ═══════════════════════════════════════════════════
+function showFloatingScore(pos, score, combo) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, 256, 128);
+  ctx.font = 'bold 48px monospace';
+  ctx.textAlign = 'center';
+  const hue = Math.min(combo * 20, 60);
+  ctx.fillStyle = `hsl(${hue}, 100%, 70%)`;
+  ctx.fillText(`+${score}`, 128, 60);
+  if (combo > 1) {
+    ctx.font = '28px monospace';
+    ctx.fillStyle = '#ffaaff';
+    ctx.fillText(`×${combo} COMBO`, 128, 95);
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.position.copy(pos).add(new THREE.Vector3(0, 0.5, 0));
+  sprite.scale.set(1.5, 0.75, 1);
+  scene.add(sprite);
+  G.particles.push({ mesh: sprite, vel: new THREE.Vector3(0, 1.5, 0), life: 1.8, maxLife: 1.8, isSprite: true });
+}
+
+// ═══════════════════════════════════════════════════
+// ORBITAL STRUCTURES (buildable from fragment clusters)
+// ═══════════════════════════════════════════════════
+function buildStructure(pos) {
+  sparkle(0.5);
+  const types = ['shield', 'multiplier', 'attractor'];
+  const type = types[G.structures.length % types.length];
+  const colors = { shield: 0x4488ff, multiplier: 0xffaa00, attractor: 0xff4488 };
+
+  const group = new THREE.Group();
+  group.position.copy(pos);
+
+  // Core
+  const core = new THREE.Mesh(
+    new THREE.OctahedronGeometry(0.15, 2),
+    new THREE.MeshStandardMaterial({ color: colors[type], emissive: new THREE.Color(colors[type]).multiplyScalar(0.5), metalness: 0.8 })
+  );
+  group.add(core);
+
+  // Orbiting rings
+  for (let i = 0; i < 3; i++) {
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(0.3 + i * 0.12, 0.02, 8, 32),
+      new THREE.MeshBasicMaterial({ color: colors[type], transparent: true, opacity: 0.6 })
+    );
+    ring.rotation.x = (i / 3) * Math.PI;
+    ring.rotation.y = (i / 3) * Math.PI * 0.7;
+    group.add(ring);
+  }
+
+  scene.add(group);
+  G.structures.push({ group, type, rotVel: new THREE.Vector3(0.01, 0.02, 0.005), pos });
+  showFloatingScore(pos, 500, 1);
+  G.score += 500;
+  document.getElementById('score-val').textContent = G.score.toLocaleString();
+}
+
+// ═══════════════════════════════════════════════════
+// CONTROLLER SETUP (VR)
+// ═══════════════════════════════════════════════════
+function setupControllers() {
+  for (let i = 0; i < 2; i++) {
+    const controller = renderer.xr.getController(i);
+    scene.add(controller);
+
+    // Controller model — custom glowing hand shape
+    const handGeo = new THREE.SphereGeometry(0.04, 8, 8);
+    const handMat = new THREE.MeshStandardMaterial({
+      color: 0x4488ff, emissive: 0x224466, metalness: 0.5,
+    });
+    const hand = new THREE.Mesh(handGeo, handMat);
+    controller.add(hand);
+
+    // Laser pointer
+    const laserGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -3)
+    ]);
+    const laser = new THREE.Line(laserGeo, new THREE.LineBasicMaterial({
+      color: 0x4488ff, transparent: true, opacity: 0.3
+    }));
+    controller.add(laser);
+
+    // Grab sphere (visual feedback)
+    const grabGeo = new THREE.SphereGeometry(0.08, 16, 16);
+    const grabMat = new THREE.MeshBasicMaterial({
+      color: 0x88ccff, transparent: true, opacity: 0.2, wireframe: false,
+    });
+    const grabSphere = new THREE.Mesh(grabGeo, grabMat);
+    controller.add(grabSphere);
+    hand._grabSphere = grabSphere;
+    hand._laser = laser;
+
+    G.controllers.push({ controller, hand, grabSphere, idx: i });
+
+    controller.addEventListener('selectstart', () => onTrigger(i, true));
+    controller.addEventListener('selectend', () => onTrigger(i, false));
+    controller.addEventListener('squeezestart', () => onGrip(i, true));
+    controller.addEventListener('squeezeend', () => onGrip(i, false));
+  }
+}
+
+function onGrip(idx, pressed) {
+  if (pressed) tryGrab(idx);
+  else releaseGrab(idx);
+}
+
+function onTrigger(idx, pressed) {
+  if (!pressed) return;
+  // Trigger: try to build structure from nearby fragments
+  tryBuild(idx);
+}
+
+function tryGrab(idx) {
+  if (!G.controllers[idx]) return;
+  const pos = new THREE.Vector3();
+  G.controllers[idx].controller.getWorldPosition(pos);
+  const GRAB_DIST = 0.5;
+
+  // Find nearest asteroid
+  let nearest = null, nearDist = GRAB_DIST;
+  for (const ast of G.asteroids) {
+    if (ast.grabbed) continue;
+    const d = pos.distanceTo(ast.mesh.position);
+    if (d < ast.radius + GRAB_DIST && d < nearDist) { nearest = ast; nearDist = d; }
+  }
+  if (nearest) {
+    nearest.grabbed = true;
+    nearest.grabIdx = idx;
+    G.grabbed[idx] = nearest;
+    G.lastGrabPos[idx].copy(pos);
+    G.grabVel[idx].set(0, 0, 0);
+    nearest.mesh.material.emissiveIntensity = 0.4;
+    G.controllers[idx].grabSphere.material.opacity = 0.5;
+    whoosh();
+  }
+}
+
+function releaseGrab(idx) {
+  const ast = G.grabbed[idx];
+  if (!ast) return;
+  ast.grabbed = false;
+  ast.grabIdx = -1;
+  // Transfer velocity from hand movement to asteroid
+  const throwVel = G.grabVel[idx].clone().multiplyScalar(8);
+  ast.vel.copy(throwVel);
+  // Cap velocity
+  if (ast.vel.length() > 15) ast.vel.normalize().multiplyScalar(15);
+  ast.mesh.material.emissiveIntensity = 0.05;
+  if (G.controllers[idx]) G.controllers[idx].grabSphere.material.opacity = 0.2;
+  G.grabbed[idx] = null;
+  whoosh();
+}
+
+function tryBuild(idx) {
+  if (!G.controllers[idx]) return;
+  const pos = new THREE.Vector3();
+  G.controllers[idx].controller.getWorldPosition(pos);
+  // Check fragment cluster nearby
+  const nearby = G.fragments.filter(f => f.mesh.position.distanceTo(pos) < 1.5);
+  if (nearby.length >= 5) {
+    const center = new THREE.Vector3();
+    nearby.forEach(f => center.add(f.mesh.position));
+    center.divideScalar(nearby.length);
+    nearby.forEach(f => { scene.remove(f.mesh); f.mesh.geometry.dispose(); });
+    G.fragments = G.fragments.filter(f => !nearby.includes(f));
+    buildStructure(center);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// DESKTOP MODE (mouse + WASD)
+// ═══════════════════════════════════════════════════
+let desktop = {
+  yaw: 0, pitch: 0, locked: false,
+  keys: {},
+  virtualHand: null,
+  handPos: new THREE.Vector3(0, 1.4, -1.5),
+  grabbed: null,
+  vel: new THREE.Vector3(),
+  lastHandPos: new THREE.Vector3(),
+};
+
+function initDesktop() {
+  G.desktopMode = true;
+  // Virtual hand
+  const geo = new THREE.SphereGeometry(0.06, 16, 16);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x4488ff, emissive: 0x224466 });
+  desktop.virtualHand = new THREE.Mesh(geo, mat);
+  desktop.virtualHand.position.copy(desktop.handPos);
+  scene.add(desktop.virtualHand);
+
+  // Laser from hand
+  const laserGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,-4)
+  ]);
+  const laser = new THREE.Line(laserGeo, new THREE.LineBasicMaterial({ color: 0x4488ff, transparent: true, opacity: 0.4 }));
+  desktop.virtualHand.add(laser);
+
+  renderer.domElement.addEventListener('click', () => renderer.domElement.requestPointerLock());
+  document.addEventListener('pointerlockchange', () => { desktop.locked = document.pointerLockElement === renderer.domElement; });
+  document.addEventListener('mousemove', e => {
+    if (!desktop.locked) return;
+    desktop.yaw -= e.movementX * 0.002;
+    desktop.pitch = Math.max(-Math.PI/2.5, Math.min(Math.PI/2.5, desktop.pitch - e.movementY * 0.002));
+  });
+  document.addEventListener('keydown', e => {
+    desktop.keys[e.code] = true;
+    if (e.code === 'KeyG') tryGrabDesktop();
+    if (e.code === 'KeyF') releaseGrabDesktop();
+    if (e.code === 'KeyB') tryBuildDesktop();
+  });
+  document.addEventListener('keyup', e => desktop.keys[e.code] = false);
+
+  // Update desktop instructions
+  document.getElementById('instructions').innerHTML =
+    'CLICK to capture mouse &nbsp;|&nbsp; WASD: move &nbsp;|&nbsp; G: grab &nbsp;|&nbsp; F: throw &nbsp;|&nbsp; B: build structure &nbsp;|&nbsp; QE: hand up/down';
+  document.getElementById('instructions').style.display = 'block';
+}
+
+function tryGrabDesktop() {
+  const pos = desktop.virtualHand.position;
+  let nearest = null, nearDist = 1.5;
+  for (const ast of G.asteroids) {
+    if (ast.grabbed) continue;
+    const d = pos.distanceTo(ast.mesh.position);
+    if (d < ast.radius + 1.5 && d < nearDist) { nearest = ast; nearDist = d; }
+  }
+  if (nearest) {
+    nearest.grabbed = true;
+    desktop.grabbed = nearest;
+    desktop.lastHandPos.copy(pos);
+    desktop.vel.set(0,0,0);
+    nearest.mesh.material.emissiveIntensity = 0.4;
+    whoosh();
+  }
+}
+
+function releaseGrabDesktop() {
+  if (!desktop.grabbed) return;
+  const ast = desktop.grabbed;
+  ast.grabbed = false;
+  ast.vel.copy(desktop.vel).multiplyScalar(10);
+  if (ast.vel.length() > 18) ast.vel.normalize().multiplyScalar(18);
+  ast.mesh.material.emissiveIntensity = 0.05;
+  desktop.grabbed = null;
+  whoosh();
+}
+
+function tryBuildDesktop() {
+  const pos = desktop.virtualHand.position;
+  const nearby = G.fragments.filter(f => f.mesh.position.distanceTo(pos) < 2);
+  if (nearby.length >= 5) {
+    const center = new THREE.Vector3();
+    nearby.forEach(f => center.add(f.mesh.position));
+    center.divideScalar(nearby.length);
+    nearby.forEach(f => { scene.remove(f.mesh); f.mesh.geometry.dispose(); });
+    G.fragments = G.fragments.filter(f => !nearby.includes(f));
+    buildStructure(center);
+  }
+}
+
+function updateDesktop(dt) {
+  if (!G.desktopMode) return;
+  // Camera rotation
+  camera.rotation.order = 'YXZ';
+  camera.rotation.y = desktop.yaw;
+  camera.rotation.x = desktop.pitch;
+
+  // Camera movement
+  const speed = 4;
+  const fwd = new THREE.Vector3(-Math.sin(desktop.yaw), 0, -Math.cos(desktop.yaw));
+  const right = new THREE.Vector3(Math.cos(desktop.yaw), 0, -Math.sin(desktop.yaw));
+  if (desktop.keys['KeyW']) camera.position.addScaledVector(fwd, speed * dt);
+  if (desktop.keys['KeyS']) camera.position.addScaledVector(fwd, -speed * dt);
+  if (desktop.keys['KeyA']) camera.position.addScaledVector(right, -speed * dt);
+  if (desktop.keys['KeyD']) camera.position.addScaledVector(right, speed * dt);
+
+  // Hand moves with camera forward direction, slightly right and down
+  const camFwd = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+  const camRight = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+  const camUp = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+  const handTarget = camera.position.clone()
+    .addScaledVector(camFwd, 1.2)
+    .addScaledVector(camRight, 0.3)
+    .addScaledVector(camUp, -0.2);
+
+  if (desktop.keys['KeyQ']) handTarget.y += 1;
+  if (desktop.keys['KeyE']) handTarget.y -= 1;
+
+  desktop.lastHandPos.copy(desktop.virtualHand.position);
+  desktop.virtualHand.position.lerp(handTarget, 0.15);
+  desktop.vel.subVectors(desktop.virtualHand.position, desktop.lastHandPos);
+
+  // Update grabbed
+  if (desktop.grabbed) {
+    desktop.grabbed.mesh.position.copy(desktop.virtualHand.position);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// COLLISION DETECTION
+// ═══════════════════════════════════════════════════
+function checkCollisions() {
+  for (let i = 0; i < G.asteroids.length; i++) {
+    const a = G.asteroids[i];
+    if (a.grabbed) continue;
+    for (let j = i + 1; j < G.asteroids.length; j++) {
+      const b = G.asteroids[j];
+      if (b.grabbed) continue;
+      // Only collide if one is moving fast enough
+      const speed = Math.max(a.vel.length(), b.vel.length());
+      if (speed < 0.3) continue;
+      const dist = a.mesh.position.distanceTo(b.mesh.position);
+      const minDist = a.radius + b.radius;
+      if (dist < minDist) {
+        const midpoint = a.mesh.position.clone().add(b.mesh.position).multiplyScalar(0.5);
+        explode(midpoint, a.radius, b.radius,
+          a.mesh.material.color, b.mesh.material.color);
+        // Remove both
+        scene.remove(a.mesh); a.mesh.geometry.dispose();
+        scene.remove(b.mesh); b.mesh.geometry.dispose();
+        G.asteroids.splice(j, 1);
+        G.asteroids.splice(i, 1);
+        i--;
+        break;
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// ATTRACTOR STRUCTURE EFFECT
+// ═══════════════════════════════════════════════════
+function applyStructureEffects(dt) {
+  for (const struct of G.structures) {
+    if (struct.type === 'attractor') {
+      // Pull nearby asteroids
+      for (const ast of G.asteroids) {
+        if (ast.grabbed) continue;
+        const diff = struct.pos.clone().sub(ast.mesh.position);
+        const dist = diff.length();
+        if (dist < 8 && dist > 0.5) {
+          diff.normalize().multiplyScalar(1.5 / dist * dt);
+          ast.vel.add(diff);
+        }
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// WAVE MANAGEMENT
+// ═══════════════════════════════════════════════════
+function updateWaves(dt) {
+  G.waveTimer += dt;
+  if (G.waveTimer > G.waveInterval && G.asteroids.length < G.maxAsteroids) {
+    G.waveTimer = 0;
+    const toSpawn = Math.min(2 + Math.floor(G.wave * 0.5), 4);
+    for (let i = 0; i < toSpawn; i++) spawnAsteroid();
+    if (G.asteroids.length > G.maxAsteroids * 0.8) {
+      G.wave++;
+      G.maxAsteroids = Math.min(6 + G.wave, 14);
+      G.waveInterval = Math.max(2, 5 - G.wave * 0.3);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// UPDATE LOOP
+// ═══════════════════════════════════════════════════
+function update(dt) {
+  updateDesktop(dt);
+  updateWaves(dt);
+  applyStructureEffects(dt);
+
+  // Combo decay
+  if (G.comboTimer > 0) {
+    G.comboTimer -= dt;
+    if (G.comboTimer <= 0) G.combo = 0;
+  }
+
+  // Asteroids
+  for (let i = G.asteroids.length - 1; i >= 0; i--) {
+    const ast = G.asteroids[i];
+    if (ast.grabbed) {
+      // In VR: snap to controller
+      if (G.isVR && G.controllers[ast.grabIdx]) {
+        const pos = new THREE.Vector3();
+        G.controllers[ast.grabIdx].controller.getWorldPosition(pos);
+        G.grabVel[ast.grabIdx].subVectors(pos, G.lastGrabPos[ast.grabIdx]);
+        G.lastGrabPos[ast.grabIdx].copy(pos);
+        ast.mesh.position.lerp(pos, 0.35);
+      }
+      ast.mesh.rotation.x += ast.rotVel.x;
+      ast.mesh.rotation.y += ast.rotVel.y;
+      continue;
+    }
+    ast.mesh.position.addScaledVector(ast.vel, dt);
+    ast.mesh.rotation.x += ast.rotVel.x;
+    ast.mesh.rotation.y += ast.rotVel.y;
+    ast.mesh.rotation.z += ast.rotVel.z;
+
+    // Gravity toward origin (very gentle)
+    const toOrigin = new THREE.Vector3(0, 1.6, 0).sub(ast.mesh.position);
+    const d = toOrigin.length();
+    if (d > 1) ast.vel.addScaledVector(toOrigin.normalize(), 0.02 * dt);
+
+    // Out of bounds — respawn
+    if (d > 30) {
+      scene.remove(ast.mesh); ast.mesh.geometry.dispose();
+      G.asteroids.splice(i, 1);
+    }
+  }
+
+  // Fragments
+  for (let i = G.fragments.length - 1; i >= 0; i--) {
+    const f = G.fragments[i];
+    f.life -= dt;
+    if (f.life <= 0) { scene.remove(f.mesh); f.mesh.geometry.dispose(); G.fragments.splice(i, 1); continue; }
+    f.mesh.position.addScaledVector(f.vel, dt);
+    f.vel.multiplyScalar(0.97);
+    f.vel.y -= 0.5 * dt; // gentle drift
+    f.mesh.material.opacity = Math.min(1, f.life / f.maxLife * 3);
+    f.mesh.material.transparent = true;
+    f.mesh.rotation.x += 0.03; f.mesh.rotation.y += 0.04;
+  }
+
+  // Particles
+  for (let i = G.particles.length - 1; i >= 0; i--) {
+    const p = G.particles[i];
+    p.life -= dt;
+    if (p.life <= 0) { scene.remove(p.mesh); G.particles.splice(i, 1); continue; }
+    p.mesh.position.addScaledVector(p.vel, dt);
+    if (!p.isRing) p.vel.y -= 2 * dt;
+    const t = p.life / p.maxLife;
+    if (p.isRing) {
+      const s = 1 + (1 - t) * 4;
+      p.mesh.scale.setScalar(s);
+      p.mesh.material.opacity = t * 0.8;
+      p.mesh.lookAt(camera.position);
+    } else if (p.isSprite) {
+      p.mesh.material.opacity = Math.min(1, t * 3);
+    } else {
+      p.mesh.material.opacity = t;
+      p.mesh.material.transparent = true;
+    }
+  }
+
+  // Structures
+  for (const s of G.structures) {
+    s.group.rotation.x += s.rotVel.x;
+    s.group.rotation.y += s.rotVel.y;
+    s.group.rotation.z += s.rotVel.z;
+  }
+
+  checkCollisions();
+}
+
+// ═══════════════════════════════════════════════════
+// VR CONTROLLER UPDATE
+// ═══════════════════════════════════════════════════
+function updateVRControllers() {
+  for (const ctrl of G.controllers) {
+    const pos = new THREE.Vector3();
+    ctrl.controller.getWorldPosition(pos);
+    const idx = ctrl.idx;
+    if (G.grabbed[idx]) {
+      G.grabVel[idx].subVectors(pos, G.lastGrabPos[idx]);
+      G.lastGrabPos[idx].copy(pos);
+      G.grabbed[idx].mesh.position.lerp(pos, 0.4);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// MAIN LOOP
+// ═══════════════════════════════════════════════════
+renderer.setAnimationLoop((time) => {
+  const dt = Math.min(G.clock.getDelta(), 0.05);
+  if (G.isVR) updateVRControllers();
+  update(dt);
+  renderer.render(scene, camera);
+});
+
+// ═══════════════════════════════════════════════════
+// INITIAL ASTEROIDS
+// ═══════════════════════════════════════════════════
+function spawnInitialAsteroids() {
+  for (let i = 0; i < 4; i++) setTimeout(() => spawnAsteroid(), i * 600);
+}
+
+// ═══════════════════════════════════════════════════
+// VR BUTTON
+// ═══════════════════════════════════════════════════
+async function initVR() {
+  const status = document.getElementById('status');
+  if (!navigator.xr) { status.textContent = 'WebXR not supported in this browser.'; return; }
+  const supported = await navigator.xr.isSessionSupported('immersive-vr').catch(() => false);
+  if (!supported) { status.textContent = 'VR not available. Try the desktop mode.'; return; }
+
+  document.getElementById('vr-btn').addEventListener('click', async () => {
+    try { getAC(); } catch(e) {}
+    const session = await navigator.xr.requestSession('immersive-vr', {
+      requiredFeatures: ['local-floor'],
+      optionalFeatures: ['bounded-floor', 'hand-tracking'],
+    });
+    renderer.xr.setSession(session);
+    G.isVR = true;
+    setupControllers();
+    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('score-hud').style.display = 'block';
+    document.getElementById('instructions').style.display = 'block';
+    spawnInitialAsteroids();
+    session.addEventListener('end', () => {
+      G.isVR = false;
+      document.getElementById('overlay').style.display = 'flex';
+    });
+  });
+  status.textContent = 'VR headset detected. Ready to enter.';
+  document.getElementById('vr-btn').disabled = false;
+}
+
+document.getElementById('desktop-btn').addEventListener('click', () => {
+  try { getAC(); } catch(e) {}
+  document.getElementById('overlay').style.display = 'none';
+  document.getElementById('score-hud').style.display = 'block';
+  initDesktop();
+  spawnInitialAsteroids();
+});
+
+initVR();
+</script>
+</body>
+</html>
