@@ -7,7 +7,100 @@
   <link rel="icon" href="https://ssl.gstatic.com/classroom/favicon.ico" type="image/x-icon">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-   
+
+    :root {
+      --accent: #00ffff;
+      --accent2: #ff00ff;
+      --accent3: #ffff00;
+      --card-border: rgba(0,255,255,0.15);
+      --card-border-hover: rgba(0,255,255,0.5);
+      --card-glow: rgba(0,255,255,0.4);
+      --dot-color: rgba(0,255,255,0.5);
+      --dot-glow: rgba(0,255,255,0.6);
+      --btn-bg: linear-gradient(45deg, #ff4757, #ff6b7a);
+      --title-gradient: linear-gradient(45deg, #ff00ff, #00ffff, #ffff00);
+      --glow-multiplier: 1;
+    }
+
+    /* ─── THEMES ─────────────────────────────────────────────── */
+    body.theme-rgb {
+      --accent: #ff0000;
+      --accent2: #00ff00;
+      --accent3: #0000ff;
+      animation: rgbCycle 3s linear infinite;
+    }
+    @keyframes rgbCycle {
+      0%   { filter: hue-rotate(0deg) brightness(var(--brightness,1)); }
+      100% { filter: hue-rotate(360deg) brightness(var(--brightness,1)); }
+    }
+    body.theme-neon {
+      --accent: #39ff14;
+      --accent2: #ff1493;
+      --accent3: #ffff00;
+      --card-border: rgba(57,255,20,0.2);
+      --card-border-hover: rgba(57,255,20,0.7);
+      --card-glow: rgba(57,255,20,0.5);
+      --dot-color: rgba(57,255,20,0.5);
+      --dot-glow: rgba(57,255,20,0.7);
+      --title-gradient: linear-gradient(45deg, #39ff14, #ff1493, #ffff00);
+    }
+    body.theme-mono {
+      --accent: #ffffff;
+      --accent2: #aaaaaa;
+      --accent3: #cccccc;
+      --card-border: rgba(255,255,255,0.15);
+      --card-border-hover: rgba(255,255,255,0.6);
+      --card-glow: rgba(255,255,255,0.3);
+      --dot-color: rgba(255,255,255,0.4);
+      --dot-glow: rgba(255,255,255,0.5);
+      --title-gradient: linear-gradient(45deg, #fff, #aaa, #fff);
+    }
+    body.theme-purple {
+      --accent: #bf5fff;
+      --accent2: #ff5fbf;
+      --accent3: #d4a0ff;
+      --card-border: rgba(191,95,255,0.2);
+      --card-border-hover: rgba(191,95,255,0.6);
+      --card-glow: rgba(191,95,255,0.5);
+      --dot-color: rgba(191,95,255,0.5);
+      --dot-glow: rgba(191,95,255,0.7);
+      --title-gradient: linear-gradient(45deg, #bf5fff, #ff5fbf, #d4a0ff);
+    }
+    body.theme-cyan {
+      --accent: #00ffff;
+      --accent2: #00ccff;
+      --accent3: #aaffff;
+      --card-border: rgba(0,255,255,0.2);
+      --card-border-hover: rgba(0,255,255,0.7);
+      --card-glow: rgba(0,255,255,0.5);
+      --dot-color: rgba(0,255,255,0.5);
+      --dot-glow: rgba(0,255,255,0.8);
+      --title-gradient: linear-gradient(45deg, #00ffff, #00ccff, #aaffff);
+    }
+    body.theme-red {
+      --accent: #ff3333;
+      --accent2: #ff6600;
+      --accent3: #ffaaaa;
+      --card-border: rgba(255,51,51,0.2);
+      --card-border-hover: rgba(255,51,51,0.6);
+      --card-glow: rgba(255,51,51,0.5);
+      --dot-color: rgba(255,51,51,0.5);
+      --dot-glow: rgba(255,51,51,0.7);
+      --title-gradient: linear-gradient(45deg, #ff3333, #ff6600, #ffaaaa);
+    }
+    body.theme-green {
+      --accent: #00ff41;
+      --accent2: #008f11;
+      --accent3: #aaffaa;
+      --card-border: rgba(0,255,65,0.15);
+      --card-border-hover: rgba(0,255,65,0.6);
+      --card-glow: rgba(0,255,65,0.4);
+      --dot-color: rgba(0,255,65,0.5);
+      --dot-glow: rgba(0,255,65,0.6);
+      --title-gradient: linear-gradient(45deg, #00ff41, #008f11, #aaffaa);
+    }
+
+    /* ─── BASE ───────────────────────────────────────────────── */
     body {
       margin: 0;
       padding: 20px;
@@ -18,18 +111,20 @@
       text-align: center;
       overflow-x: hidden;
       position: relative;
-      transition: color 0.8s ease, filter 0.8s ease, text-shadow 0.8s ease;
+      transition: filter 0.4s ease;
     }
     body::before {
       content: "";
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(circle at 20% 30%, rgba(0, 255, 255, 0.03) 0%, transparent 60%),
-        radial-gradient(circle at 80% 70%, rgba(255, 0, 255, 0.03) 0%, transparent 60%);
+        radial-gradient(circle at 20% 30%, rgba(0,255,255,0.03) 0%, transparent 60%),
+        radial-gradient(circle at 80% 70%, rgba(255,0,255,0.03) 0%, transparent 60%);
       z-index: -2;
       pointer-events: none;
     }
+
+    /* ─── TOPO BG ─────────────────────────────────────────────── */
     .topo-bg {
       position: fixed;
       inset: 0;
@@ -42,22 +137,23 @@
       width: 200%;
       height: 200%;
       background: transparent;
-      border: 1px solid rgba(0, 255, 255, 0.12);
+      border: 1px solid var(--card-border, rgba(0,255,255,0.12));
       border-radius: 50%;
       animation: contourMove 80s linear infinite;
-      box-shadow: 0 0 15px rgba(0, 255, 255, 0.08);
+      box-shadow: 0 0 15px var(--card-border, rgba(0,255,255,0.08));
     }
     .contour:nth-child(odd) {
-      border-color: rgba(255, 0, 255, 0.10);
-      box-shadow: 0 0 20px rgba(255, 0, 255, 0.06);
+      border-color: var(--card-border, rgba(255,0,255,0.10));
       animation-duration: 120s;
       animation-direction: reverse;
     }
     @keyframes contourMove {
-      0% { transform: translate(-50%, -50%) rotate(0deg) scale(0.8); opacity: 0.3; }
-      50% { transform: translate(0%, 0%) rotate(180deg) scale(1.2); opacity: 0.6; }
-      100% { transform: translate(50%, 50%) rotate(360deg) scale(0.8); opacity: 0.3; }
+      0%   { transform: translate(-50%,-50%) rotate(0deg) scale(0.8); opacity: 0.3; }
+      50%  { transform: translate(0%,0%) rotate(180deg) scale(1.2); opacity: 0.6; }
+      100% { transform: translate(50%,50%) rotate(360deg) scale(0.8); opacity: 0.3; }
     }
+
+    /* ─── DOTS ───────────────────────────────────────────────── */
     #floating-dots {
       position: fixed;
       inset: 0;
@@ -67,31 +163,33 @@
     }
     .dot {
       position: absolute;
-      background: rgba(0, 255, 255, 0.5);
+      background: var(--dot-color, rgba(0,255,255,0.5));
       border-radius: 50%;
-      box-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+      box-shadow: 0 0 8px var(--dot-glow, rgba(0,255,255,0.6));
       animation: floatUp linear infinite;
     }
     @keyframes floatUp {
-      0% { transform: translateY(100vh) scale(0.2); opacity: 0; }
-      10% { opacity: 0.8; }
-      90% { opacity: 0.8; }
+      0%   { transform: translateY(100vh) scale(0.2); opacity: 0; }
+      10%  { opacity: 0.8; }
+      90%  { opacity: 0.8; }
       100% { transform: translateY(-20vh) scale(0.8); opacity: 0; }
     }
+
+    /* ─── HEADER ─────────────────────────────────────────────── */
     h1 {
       font-size: 3em;
-      background: linear-gradient(45deg, #ff00ff, #00ffff, #ffff00);
+      background: var(--title-gradient, linear-gradient(45deg,#ff00ff,#00ffff,#ffff00));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 20px #00ffff;
+      background-clip: text;
       margin-bottom: 10px;
       animation: glow 2s ease-in-out infinite alternate;
       position: relative;
       z-index: 1;
     }
     @keyframes glow {
-      from { filter: drop-shadow(0 0 10px #00ffff); }
-      to { filter: drop-shadow(0 0 30px #ff00ff); }
+      from { filter: drop-shadow(0 0 10px var(--accent,#00ffff)); }
+      to   { filter: drop-shadow(0 0 30px var(--accent2,#ff00ff)); }
     }
     p {
       font-size: 1.2em;
@@ -99,6 +197,8 @@
       max-width: 600px;
       margin: 0 auto 40px;
     }
+
+    /* ─── SEARCH ─────────────────────────────────────────────── */
     .search-container {
       margin: 0 auto 30px;
       max-width: 600px;
@@ -110,24 +210,25 @@
       padding: 15px 20px;
       font-size: 1.3em;
       background: rgba(255,255,255,0.05);
-      border: 2px solid #00ffff;
+      border: 2px solid var(--accent, #00ffff);
       border-radius: 50px;
-      color: #00ffff;
+      color: var(--accent, #00ffff);
       font-family: 'Orbitron', monospace;
-      box-shadow: 0 0 20px rgba(0,255,255,0.3);
+      box-shadow: 0 0 20px color-mix(in srgb, var(--accent,#00ffff) 30%, transparent);
       transition: all 0.3s;
+      box-sizing: border-box;
     }
     #searchInput:focus {
       outline: none;
-      border-color: #ff00ff;
-      box-shadow: 0 0 30px rgba(255,0,255,0.5);
+      border-color: var(--accent2, #ff00ff);
+      box-shadow: 0 0 30px color-mix(in srgb, var(--accent2,#ff00ff) 50%, transparent);
     }
-    #searchInput::placeholder {
-      color: #aaa;
-    }
+    #searchInput::placeholder { color: #aaa; }
+
+    /* ─── RANDOM BTN ─────────────────────────────────────────── */
     .random-btn {
       display: inline-block;
-      background: linear-gradient(45deg, #00ffff, #ffff00, #ff00ff);
+      background: var(--title-gradient, linear-gradient(45deg,#00ffff,#ffff00,#ff00ff));
       color: #000;
       font-weight: 900;
       padding: 18px 40px;
@@ -135,16 +236,19 @@
       font-size: 1.4em;
       text-decoration: none;
       margin: 0 auto 40px;
-      box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+      box-shadow: 0 0 30px color-mix(in srgb, var(--accent,#00ffff) 50%, transparent);
       transition: all 0.3s;
       cursor: pointer;
       border: none;
+      font-family: 'Orbitron', monospace;
+      width: auto;
     }
     .random-btn:hover {
       transform: scale(1.08) translateY(-4px);
-      box-shadow: 0 0 50px rgba(255, 255, 0, 0.7);
-      background: linear-gradient(45deg, #ffff00, #ff00ff, #00ffff);
+      box-shadow: 0 0 50px color-mix(in srgb, var(--accent3,#ffff00) 70%, transparent);
     }
+
+    /* ─── GRID ───────────────────────────────────────────────── */
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -160,26 +264,25 @@
       border-radius: 15px;
       padding: 25px;
       transition: all 0.4s;
-      border: 1px solid rgba(0, 255, 255, 0.15);
+      border: 1px solid var(--card-border, rgba(0,255,255,0.15));
       box-shadow: 0 4px 30px rgba(0,0,0,0.3);
       display: flex;
       flex-direction: column;
       height: 260px;
       justify-content: space-between;
+      box-sizing: border-box;
     }
-    .game-card.hidden {
-      display: none;
-    }
+    .game-card.hidden { display: none; }
     .game-card:hover {
       transform: scale(1.06) translateY(-5px);
-      box-shadow: 0 0 40px rgba(0, 255, 255, 0.4);
-      border-color: rgba(0, 255, 255, 0.5);
+      box-shadow: 0 0 40px var(--card-glow, rgba(0,255,255,0.4));
+      border-color: var(--card-border-hover, rgba(0,255,255,0.5));
     }
     .game-card h3 {
       font-size: 1.5em;
       margin: 0 0 10px;
-      color: #ffff00;
-      text-shadow: 0 0 10px #ffff00aa;
+      color: var(--accent3, #ffff00);
+      text-shadow: 0 0 10px color-mix(in srgb, var(--accent3,#ffff00) 67%, transparent);
     }
     .game-card p {
       font-size: 0.95em;
@@ -194,7 +297,9 @@
       align-items: center;
       justify-content: center;
     }
-    a {
+
+    /* ─── LAUNCH LINKS ───────────────────────────────────────── */
+    a.launch {
       display: block;
       background: linear-gradient(45deg, #ff4757, #ff6b7a);
       color: white;
@@ -204,12 +309,18 @@
       font-weight: bold;
       font-size: 1.1em;
       transition: all 0.3s;
+      font-family: 'Orbitron', monospace;
+      width: auto;
+      border: none;
+      cursor: pointer;
     }
-    a:hover {
+    a.launch:hover {
       background: linear-gradient(45deg, #ff6b7a, #ff4757);
       transform: translateY(-3px);
       box-shadow: 0 10px 20px rgba(255,71,87,0.4);
     }
+
+    /* ─── MISC ───────────────────────────────────────────────── */
     footer {
       margin-top: 50px;
       font-size: 0.8em;
@@ -225,19 +336,21 @@
       margin: 40px 0;
       display: none;
     }
+
+    /* ─── SETTINGS BTN ───────────────────────────────────────── */
     #settings-btn {
       position: fixed;
       top: 20px;
       right: 20px;
-      background: rgba(0,255,255,0.2);
-      border: 2px solid #00ffff;
+      background: color-mix(in srgb, var(--accent,#00ffff) 20%, transparent);
+      border: 2px solid var(--accent, #00ffff);
       border-radius: 50%;
       width: 50px;
       height: 50px;
       font-size: 1.8em;
-      color: #00ffff;
+      color: var(--accent, #00ffff);
       cursor: pointer;
-      box-shadow: 0 0 20px rgba(0,255,255,0.4);
+      box-shadow: 0 0 20px color-mix(in srgb, var(--accent,#00ffff) 40%, transparent);
       z-index: 100;
       display: flex;
       align-items: center;
@@ -246,8 +359,10 @@
     }
     #settings-btn:hover {
       transform: rotate(90deg) scale(1.1);
-      box-shadow: 0 0 40px rgba(0,255,255,0.7);
+      box-shadow: 0 0 40px color-mix(in srgb, var(--accent,#00ffff) 70%, transparent);
     }
+
+    /* ─── MODAL ──────────────────────────────────────────────── */
     #settings-modal {
       display: none;
       position: fixed;
@@ -261,12 +376,18 @@
       background: rgba(0,0,0,0.9);
       padding: 40px;
       border-radius: 20px;
-      border: 3px solid #ff00ff;
-      box-shadow: 0 0 50px rgba(255,0,255,0.5);
+      border: 3px solid var(--accent2, #ff00ff);
+      box-shadow: 0 0 50px color-mix(in srgb, var(--accent2,#ff00ff) 50%, transparent);
       max-width: 600px;
       width: 90%;
-      color: #00ffff;
+      color: var(--accent, #00ffff);
       position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-content h1 {
+      font-size: 1.8em;
+      margin-bottom: 10px;
     }
     .close-btn {
       position: absolute;
@@ -275,54 +396,80 @@
       font-size: 2em;
       cursor: pointer;
       color: #ff4444;
+      background: none;
+      border: none;
+      width: auto;
+      padding: 0;
+      font-family: inherit;
     }
+    .close-btn:hover { transform: none; box-shadow: none; background: none; }
     label {
       display: block;
       margin: 20px 0 8px;
-      font-size: 1.4em;
-      color: #ffff00;
+      font-size: 1.1em;
+      color: var(--accent3, #ffff00);
+      text-align: left;
     }
-    select, input[type="color"], input[type="range"], button {
+    select, input[type="color"], input[type="range"] {
       width: 100%;
       padding: 12px;
-      font-size: 1.2em;
+      font-size: 1.1em;
       background: #111133;
-      color: #00ffff;
-      border: 2px solid #00ffff;
+      color: var(--accent, #00ffff);
+      border: 2px solid var(--accent, #00ffff);
       border-radius: 10px;
       margin-bottom: 15px;
       box-sizing: border-box;
+      font-family: 'Orbitron', monospace;
     }
-    button {
-      background: linear-gradient(45deg, #ff00ff, #00ffff);
+    input[type="color"] { padding: 4px; height: 48px; cursor: pointer; }
+    input[type="range"] { padding: 6px 12px; cursor: pointer; }
+    .save-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 1.2em;
+      background: linear-gradient(45deg, var(--accent2,#ff00ff), var(--accent,#00ffff));
       color: #000;
       font-weight: bold;
       cursor: pointer;
       transition: all 0.3s;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Orbitron', monospace;
+      margin-top: 10px;
     }
-    button:hover {
+    .save-btn:hover {
       transform: scale(1.03);
-      box-shadow: 0 0 30px #00ffff;
+      box-shadow: 0 0 30px var(--accent, #00ffff);
+    }
+    .setting-preview {
+      font-size: 0.8em;
+      color: #888;
+      text-align: right;
+      margin-top: -12px;
+      margin-bottom: 8px;
     }
   </style>
 </head>
 <body>
   <div class="topo-bg" id="topo">
-    <div class="contour" style="top:10%; left:20%; animation-delay:0s;"></div>
-    <div class="contour" style="top:40%; left:60%; animation-delay:15s;"></div>
-    <div class="contour" style="top:70%; left:30%; animation-delay:30s;"></div>
-    <div class="contour" style="top:25%; left:80%; animation-delay:45s;"></div>
-    <div class="contour" style="top:55%; left:10%; animation-delay:60s;"></div>
+    <div class="contour" style="top:10%;left:20%;animation-delay:0s;"></div>
+    <div class="contour" style="top:40%;left:60%;animation-delay:15s;"></div>
+    <div class="contour" style="top:70%;left:30%;animation-delay:30s;"></div>
+    <div class="contour" style="top:25%;left:80%;animation-delay:45s;"></div>
+    <div class="contour" style="top:55%;left:10%;animation-delay:60s;"></div>
   </div>
 
   <div id="floating-dots"></div>
 
-  <div id="settings-btn">⚙</div>
+  <button id="settings-btn" aria-label="Settings">⚙</button>
 
+  <!-- SETTINGS MODAL -->
   <div id="settings-modal">
     <div class="modal-content">
-      <span class="close-btn" onclick="document.getElementById('settings-modal').style.display='none'">×</span>
+      <button class="close-btn" onclick="document.getElementById('settings-modal').style.display='none'">×</button>
       <h1>Hub Settings</h1>
+
       <label>Color Scheme</label>
       <select id="colorScheme">
         <option value="default">Default Neon</option>
@@ -334,18 +481,24 @@
         <option value="red">Red Devil</option>
         <option value="green">Green Matrix</option>
       </select>
+
       <label>Custom Accent Color</label>
       <input type="color" id="accentColor" value="#00ffff">
+
       <label>Text Brightness</label>
-      <input type="range" id="brightness" min="0.8" max="1.6" step="0.1" value="1.0">
+      <input type="range" id="brightness" min="0.5" max="1.8" step="0.05" value="1.0">
+      <div class="setting-preview" id="brightness-val">1.0×</div>
+
       <label>Glow Intensity</label>
-      <input type="range" id="glow" min="0.5" max="2.0" step="0.1" value="1.0">
-      <button onclick="saveSettings()">SAVE & APPLY</button>
+      <input type="range" id="glow" min="0.2" max="3.0" step="0.1" value="1.0">
+      <div class="setting-preview" id="glow-val">1.0×</div>
+
+      <button class="save-btn" onclick="saveSettings()">SAVE &amp; APPLY</button>
     </div>
   </div>
 
   <h1>🚀 MEGAFOLDER - GAMES</h1>
-  <p>Click any game & have fun.</p>
+  <p>Click any game &amp; have fun.</p>
 
   <div class="search-container">
     <input type="text" id="searchInput" placeholder="Search games...">
@@ -358,334 +511,331 @@
     <div class="game-card">
       <h3>🧬 Mutation</h3>
       <p>Platformer but you have carbon monoxide poisoning</p>
-      <a href="platformer.html">LAUNCH</a>
+      <a class="launch" href="platformer.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🌀 Backrooms</h3>
       <p>Endless yellow hell, liminal spaces, no escape, pure dread.</p>
-      <a href="backrooms.html">LAUNCH</a>
+      <a class="launch" href="backrooms.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🏛️ The Crypts</h3>
       <p>If Undertale and Undertale had a child</p>
-      <a href="crypts.html">LAUNCH</a>
+      <a class="launch" href="crypts.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🐷 Bacon May Die</h3>
       <p>Pig vs endless zombie hordes, brutal action, gore everywhere.</p>
-      <a href="baconmaydie.html">LAUNCH</a>
+      <a class="launch" href="baconmaydie.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🃏 Balatro</h3>
       <p>Poker roguelite madness, insane combos, high-score chases.</p>
-      <a href="balatro.html">LAUNCH</a>
+      <a class="launch" href="balatro.html">LAUNCH</a>
     </div>
-        <div class="game-card">
+    <div class="game-card">
       <h3>☄️ Void Architect</h3>
       <p>Throw asteroids into eachother, works best in VR</p>
-      <a href="void.html">LAUNCH</a>
+      <a class="launch" href="void.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>⚛️ Shitlab</h3>
       <p>bonelab but shittier</p>
-      <a href="physicslab.html">LAUNCH</a>
-    <div>
+      <a class="launch" href="physicslab.html">LAUNCH</a>
+    </div>
     <div class="game-card">
       <h3>🧱 Five Flights</h3>
       <p>Fem Våningar tower climb. Stack 5 ascending floors before the AI snipes your progress. Pure card-game tension.</p>
-      <a href="fiveflightsatfreddys.html">LAUNCH</a>
+      <a class="launch" href="fiveflightsatfreddys.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🔫 Buckshot Roulette</h3>
       <p>Shotgun tension, Russian roulette but with buckshot, pure stress.</p>
-      <a href="buckshot.html">LAUNCH</a>
+      <a class="launch" href="buckshot.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>📌 Plinko</h3>
       <p>Drop ball, watch it bounce, fake cash rain, pure dopamine.</p>
-      <a href="plinko.html">LAUNCH</a>
+      <a class="launch" href="plinko.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🐦 Flappy Bird</h3>
       <p>Tap to flap, endless rage, one of the hardest classics ever.</p>
-      <a href="flappy.html">LAUNCH</a>
+      <a class="launch" href="flappy.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🦍 Flying Gorilla</h3>
       <p>Dodge pillars for bananas, gorilla flight chaos, pure fun.</p>
-      <a href="flying-gorilla.html">LAUNCH</a>
+      <a class="launch" href="flying-gorilla.html">LAUNCH</a>
     </div>
-       <h3>🏃 Parkour Era</h3>
+    <div class="game-card">
+      <h3>🏃 Parkour Era</h3>
       <p>Multiplayer parkour racer, bhop alot</p>
-      <a href="parkour.html">LAUNCH</a>
+      <a class="launch" href="parkour.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🚗 GTA Vice City</h3>
       <p>80s Miami open world, cars, guns, missions, full nostalgia trip.</p>
-      <a href="gta-vice-city.html">LAUNCH</a>
+      <a class="launch" href="gta-vice-city.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>⛏️ Minecraft</h3>
-      <p>Eaglercraft build mode, infinite blocks, survival & creative.</p>
-      <a href="minecraft.html">LAUNCH</a>
+      <p>Eaglercraft build mode, infinite blocks, survival &amp; creative.</p>
+      <a class="launch" href="minecraft.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🌱 PvZ</h3>
       <p>Zombie lawn defense, tower defense classic, plants vs zombies.</p>
-      <a href="pvz.html">LAUNCH</a>
+      <a class="launch" href="pvz.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>⭐ SM64</h3>
       <p>Star collecting 3D platformer, Mario 64 in browser, pure joy.</p>
-      <a href="sm64.html">LAUNCH</a>
+      <a class="launch" href="sm64.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🚪 That's Not My Neighbor</h3>
       <p>Doppelganger door checker, spot the fakes, tense as hell.</p>
-      <a href="notmyneighbor.html">LAUNCH</a>
+      <a class="launch" href="notmyneighbor.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>💀 Ultrakill</h3>
       <p>Blood-fueled FPS frenzy, fast movement, style meter madness.</p>
-      <a href="ultrakill.html">LAUNCH</a>
+      <a class="launch" href="ultrakill.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>❤️ Undertale</h3>
       <p>Mercy or genocide RPG, emotional story, bullet hell battles.</p>
-      <a href="undertale.html">LAUNCH</a>
+      <a class="launch" href="undertale.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🔴 World's Hardest Game</h3>
       <p>Red square rage maze, impossible levels, pure frustration.</p>
-      <a href="worldshardest.html">LAUNCH</a>
+      <a class="launch" href="worldshardest.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🐍 Snake</h3>
-      <p>Eat food, grow long—don't crash, classic arcade endless.</p>
-      <a href="snake.html">LAUNCH</a>
+      <p>Eat food, grow long — don't crash, classic arcade endless.</p>
+      <a class="launch" href="snake.html">LAUNCH</a>
     </div>
     <div class="game-card">
       <h3>🤖 Morgan AI Chatbot</h3>
       <p>he hates ayham type shit</p>
-      <a href="morgan-chat.html">LAUNCH</a>
+      <a class="launch" href="morgan-chat.html">LAUNCH</a>
     </div>
-    <!-- Secret game card - only shows when "ZYXBA" is searched -->
+    <!-- Secret card — only shows when "ZYXBA" is searched -->
     <div class="game-card hidden" id="secret-card">
       <h3>???</h3>
       <p>???</p>
-      <a href="morgis.html">LAUNCH</a>
+      <a class="launch" href="morgis.html">LAUNCH</a>
     </div>
   </div>
 
   <footer>gaming</footer>
 
   <script>
+    // ─── RANDOM LAUNCH ────────────────────────────────────────
+    const ALL_LINKS = [
+      "backrooms.html","baconmaydie.html","balatro.html",
+      "fiveflightsatfreddys.html","buckshot.html","plinko.html",
+      "flappy.html","flying-gorilla.html","gta-vice-city.html",
+      "minecraft.html","pvz.html","sm64.html","notmyneighbor.html",
+      "ultrakill.html","undertale.html","worldshardest.html",
+      "snake.html","morgan-chat.html","shorts.html"
+    ];
     function launchRandom() {
-      const links = [
-        "backrooms.html",
-        "baconmaydie.html",
-        "balatro.html",
-        "fiveflightsatfreddys.html",
-        "buckshot.html",
-        "plinko.html",
-        "flappy.html",
-        "flying-gorilla.html",
-        "gta-vice-city.html",
-        "minecraft.html",
-        "pvz.html",
-        "sm64.html",
-        "notmyneighbor.html",
-        "ultrakill.html",
-        "undertale.html",
-        "worldshardest.html",
-        "snake.html",
-        "morgan-chat.html",
-        "shorts.html" // FIXED: Added missing comma above this line!
-      ];
-      const randomIndex = Math.floor(Math.random() * links.length);
-      window.open(links[randomIndex], '_blank');
+      window.open(ALL_LINKS[Math.floor(Math.random() * ALL_LINKS.length)], '_blank');
     }
 
-    // Game search + secret trigger
+    // ─── SEARCH ──────────────────────────────────────────────
     const searchInput = document.getElementById('searchInput');
-    const cards = document.querySelectorAll('.game-card:not(#secret-card)');
-    const secretCard = document.getElementById('secret-card');
-    const noResults = document.getElementById('noResults');
-    
+    const cards       = document.querySelectorAll('.game-card:not(#secret-card)');
+    const secretCard  = document.getElementById('secret-card');
+    const noResults   = document.getElementById('noResults');
+
     searchInput.addEventListener('input', () => {
-      const query = searchInput.value.toLowerCase().trim();
+      const q = searchInput.value.toLowerCase().trim();
       let visible = 0;
-
       cards.forEach(card => {
-        const title = card.querySelector('h3').textContent.toLowerCase();
-        const desc = card.querySelector('p').textContent.toLowerCase();
-        const match = title.includes(query) || desc.includes(query);
-        
-        if (query === '') {
-          // Show all cards when search is empty
-          card.classList.remove('hidden');
-          visible++;
-        } else {
-          // Hide/show based on match
-          if (match) {
-            card.classList.remove('hidden');
-            visible++;
-          } else {
-            card.classList.add('hidden');
-          }
-        }
+        const text = card.textContent.toLowerCase();
+        const show = q === '' || text.includes(q);
+        card.classList.toggle('hidden', !show);
+        if (show) visible++;
       });
-
-      // Secret trigger on exact match
-      if (query === 'zyxba') {
-        if (secretCard) secretCard.classList.remove('hidden');
-        visible++; // Count secret card as visible
-        noResults.style.display = 'none';
+      if (q === 'zyxba') {
+        secretCard.classList.remove('hidden');
+        visible++;
       } else {
-        if (secretCard) secretCard.classList.add('hidden');
+        secretCard.classList.add('hidden');
       }
-
-      // Show "no results" only if nothing is visible and query is not empty
-      noResults.style.display = (visible === 0 && query !== '') ? 'block' : 'none';
+      noResults.style.display = (visible === 0 && q !== '') ? 'block' : 'none';
     });
 
-    // Floating dots
-    const dotsContainer = document.createElement('div');
-    dotsContainer.id = 'floating-dots';
-    dotsContainer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden;';
-    document.body.appendChild(dotsContainer);
+    // ─── FLOATING DOTS ───────────────────────────────────────
+    const dotsContainer = document.getElementById('floating-dots');
     for (let i = 0; i < 80; i++) {
       const dot = document.createElement('div');
       dot.className = 'dot';
       const size = Math.random() * 3 + 1;
-      dot.style.width = dot.style.height = size + 'px';
-      dot.style.left = Math.random() * 100 + 'vw';
-      dot.style.top = Math.random() * 100 + 'vh';
-      dot.style.background = 'rgba(0, 255, 255, 0.5)';
-      dot.style.boxShadow = '0 0 8px rgba(0, 255, 255, 0.6)';
-      dot.style.animation = `floatUp ${Math.random() * 80 + 80}s linear infinite`;
-      dot.style.animationDelay = Math.random() * 20 + 's';
-      dot.style.opacity = Math.random() * 0.4 + 0.1;
+      dot.style.cssText = `
+        width:${size}px; height:${size}px;
+        left:${Math.random()*100}vw;
+        top:${Math.random()*100}vh;
+        animation-duration:${Math.random()*80+80}s;
+        animation-delay:${Math.random()*20}s;
+        opacity:${Math.random()*0.4+0.1};
+      `;
       dotsContainer.appendChild(dot);
     }
-    if (!document.querySelector('style#dotsAnim')) {
-      const anim = document.createElement('style');
-      anim.id = 'dotsAnim';
-      anim.textContent = `
-        @keyframes floatUp {
-          0% { transform: translateY(100vh) scale(0.2); opacity: 0; }
-          10% { opacity: 0.8; }
-          90% { opacity: 0.8; }
-          100% { transform: translateY(-20vh) scale(0.8); opacity: 0; }
-        }
-      `;
-      document.head.appendChild(anim);
-    }
 
-    // Settings modal
+    // ─── SETTINGS ────────────────────────────────────────────
+    const modal       = document.getElementById('settings-modal');
     const settingsBtn = document.getElementById('settings-btn');
-    const modal = document.getElementById('settings-modal');
-    settingsBtn.onclick = () => modal.style.display = 'flex';
-    modal.onclick = e => { if (e.target === modal) modal.style.display = 'none'; };
+    const schemeEl    = document.getElementById('colorScheme');
+    const accentEl    = document.getElementById('accentColor');
+    const brightEl    = document.getElementById('brightness');
+    const glowEl      = document.getElementById('glow');
+    const brightVal   = document.getElementById('brightness-val');
+    const glowVal     = document.getElementById('glow-val');
 
-    let savedSettings = JSON.parse(localStorage.getItem('hubSettings')) || {
-      colorScheme: 'default',
-      accentColor: '#00ffff',
-      brightness: '1.0',
-      glow: '1.0'
-    };
-    applySettings(savedSettings);
-    window.addEventListener('storage', e => {
-      if (e.key === 'hubSettings') {
-        savedSettings = JSON.parse(e.newValue);
-        applySettings(savedSettings);
-      }
-    });
+    // Live preview labels
+    brightEl.addEventListener('input', () => brightVal.textContent = parseFloat(brightEl.value).toFixed(2) + '×');
+    glowEl.addEventListener('input',   () => glowVal.textContent   = parseFloat(glowEl.value).toFixed(1) + '×');
+
+    settingsBtn.onclick = () => { modal.style.display = 'flex'; };
+    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+
+    // Apply settings to CSS variables + classes
     function applySettings(s) {
-      document.body.classList.remove('theme-rgb', 'theme-neon', 'theme-mono', 'theme-purple', 'theme-cyan', 'theme-red', 'theme-green');
-      if (s.colorScheme !== 'default') document.body.classList.add('theme-' + s.colorScheme);
-      document.body.style.setProperty('--accent-color', s.accentColor || '#00ffff');
-      document.body.style.filter = `brightness(${s.brightness || 1.0})`;
-      document.querySelectorAll('h1, .random-btn, a').forEach(el => {
-        el.style.filter = `drop-shadow(0 0 ${20 * (s.glow || 1.0)}px var(--accent-color))`;
+      const body = document.body;
+
+      // Remove all theme classes
+      body.classList.remove(
+        'theme-rgb','theme-neon','theme-mono',
+        'theme-purple','theme-cyan','theme-red','theme-green'
+      );
+      if (s.colorScheme && s.colorScheme !== 'default') {
+        body.classList.add('theme-' + s.colorScheme);
+      }
+
+      // For RGB theme, brightness is handled by the animation — skip filter
+      if (s.colorScheme !== 'rgb') {
+        body.style.filter = `brightness(${s.brightness || 1})`;
+      } else {
+        body.style.filter = '';
+      }
+
+      // Custom accent color overrides the theme's --accent
+      if (s.accentColor && s.accentColor !== '#00ffff') {
+        body.style.setProperty('--accent', s.accentColor);
+        // Derive accent2 as complementary hue shift
+        body.style.setProperty('--card-border', hexToRgba(s.accentColor, 0.15));
+        body.style.setProperty('--card-border-hover', hexToRgba(s.accentColor, 0.55));
+        body.style.setProperty('--card-glow', hexToRgba(s.accentColor, 0.4));
+        body.style.setProperty('--dot-color', hexToRgba(s.accentColor, 0.5));
+        body.style.setProperty('--dot-glow', hexToRgba(s.accentColor, 0.6));
+        body.style.setProperty('--searchInput-color', s.accentColor);
+      } else {
+        // Clear overrides so theme variables take over
+        body.style.removeProperty('--accent');
+        body.style.removeProperty('--card-border');
+        body.style.removeProperty('--card-border-hover');
+        body.style.removeProperty('--card-glow');
+        body.style.removeProperty('--dot-color');
+        body.style.removeProperty('--dot-glow');
+      }
+
+      // Glow intensity — scale all glow elements
+      const g = parseFloat(s.glow || 1);
+      document.querySelectorAll('.game-card').forEach(el => {
+        el.style.setProperty('--card-glow-size', (g * 40) + 'px');
       });
+      // Update cards hover dynamically via a style tag
+      let glowStyle = document.getElementById('dynamic-glow-style');
+      if (!glowStyle) {
+        glowStyle = document.createElement('style');
+        glowStyle.id = 'dynamic-glow-style';
+        document.head.appendChild(glowStyle);
+      }
+      glowStyle.textContent = `
+        .game-card:hover {
+          box-shadow: 0 0 ${g * 40}px var(--card-glow, rgba(0,255,255,0.4)) !important;
+        }
+        #settings-btn {
+          box-shadow: 0 0 ${g * 20}px color-mix(in srgb, var(--accent,#00ffff) 40%, transparent) !important;
+        }
+        h1 { filter: drop-shadow(0 0 ${g * 10}px var(--accent,#00ffff)); }
+        .random-btn { box-shadow: 0 0 ${g * 30}px color-mix(in srgb, var(--accent,#00ffff) 50%, transparent) !important; }
+      `;
+
+      // Sync modal controls
+      schemeEl.value  = s.colorScheme || 'default';
+      accentEl.value  = s.accentColor || '#00ffff';
+      brightEl.value  = s.brightness  || 1.0;
+      glowEl.value    = s.glow        || 1.0;
+      brightVal.textContent = parseFloat(s.brightness || 1).toFixed(2) + '×';
+      glowVal.textContent   = parseFloat(s.glow || 1).toFixed(1) + '×';
     }
+
+    function hexToRgba(hex, alpha) {
+      const r = parseInt(hex.slice(1,3),16);
+      const g = parseInt(hex.slice(3,5),16);
+      const b = parseInt(hex.slice(5,7),16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
     function saveSettings() {
       const s = {
-        colorScheme: document.getElementById('colorScheme').value,
-        accentColor: document.getElementById('accentColor').value,
-        brightness: document.getElementById('brightness').value,
-        glow: document.getElementById('glow').value
+        colorScheme: schemeEl.value,
+        accentColor: accentEl.value,
+        brightness:  brightEl.value,
+        glow:        glowEl.value
       };
       localStorage.setItem('hubSettings', JSON.stringify(s));
       applySettings(s);
       modal.style.display = 'none';
     }
 
-    // Easter egg sequence
-    let tripleFooter = false;
-    let secretE = false;
-    let typedInModal = '';
+    // Load on start
+    const savedSettings = JSON.parse(localStorage.getItem('hubSettings')) || {
+      colorScheme: 'default', accentColor: '#00ffff', brightness: '1.0', glow: '1.0'
+    };
+    applySettings(savedSettings);
+
+    // Sync across tabs
+    window.addEventListener('storage', e => {
+      if (e.key === 'hubSettings') applySettings(JSON.parse(e.newValue));
+    });
+
+    // ─── RANDOM BUTTON ────────────────────────────────────────
+    let tripleFooter = false, secretE = false, typedInModal = '';
 
     document.querySelector('footer').addEventListener('click', e => {
-      if (e.detail === 3) {
-        tripleFooter = true;
-        typedInModal = '';
-        secretE = false;
+      if (e.detail === 3) { tripleFooter = true; typedInModal = ''; secretE = false; }
+    });
+    modal.addEventListener('keydown', e => {
+      if (tripleFooter && !secretE) {
+        if (e.key.toLowerCase() === 'e') { typedInModal = 'e'; secretE = true; }
+        else { typedInModal = ''; }
       }
     });
 
-    if (modal) {
-      modal.addEventListener('keydown', e => {
-        if (tripleFooter && !secretE) {
-          if (e.key.toLowerCase() === 'e' && typedInModal.length === 0) {
-            typedInModal = 'e';
-            secretE = true;
-          } else {
-            typedInModal = '';
-          }
-        }
-      });
-    }
-
     const randomBtn = document.querySelector('.random-btn');
-    if (randomBtn) {
-      randomBtn.addEventListener('click', e => {
-        if (tripleFooter && secretE) {
-          e.preventDefault();
-          window.location.href = 'vault.html';
-          tripleFooter = false;
-          secretE = false;
-          typedInModal = '';
-        } else {
-          launchRandom();
-        }
-      });
-    }
-
-    if (modal) {
-      modal.addEventListener('click', e => {
-        if (e.target === modal) {
-          tripleFooter = false;
-          secretE = false;
-          typedInModal = '';
-        }
-      });
-    }
+    randomBtn.addEventListener('click', e => {
+      if (tripleFooter && secretE) {
+        e.preventDefault();
+        window.location.href = 'vault.html';
+        tripleFooter = false; secretE = false; typedInModal = '';
+      } else {
+        launchRandom();
+      }
+    });
+    modal.addEventListener('click', e => {
+      if (e.target === modal) { tripleFooter = false; secretE = false; typedInModal = ''; }
+    });
     window.addEventListener('beforeunload', () => {
-      tripleFooter = false;
-      secretE = false;
-      typedInModal = '';
+      tripleFooter = false; secretE = false; typedInModal = '';
     });
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
