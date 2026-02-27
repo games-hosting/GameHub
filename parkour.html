@@ -9,6 +9,8 @@
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:#0a0a0f;overflow:hidden;font-family:'Press Start 2P',monospace;}
 #gameCanvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;}
+
+/* ══ MENU ══ */
 #menuScreen{
   position:fixed;inset:0;display:flex;flex-direction:column;
   align-items:center;justify-content:center;z-index:100;overflow:hidden;
@@ -20,16 +22,43 @@ body{background:#0a0a0f;overflow:hidden;font-family:'Press Start 2P',monospace;}
 }
 #menuBgCanvas{position:absolute;inset:0;z-index:1;pointer-events:none;}
 .menu-content{position:relative;z-index:5;display:flex;flex-direction:column;align-items:center;}
-.menu-title{font-family:'Press Start 2P',monospace;font-size:clamp(22px,4vw,46px);color:#fff;letter-spacing:4px;margin-bottom:6px;text-shadow:0 0 0 #000, 3px 3px 0 #1a3a00, 0 0 30px rgba(255,100,0,0.4);animation:titleFloat 3s ease-in-out infinite;}
+.menu-title{
+  font-family:'Press Start 2P',monospace;font-size:clamp(22px,4vw,46px);
+  color:#fff;letter-spacing:4px;margin-bottom:4px;
+  text-shadow:0 0 0 #000, 3px 3px 0 #1a3a00, 0 0 30px rgba(255,100,0,0.4);
+  animation:titleFloat 3s ease-in-out infinite;
+}
 @keyframes titleFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
-.menu-sub{font-family:'VT323',monospace;font-size:clamp(16px,2.2vw,26px);color:#fff;margin-bottom:44px;letter-spacing:3px;text-shadow:1px 1px 0 #1a3a00;}
-.menu-btn{font-family:'Press Start 2P',monospace;font-size:clamp(7px,1.1vw,12px);background:rgba(0,0,0,0.75);border:2px solid #ff4444;color:#ff4444;padding:11px 26px;margin:5px;cursor:pointer;pointer-events:all;transition:all 0.08s;letter-spacing:2px;backdrop-filter:blur(2px);}
+.menu-sub{
+  font-family:'VT323',monospace;font-size:clamp(16px,2.2vw,26px);
+  color:#fff;margin-bottom:8px;letter-spacing:3px;
+  text-shadow:1px 1px 0 #1a3a00;
+}
+.menu-version{
+  font-family:'VT323',monospace;font-size:13px;color:rgba(255,255,255,0.5);
+  margin-bottom:32px;letter-spacing:2px;
+}
+.menu-btn{
+  font-family:'Press Start 2P',monospace;font-size:clamp(7px,1.1vw,12px);
+  background:rgba(0,0,0,0.75);border:2px solid #ff4444;color:#ff4444;
+  padding:11px 26px;margin:4px;cursor:pointer;pointer-events:all;
+  transition:all 0.08s;letter-spacing:2px;backdrop-filter:blur(2px);
+  min-width:200px;text-align:center;
+}
 .menu-btn:hover{background:#ff4444;color:#fff;box-shadow:0 0 18px #ff4444;}
 .menu-btn.special{border-color:#ffdd00;color:#ffdd00;}
 .menu-btn.special:hover{background:#ffdd00;color:#000;box-shadow:0 0 18px #ffdd00;}
 .menu-btn.green{border-color:#44ff88;color:#44ff88;}
 .menu-btn.green:hover{background:#44ff88;color:#000;box-shadow:0 0 18px #44ff88;}
-.overlay{position:fixed;inset:0;background:#0a0a0f;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:100;gap:10px;}
+.menu-btn.blue{border-color:#44aaff;color:#44aaff;}
+.menu-btn.blue:hover{background:#44aaff;color:#000;box-shadow:0 0 18px #44aaff;}
+.menu-btn.dim{border-color:#555;color:#555;}
+.menu-btn.dim:hover{border-color:#888;color:#888;background:rgba(0,0,0,0.5);}
+
+.overlay{
+  position:fixed;inset:0;background:#0a0a0f;display:none;
+  flex-direction:column;align-items:center;justify-content:center;z-index:100;gap:10px;
+}
 .screen-title{font-family:'Press Start 2P',monospace;font-size:clamp(11px,1.8vw,18px);color:#ff4444;margin-bottom:18px;text-shadow:2px 2px 0 #330000;}
 .player-slots{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:24px;}
 .player-slot{width:115px;height:130px;border:2px solid #333;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'VT323',monospace;gap:4px;}
@@ -39,19 +68,68 @@ body{background:#0a0a0f;overflow:hidden;font-family:'Press Start 2P',monospace;}
 .setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-family:'VT323',monospace;font-size:clamp(15px,2vw,20px);color:#aaa;}
 .setting-row label{color:#fff;}
 .setting-btn-group{display:flex;gap:4px;}
-.sett-btn{font-family:'Press Start 2P',monospace;font-size:clamp(5px,0.8vw,9px);background:#111;border:2px solid #444;color:#888;padding:5px 8px;cursor:pointer;pointer-events:all;transition:all 0.1s;}
+.sett-btn{
+  font-family:'Press Start 2P',monospace;font-size:clamp(5px,0.8vw,9px);
+  background:#111;border:2px solid #444;color:#888;padding:5px 8px;cursor:pointer;pointer-events:all;transition:all 0.1s;
+}
 .sett-btn.active{border-color:#ffdd00;color:#ffdd00;background:#1a1500;}
 .sett-btn:hover{border-color:#ff8844;color:#ff8844;}
 .peer-input{font-family:'Press Start 2P',monospace;font-size:clamp(7px,1vw,11px);background:#111;border:2px solid #444;color:#fff;padding:8px 14px;outline:none;pointer-events:all;width:min(300px,80vw);}
 .peer-input:focus{border-color:#ff4444;}
 .peer-code{font-family:'Press Start 2P',monospace;font-size:clamp(13px,2vw,22px);color:#ffdd00;letter-spacing:4px;background:#111;border:2px solid #ffdd00;padding:10px 20px;}
+
+/* ══ SETTINGS PANEL ══ */
+#settingsScreen{
+  position:fixed;inset:0;background:rgba(0,0,0,0.96);display:none;
+  flex-direction:column;align-items:center;z-index:110;overflow-y:auto;padding:20px 10px;
+}
+.settings-section{width:min(520px,95vw);margin-bottom:20px;}
+.settings-section h3{
+  font-family:'Press Start 2P',monospace;font-size:9px;color:#ff4444;
+  letter-spacing:2px;margin-bottom:12px;padding-bottom:6px;
+  border-bottom:1px solid #2a0000;
+}
+.sett-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 0;border-bottom:1px solid #111;
+  font-family:'VT323',monospace;font-size:17px;color:#888;
+}
+.sett-row label{color:#ccc;}
+.toggle-btn{
+  font-family:'Press Start 2P',monospace;font-size:7px;
+  background:#111;border:1px solid #333;color:#555;
+  padding:4px 10px;cursor:pointer;pointer-events:all;transition:all 0.1s;
+  min-width:50px;text-align:center;
+}
+.toggle-btn.on{border-color:#44ff44;color:#44ff44;background:#001400;}
+.toggle-btn:hover{border-color:#ff8844;color:#ff8844;}
+.slider-wrap{display:flex;align-items:center;gap:8px;}
+.sett-slider{
+  -webkit-appearance:none;appearance:none;
+  width:100px;height:4px;background:#222;outline:none;cursor:pointer;
+}
+.sett-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:12px;height:12px;
+  background:#ff4444;cursor:pointer;border:1px solid #ff8844;
+}
+.sett-val{font-family:'VT323',monospace;font-size:14px;color:#ffdd00;min-width:30px;}
+
+/* ══ CORRUPTION ══ */
 #corruptionScreen{position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:200;}
 .glitch-title{font-family:'Press Start 2P',monospace;font-size:clamp(14px,2.5vw,24px);color:#00ff88;text-align:center;margin-bottom:24px;animation:glitchAnim 0.15s infinite;}
-@keyframes glitchAnim{0%{text-shadow:2px 0 #f00,-2px 0 #00f;transform:translate(0);}25%{text-shadow:-2px 0 #f00,2px 0 #00f;transform:translate(-2px,1px);}50%{text-shadow:2px 0 #0f0,-2px 0 #f0f;transform:translate(1px,-1px);}75%{text-shadow:-1px 0 #f00,1px 0 #0ff;transform:translate(-1px,2px);}100%{text-shadow:2px 0 #f00,-2px 0 #00f;transform:translate(0);}}
+@keyframes glitchAnim{
+  0%  {text-shadow:2px 0 #f00,-2px 0 #00f;transform:translate(0);}
+  25% {text-shadow:-2px 0 #f00,2px 0 #00f;transform:translate(-2px,1px);}
+  50% {text-shadow:2px 0 #0f0,-2px 0 #f0f;transform:translate(1px,-1px);}
+  75% {text-shadow:-1px 0 #f00,1px 0 #0ff;transform:translate(-1px,2px);}
+  100%{text-shadow:2px 0 #f00,-2px 0 #00f;transform:translate(0);}
+}
 .sim-label{font-family:'Press Start 2P',monospace;font-size:clamp(8px,1.2vw,13px);color:#00ff88;margin-bottom:16px;letter-spacing:4px;}
 .sim-bar-wrap{width:min(400px,80vw);height:20px;background:#0a0a0f;border:2px solid #00ff88;overflow:hidden;}
 .sim-bar-fill{height:100%;background:linear-gradient(90deg,#00ff88,#00ffff);width:0%;}
 .sim-percent{font-family:'Press Start 2P',monospace;font-size:11px;color:#00ff88;margin-top:8px;}
+
+/* ══ CHOICE ══ */
 #choiceScreen{position:fixed;inset:0;background:rgba(0,0,0,0.93);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:150;}
 .choice-title{font-family:'Press Start 2P',monospace;font-size:clamp(10px,1.5vw,16px);color:#ffdd00;margin-bottom:8px;}
 .choice-sub{font-family:'VT323',monospace;font-size:clamp(15px,2vw,22px);color:#aaa;margin-bottom:22px;}
@@ -62,6 +140,8 @@ body{background:#0a0a0f;overflow:hidden;font-family:'Press Start 2P',monospace;}
 .choice-btn.pw:hover{background:#00aaff;color:#000;}
 .choice-btn.sp{border-color:#ffdd00;color:#ffdd00;animation:spGlow 1s ease-in-out infinite;}
 @keyframes spGlow{0%,100%{box-shadow:0 0 10px #ffdd00;}50%{box-shadow:0 0 22px #ffdd00,0 0 36px #ff8800;}}
+
+/* ══ WIN ══ */
 #winScreen{position:fixed;inset:0;background:rgba(0,0,0,0.86);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:140;}
 .win-title{font-family:'Press Start 2P',monospace;font-size:clamp(16px,3vw,36px);color:#ffdd00;text-shadow:0 0 20px #ffdd00,4px 4px 0 #664400;margin-bottom:14px;animation:winPop 0.4s ease-out;}
 @keyframes winPop{0%{transform:scale(0.4);opacity:0;}100%{transform:scale(1);opacity:1;}}
@@ -69,27 +149,146 @@ body{background:#0a0a0f;overflow:hidden;font-family:'Press Start 2P',monospace;}
 .scoreboard{background:#111;border:2px solid #333;padding:14px;min-width:260px;}
 .score-row{font-family:'VT323',monospace;font-size:clamp(14px,1.8vw,20px);color:#fff;padding:4px 0;border-bottom:1px solid #222;display:flex;justify-content:space-between;gap:20px;}
 .score-row:last-child{border-bottom:none;}
-#eraShift{position:fixed;inset:0;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:180;}
+
+/* ══ ERA SHIFT ══ */
+#eraShift{position:fixed;inset:0;background:rgba(0,0,0,0.93);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:180;}
 .era-title{font-family:'Press Start 2P',monospace;font-size:clamp(11px,1.8vw,20px);color:#ff4444;margin-bottom:16px;text-align:center;}
 .era-maps{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;}
-.era-map-btn{width:150px;height:110px;background:#111;border:2px solid #444;color:#fff;cursor:pointer;pointer-events:all;font-family:'Press Start 2P',monospace;font-size:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transition:all 0.12s;}
+.era-map-btn{width:150px;height:130px;background:#111;border:2px solid #444;color:#fff;cursor:pointer;pointer-events:all;font-family:'Press Start 2P',monospace;font-size:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transition:all 0.12s;line-height:1.6;}
 .era-map-btn:hover{border-color:#ff4444;box-shadow:0 0 14px rgba(255,68,68,0.4);}
+.era-map-btn .era-icon{font-size:28px;}
+.era-map-btn .era-mech{font-size:6px;color:#888;margin-top:4px;}
+
+/* ══ ERA INTRO SPLASH ══ */
+#eraSplash{
+  position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+  flex-direction:column;z-index:170;pointer-events:none;
+  background:rgba(0,0,0,0);
+}
+.era-splash-bg{position:absolute;inset:0;opacity:0;transition:opacity 0.2s;}
+.era-splash-name{
+  font-family:'Press Start 2P',monospace;font-size:clamp(18px,4vw,48px);
+  color:#fff;letter-spacing:6px;text-align:center;
+  opacity:0;transform:scale(0.7) translateY(20px);
+  transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  text-shadow:3px 3px 0 #000, 0 0 40px currentColor;
+  position:relative;z-index:2;
+}
+.era-splash-sub{
+  font-family:'VT323',monospace;font-size:clamp(16px,2.5vw,28px);
+  color:rgba(255,255,255,0.7);letter-spacing:4px;text-align:center;
+  opacity:0;transform:translateY(10px);
+  transition:all 0.3s 0.15s;
+  position:relative;z-index:2;
+}
+.era-splash-mech{
+  font-family:'Press Start 2P',monospace;font-size:clamp(6px,1vw,10px);
+  color:rgba(255,255,255,0.5);letter-spacing:2px;text-align:center;
+  margin-top:12px;opacity:0;
+  transition:all 0.3s 0.25s;
+  position:relative;z-index:2;border:1px solid rgba(255,255,255,0.2);
+  padding:6px 14px;background:rgba(0,0,0,0.5);
+}
+
+/* ══ HUD ══ */
 .sd-banner{position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:50;display:none;}
 .sd-text{font-family:'Press Start 2P',monospace;font-size:clamp(11px,2.2vw,26px);color:#ff2200;text-align:center;padding:7px;background:rgba(0,0,0,0.82);animation:sdPulse 0.7s ease-in-out infinite;}
 @keyframes sdPulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
-.timer-hud{position:fixed;top:12px;left:50%;transform:translateX(-50%);font-family:'Press Start 2P',monospace;font-size:clamp(10px,1.5vw,15px);color:#fff;text-shadow:2px 2px 0 #000;background:rgba(0,0,0,0.72);padding:6px 12px;border:1px solid #444;display:none;z-index:20;}
-.timer-hud.danger{color:#ff4444;animation:tdanger 0.5s ease-in-out infinite;}
-@keyframes tdanger{0%,100%{opacity:1;}50%{opacity:0.45;}}
-.place-hud{position:fixed;top:12px;right:12px;font-family:'Press Start 2P',monospace;font-size:clamp(6px,0.9vw,10px);color:#ffdd00;text-shadow:1px 1px 0 #000;display:none;z-index:20;}
-#debugOverlay{position:fixed;top:50px;left:8px;font-family:'VT323',monospace;font-size:13px;color:#0f0;pointer-events:none;z-index:200;display:none;background:rgba(0,0,0,0.7);padding:4px 8px;}
+.timer-hud{
+  position:fixed;top:10px;left:50%;transform:translateX(-50%);
+  font-family:'Press Start 2P',monospace;font-size:clamp(9px,1.3vw,14px);
+  color:#ffffff;letter-spacing:2px;
+  text-shadow:0 0 12px rgba(255,255,255,0.4), 1px 1px 0 #000;
+  background:rgba(0,0,0,0.55);padding:5px 14px;
+  border:1px solid rgba(255,255,255,0.15);
+  backdrop-filter:blur(4px);display:none;z-index:20;
+}
+.timer-hud.danger{color:#ff4444;text-shadow:0 0 12px rgba(255,68,68,0.6);animation:tdanger 0.6s ease-in-out infinite;}
+@keyframes tdanger{0%,100%{opacity:1;}50%{opacity:0.5;}}
+.place-hud{
+  position:fixed;top:10px;right:12px;
+  font-family:'Press Start 2P',monospace;font-size:clamp(5px,0.8vw,9px);
+  color:#ffdd00;text-shadow:1px 1px 0 #000;
+  line-height:1.8;display:none;z-index:20;
+}
+#fpsCounter{
+  position:fixed;top:10px;left:10px;
+  font-family:'VT323',monospace;font-size:14px;color:#00ff88;
+  pointer-events:none;z-index:300;display:none;
+  background:rgba(0,0,0,0.6);padding:2px 6px;
+}
+#debugOverlay{
+  position:fixed;top:40px;left:8px;font-family:'VT323',monospace;font-size:13px;
+  color:#0f0;pointer-events:none;z-index:200;display:none;
+  background:rgba(0,0,0,0.7);padding:4px 8px;line-height:1.6;
+}
+
+/* ══ STREAK ══ */
+#streakHud{
+  position:fixed;top:50%;right:12px;transform:translateY(-50%);
+  font-family:'Press Start 2P',monospace;font-size:8px;
+  color:#ffdd00;text-shadow:0 0 8px #ffdd00;
+  display:none;z-index:20;text-align:right;
+  animation:streakPop 0.3s ease-out;
+}
+@keyframes streakPop{0%{transform:translateY(-50%) scale(0.5);}100%{transform:translateY(-50%) scale(1);}}
+
+/* ══ ERA INDICATOR (in-game) ══ */
+#eraHud{
+  position:fixed;bottom:30px;left:50%;transform:translateX(-50%);
+  font-family:'VT323',monospace;font-size:14px;
+  color:rgba(255,255,255,0.35);letter-spacing:3px;
+  pointer-events:none;z-index:20;
+  display:none;text-align:center;
+}
+
+/* ══ PERSONAL BEST ══ */
+#pbHud{
+  position:fixed;bottom:50px;right:12px;
+  font-family:'VT323',monospace;font-size:14px;
+  color:#aaaaaa;pointer-events:none;z-index:20;display:none;
+  text-align:right;line-height:1.5;
+}
+
+/* ══ CREDITS ══ */
+#creditsScreen{
+  position:fixed;inset:0;background:rgba(0,0,0,0.97);display:none;
+  align-items:center;justify-content:center;flex-direction:column;z-index:110;
+  font-family:'VT323',monospace;font-size:18px;color:#888;text-align:center;line-height:2;
+}
+#creditsScreen h2{font-family:'Press Start 2P',monospace;font-size:14px;color:#ff4444;margin-bottom:20px;}
+#creditsScreen p{margin:4px 0;}
+#creditsScreen .cr-big{font-size:22px;color:#ccc;}
+#creditsScreen .cr-accent{color:#ffdd00;}
+
+/* ══ VAULT FLASH ══ */
+#vaultFlash{
+  position:fixed;inset:0;pointer-events:none;z-index:60;
+  background:rgba(255,255,255,0);
+  transition:background 0.05s;
+}
 </style>
 </head>
 <body>
+
 <canvas id="gameCanvas"></canvas>
 <div class="sd-banner" id="sdBanner"><div class="sd-text">⚠ SUDDEN DEATH ⚠</div></div>
 <div class="timer-hud" id="timerHud">2:00</div>
 <div class="place-hud" id="placeHud"></div>
+<div id="fpsCounter"></div>
 <div id="debugOverlay"></div>
+<div id="streakHud"></div>
+<div id="eraHud"></div>
+<div id="pbHud"></div>
+<div id="vaultFlash"></div>
+
+<!-- ERA INTRO SPLASH -->
+<div id="eraSplash">
+  <div class="era-splash-bg" id="eraSplashBg"></div>
+  <div class="era-splash-name" id="eraSplashName"></div>
+  <div class="era-splash-sub" id="eraSplashSub"></div>
+  <div class="era-splash-mech" id="eraSplashMech"></div>
+</div>
 
 <!-- MAIN MENU -->
 <div id="menuScreen">
@@ -97,15 +296,20 @@ body{background:#0a0a0f;overflow:hidden;font-family:'Press Start 2P',monospace;}
   <div class="menu-content">
     <div class="menu-title">MOMENTUM ERA</div>
     <div class="menu-sub">// FAST. PRECISE. UNSTOPPABLE. //</div>
+    <div class="menu-version">v5.1 — INDIE EDITION</div>
     <button class="menu-btn special" onclick="showModeSelect()">▶ PLAY</button>
+    <button class="menu-btn blue" onclick="showSettings()">⚙ SETTINGS</button>
     <button class="menu-btn" onclick="toggleControls()">CONTROLS</button>
+    <button class="menu-btn dim" onclick="showCredits()">CREDITS</button>
     <div id="controlsHelp" style="display:none;margin-top:12px;font-family:'VT323',monospace;font-size:clamp(13px,1.6vw,19px);color:#fff;text-align:center;line-height:2.1;background:rgba(0,0,0,0.7);padding:12px 20px;backdrop-filter:blur(4px);">
-      <span style="color:#ff8888">P1</span> WASD · W=jump · S=slide/fastfall · <span style="color:#ffdd00">F=powerup</span><br>
-      <span style="color:#88aaff">P2</span> IJKL · I=jump · K=slide/fastfall · <span style="color:#ffdd00">H=powerup</span><br>
-      <span style="color:#88ff88">P3</span> Arrows · ↑=jump · ↓=slide/fastfall · <span style="color:#ffdd00">-=powerup</span><br>
-      <span style="color:#ffdd88">Speed Ramps:</span> orange sloped tiles boost you forward!<br>
-      <span style="color:#ffdd88">Bunny Hop:</span> jump just as you land for speed boost<br>
-      <span style="color:#ffdd88">Air Accel:</span> hold direction in air to keep building speed<br>
+      <span style="color:#ff8888">P1</span> WASD · W=jump · S=slide · <span style="color:#ffdd00">F=powerup</span><br>
+      <span style="color:#88aaff">P2</span> IJKL · I=jump · K=slide · <span style="color:#ffdd00">H=powerup</span><br>
+      <span style="color:#88ff88">P3</span> Arrows · ↑=jump · ↓=slide · <span style="color:#ffdd00">-=powerup</span><br>
+      <span style="color:#aaa">Online: WASD · F=powerup</span><br>
+      <span style="color:#ffdd88">Bhop:</span> jump just as you land for bonus speed<br>
+      <span style="color:#ffdd88">Vault:</span> run into ledges at speed to auto-hop<br>
+      <span style="color:#ffdd88">Flow Max:</span> invincibility + speed bonus<br>
+      <span style="color:#888">Z = debug · ESC = menu</span>
     </div>
   </div>
 </div>
@@ -113,11 +317,14 @@ body{background:#0a0a0f;overflow:hidden;font-family:'Press Start 2P',monospace;}
 <!-- MODE SELECT -->
 <div id="modeSelect" class="overlay">
   <div class="screen-title">SELECT MODE</div>
-  <button class="menu-btn special" onclick="startLocal()">LOCAL MULTIPLAYER<br><span style="font-size:0.7em;color:#aaa">1–3 PLAYERS</span></button>
-  <button class="menu-btn" onclick="showPeerHost()">ONLINE — HOST</button>
-  <button class="menu-btn" onclick="showPeerJoin()">ONLINE — JOIN</button>
-  <button class="menu-btn" onclick="startSinglePlayer()">SOLO + BOTS</button>
-  <button class="menu-btn" style="border-color:#555;color:#555;margin-top:8px;" onclick="showMenu()">← BACK</button>
+  <button class="menu-btn special" onclick="startLocal()">LOCAL MULTIPLAYER<br><span style="font-size:0.7em;color:#aaa">1–3 PLAYERS · SAME KEYBOARD</span></button>
+  <button class="menu-btn green" onclick="showPeerHost()">ONLINE — HOST<br><span style="font-size:0.7em;color:#aaa">SHARE CODE WITH FRIENDS</span></button>
+  <button class="menu-btn green" onclick="showPeerJoin()">ONLINE — JOIN<br><span style="font-size:0.7em;color:#aaa">ENTER A ROOM CODE</span></button>
+  <button class="menu-btn blue" onclick="showTabHost()">2-TAB — HOST<br><span style="font-size:0.7em;color:#aaa">SAME COMPUTER, TWO TABS</span></button>
+  <button class="menu-btn blue" onclick="showTabJoin()">2-TAB — JOIN<br><span style="font-size:0.7em;color:#aaa">JOIN FROM SECOND TAB</span></button>
+  <button class="menu-btn" onclick="startSinglePlayerDirect()">SOLO + BOTS</button>
+  <button class="menu-btn" onclick="startDailyRun()">📅 DAILY RUN<br><span style="font-size:0.7em;color:#aaa">SEEDED · GLOBAL</span></button>
+  <button class="menu-btn dim" style="margin-top:8px;" onclick="showMenu()">← BACK</button>
 </div>
 
 <!-- LOCAL LOBBY -->
@@ -131,18 +338,18 @@ body{background:#0a0a0f;overflow:hidden;font-family:'Press Start 2P',monospace;}
   <div class="settings-grid" id="lobbySettings">
     <div class="setting-row"><label>DIFFICULTY</label><div class="setting-btn-group" id="diffBtns"></div></div>
     <div class="setting-row"><label>VOID FLOOR</label><div class="setting-btn-group" id="voidBtns"></div></div>
-    <div class="setting-row"><label>MAP STYLE</label><div class="setting-btn-group" id="styleBtns"></div></div>
+    <div class="setting-row"><label>ERA</label><div class="setting-btn-group" id="styleBtns"></div></div>
   </div>
   <button class="menu-btn special" id="startLocalBtn" onclick="launchLocal()" style="display:none;pointer-events:all;">START RACE ▶</button>
-  <button class="menu-btn" style="pointer-events:all;margin-top:8px;" onclick="showMenu()">← BACK</button>
+  <button class="menu-btn dim" style="pointer-events:all;margin-top:8px;" onclick="showMenu()">← BACK</button>
 </div>
 
-<!-- PEER LOBBY -->
+<!-- PEER LOBBY (online via PeerJS) -->
 <div id="peerLobby" class="overlay">
   <div class="screen-title" id="peerTitle">ONLINE LOBBY</div>
   <div class="peer-code" id="peerCode" style="display:none"></div>
-  <div style="font-family:'VT323',monospace;font-size:18px;color:#aaa;" id="peerStatus">Connecting...</div>
-  <input class="peer-input" id="peerJoinInput" placeholder="ENTER ROOM CODE" style="display:none;" maxlength="6">
+  <div style="font-family:'VT323',monospace;font-size:18px;color:#aaa;text-align:center;max-width:340px;line-height:1.6;" id="peerStatus">Connecting...</div>
+  <input class="peer-input" id="peerJoinInput" placeholder="ENTER ROOM CODE" style="display:none;" maxlength="8">
   <button class="menu-btn" id="peerJoinBtn" style="display:none;pointer-events:all;" onclick="peerDoJoin()">JOIN ROOM</button>
   <div class="settings-grid" id="peerSettings" style="display:none;">
     <div class="setting-row"><label>DIFFICULTY</label><div class="setting-btn-group" id="peerDiffBtns"></div></div>
@@ -150,7 +357,54 @@ body{background:#0a0a0f;overflow:hidden;font-family:'Press Start 2P',monospace;}
   </div>
   <button class="menu-btn special" id="peerStartBtn" style="display:none;pointer-events:all;" onclick="peerStartGame()">START GAME</button>
   <div id="peerPlayerList" style="font-family:'VT323',monospace;font-size:18px;color:#aaa;text-align:center;margin-top:8px;"></div>
-  <button class="menu-btn" style="pointer-events:all;margin-top:12px;" onclick="showMenu()">← BACK</button>
+  <button class="menu-btn dim" style="pointer-events:all;margin-top:12px;" onclick="tabCleanup();peerCleanup();showMenu()">← BACK</button>
+</div>
+
+<!-- TAB LOBBY (same computer, two tabs) -->
+<div id="tabLobby" class="overlay">
+  <div class="screen-title" id="tabTitle">TAB MULTIPLAYER</div>
+  <div class="peer-code" id="tabCode" style="display:none"></div>
+  <div style="font-family:'VT323',monospace;font-size:18px;color:#aaa;text-align:center;max-width:340px;line-height:1.6;" id="tabStatus">Waiting...</div>
+  <input class="peer-input" id="tabJoinInput" placeholder="ENTER ROOM CODE" style="display:none;" maxlength="8">
+  <button class="menu-btn" id="tabJoinBtn" style="display:none;pointer-events:all;" onclick="tabDoJoin()">JOIN ROOM</button>
+  <div class="settings-grid" id="tabSettings" style="display:none;">
+    <div class="setting-row"><label>DIFFICULTY</label><div class="setting-btn-group" id="tabDiffBtns"></div></div>
+    <div class="setting-row"><label>VOID FLOOR</label><div class="setting-btn-group" id="tabVoidBtns"></div></div>
+  </div>
+  <button class="menu-btn special" id="tabStartBtn" style="display:none;pointer-events:all;" onclick="tabStartGame()">START GAME</button>
+  <div id="tabPlayerList" style="font-family:'VT323',monospace;font-size:18px;color:#aaa;text-align:center;margin-top:8px;"></div>
+  <button class="menu-btn dim" style="pointer-events:all;margin-top:12px;" onclick="tabCleanup();showMenu()">← BACK</button>
+</div>
+
+<!-- SETTINGS -->
+<div id="settingsScreen">
+  <div style="font-family:'Press Start 2P',monospace;font-size:16px;color:#ff4444;margin-bottom:24px;text-shadow:2px 2px 0 #330000;">⚙ SETTINGS</div>
+
+  <div class="settings-section">
+    <h3>GAMEPLAY</h3>
+    <div class="sett-row"><label>Screen Shake</label><button class="toggle-btn" id="sett_shake" onclick="toggleSett('shake')">ON</button></div>
+    <div class="sett-row"><label>Motion Effects</label><button class="toggle-btn" id="sett_motion" onclick="toggleSett('motion')">ON</button></div>
+    <div class="sett-row"><label>Particles</label><button class="toggle-btn" id="sett_particles" onclick="toggleSett('particles')">ON</button></div>
+    <div class="sett-row"><label>Parallax BG</label><button class="toggle-btn" id="sett_parallax" onclick="toggleSett('parallax')">ON</button></div>
+    <div class="sett-row"><label>Flow Effects</label><div class="slider-wrap"><input type="range" class="sett-slider" id="sl_flow" min="0" max="100" value="100" oninput="slSett('flowIntensity',this)"><span class="sett-val" id="sv_flow">100</span></div></div>
+    <div class="sett-row"><label>Camera Zoom</label><div class="slider-wrap"><input type="range" class="sett-slider" id="sl_zoom" min="50" max="150" value="100" oninput="slSett('cameraZoom',this)"><span class="sett-val" id="sv_zoom">100</span></div></div>
+    <div class="sett-row"><label>Jump Buffer (frames)</label><div class="slider-wrap"><input type="range" class="sett-slider" id="sl_jumpbuf" min="3" max="15" value="9" oninput="slSett('jumpBuffer',this)"><span class="sett-val" id="sv_jumpbuf">9</span></div></div>
+  </div>
+
+  <div class="settings-section">
+    <h3>DEBUG / DISPLAY</h3>
+    <div class="sett-row"><label>FPS Counter</label><button class="toggle-btn" id="sett_fps" onclick="toggleSett('fps')">OFF</button></div>
+    <div class="sett-row"><label>Debug Overlay</label><button class="toggle-btn" id="sett_debug" onclick="toggleSett('debug')">OFF</button></div>
+    <div class="sett-row"><label>Hitbox Visible</label><button class="toggle-btn" id="sett_hitbox" onclick="toggleSett('hitbox')">OFF</button></div>
+  </div>
+
+  <div class="settings-section">
+    <h3>PERSONAL BESTS</h3>
+    <div id="pbList" style="font-family:'VT323',monospace;font-size:15px;color:#666;line-height:2;"></div>
+    <button class="menu-btn dim" style="margin-top:8px;font-size:7px;pointer-events:all;" onclick="clearPBs()">CLEAR ALL PBs</button>
+  </div>
+
+  <button class="menu-btn special" style="margin-top:12px;pointer-events:all;" onclick="saveSettings();showMenu()">SAVE & BACK</button>
 </div>
 
 <!-- CORRUPTION SCREEN -->
@@ -175,120 +429,257 @@ body{background:#0a0a0f;overflow:hidden;font-family:'Press Start 2P',monospace;}
   <div class="win-title" id="winTitle">PLAYER WINS!</div>
   <div class="win-sub" id="winSub"></div>
   <div class="scoreboard" id="scoreboard"></div>
+  <div id="pbNotice" style="font-family:'VT323',monospace;font-size:18px;color:#ffdd00;margin-top:8px;display:none;">⭐ NEW PERSONAL BEST!</div>
   <button class="menu-btn special" style="margin-top:18px;pointer-events:all;" onclick="nextRound()">NEXT ROUND ▶</button>
-  <button class="menu-btn" style="margin-top:4px;pointer-events:all;" onclick="showMenu()">QUIT TO MENU</button>
+  <button class="menu-btn dim" style="margin-top:4px;pointer-events:all;" onclick="showMenu()">QUIT TO MENU</button>
 </div>
 
 <!-- ERA SHIFT -->
 <div id="eraShift">
-  <div class="era-title">ERA SHIFT!<br><span style="font-size:0.7em;color:#aaa">WINNER PICKS THE NEXT WORLD</span></div>
+  <div class="era-title">ERA SHIFT!<br><span style="font-size:0.7em;color:#aaa">PICK THE NEXT WORLD</span></div>
   <div class="era-maps" id="eraMaps"></div>
+</div>
+
+<!-- CREDITS -->
+<div id="creditsScreen">
+  <h2>CREDITS</h2>
+  <p class="cr-big">MOMENTUM ERA</p>
+  <p class="cr-accent">v5.1 — INDIE EDITION</p>
+  <p>&nbsp;</p>
+  <p>Design &amp; Code: <span class="cr-accent">Human + Claude</span></p>
+  <p>Physics Engine: <span class="cr-accent">Surf/KZ Style</span></p>
+  <p>Fonts: Press Start 2P · VT323</p>
+  <p>&nbsp;</p>
+  <p style="color:#555;font-size:13px;">Movement is king.</p>
+  <p style="color:#555;font-size:13px;">Everything else supports movement.</p>
+  <p>&nbsp;</p>
+  <button class="menu-btn dim" style="pointer-events:all;" onclick="showMenu()">← BACK</button>
 </div>
 
 <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 <script>
 'use strict';
-// ════════════════════════════════════════════════════════════════
-//  MOMENTUM ERA v6
-//  CHANGES FROM v5:
-//  A) REDRAW FIX: finish position comes from map, always synced
-//  B) SPEED REWORK: slopes give momentum, higher jump carry, air accel
-//  C) SMART AI: waypoint pathfinding along chunk path, 3 personalities
-//  D) MAP POLISH: bigger corridors, spikes only on open air tiles,
-//     "gauntlet_end" chunk type for tight finale section
-// ════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+//  MOMENTUM ERA v5.1 — INDIE EDITION
+//  Changes from v5.0:
+//  - Reduced player speeds across the board (WALK_SPEED, SPEED_CAP, etc.)
+//  - Choice screen (powerup/corruption) now ONLY shows for human winners
+//    Bot winners auto-pick a random corruption, skipping the UI entirely
+// ═══════════════════════════════════════════════════════════════
 
 const canvas = document.getElementById('gameCanvas');
 const ctx    = canvas.getContext('2d');
 
+// ── SETTINGS ──────────────────────────────────────────────────
+const SETT_DEFAULTS = {
+  shake:true, motion:true, particles:true, parallax:true,
+  fps:false, debug:false, hitbox:false,
+  flowIntensity:100, cameraZoom:100, jumpBuffer:9,
+};
+let SETT = {...SETT_DEFAULTS};
+function loadSettings(){
+  try{
+    const s = JSON.parse(localStorage.getItem('me_sett')||'{}');
+    SETT = {...SETT_DEFAULTS,...s};
+  }catch(e){}
+  applySettingsToUI();
+}
+function saveSettings(){
+  try{ localStorage.setItem('me_sett', JSON.stringify(SETT)); }catch(e){}
+}
+function applySettingsToUI(){
+  ['shake','motion','particles','parallax','fps','debug','hitbox'].forEach(k=>{
+    const el=document.getElementById('sett_'+k);
+    if(!el) return;
+    el.textContent = SETT[k] ? 'ON' : 'OFF';
+    el.classList.toggle('on', SETT[k]);
+  });
+  ['flow','zoom','jumpbuf'].forEach((k,i)=>{
+    const keys=['flowIntensity','cameraZoom','jumpBuffer'];
+    const sl=document.getElementById('sl_'+k);
+    const sv=document.getElementById('sv_'+k);
+    if(sl&&sv){ sl.value=SETT[keys[i]]; sv.textContent=SETT[keys[i]]; }
+  });
+  document.getElementById('fpsCounter').style.display = SETT.fps ? 'block' : 'none';
+  document.getElementById('debugOverlay').style.display = SETT.debug ? 'block' : 'none';
+}
+function toggleSett(k){
+  SETT[k]=!SETT[k];
+  applySettingsToUI();
+}
+function slSett(k,el){
+  SETT[k]=parseInt(el.value);
+  const svId={'flowIntensity':'sv_flow','cameraZoom':'sv_zoom','jumpBuffer':'sv_jumpbuf'}[k];
+  if(svId) document.getElementById(svId).textContent=SETT[k];
+}
+function showSettings(){
+  hideAll();
+  document.getElementById('settingsScreen').style.display='flex';
+  renderPBList();
+}
+function clearPBs(){
+  try{ localStorage.removeItem('me_pb'); }catch(e){}
+  renderPBList();
+}
+function renderPBList(){
+  const pbEl=document.getElementById('pbList');
+  try{
+    const pb=JSON.parse(localStorage.getItem('me_pb')||'{}');
+    const keys=Object.keys(pb);
+    if(!keys.length){ pbEl.textContent='No records yet.'; return; }
+    pbEl.innerHTML=keys.slice(0,8).map(k=>`<div>${k}: <span style="color:#ffdd00">${pb[k]}s</span></div>`).join('');
+  }catch(e){ pbEl.textContent='No records.'; }
+}
+function getPB(key){ try{ return (JSON.parse(localStorage.getItem('me_pb')||'{}'))[key]||null; }catch(e){ return null; } }
+function setPB(key,val){
+  try{
+    const pb=JSON.parse(localStorage.getItem('me_pb')||'{}');
+    pb[key]=val; localStorage.setItem('me_pb',JSON.stringify(pb));
+  }catch(e){}
+}
+
 // ── DIFFICULTY PRESETS ─────────────────────────────────────────
 const DIFFICULTIES = {
   zen:    { name:'ZEN',    corridorW:5, spikeChance:0.00, gapChance:0.00, movingPlats:1,  slideBoost:1.5, color:'#44aaff' },
-  easy:   { name:'EASY',   corridorW:4, spikeChance:0.05, gapChance:0.05, movingPlats:3,  slideBoost:1.2, color:'#44ff88' },
-  normal: { name:'NORMAL', corridorW:3, spikeChance:0.10, gapChance:0.08, movingPlats:5,  slideBoost:1.0, color:'#ffdd00' },
-  hard:   { name:'HARD',   corridorW:2, spikeChance:0.18, gapChance:0.14, movingPlats:8,  slideBoost:0.9, color:'#ff8844' },
-  brutal: { name:'BRUTAL', corridorW:1, spikeChance:0.26, gapChance:0.22, movingPlats:11, slideBoost:0.8, color:'#ff4444' },
+  easy:   { name:'EASY',   corridorW:4, spikeChance:0.04, gapChance:0.03, movingPlats:3,  slideBoost:1.2, color:'#44ff88' },
+  normal: { name:'NORMAL', corridorW:3, spikeChance:0.09, gapChance:0.07, movingPlats:5,  slideBoost:1.0, color:'#ffdd00' },
+  hard:   { name:'HARD',   corridorW:2, spikeChance:0.16, gapChance:0.13, movingPlats:8,  slideBoost:0.9, color:'#ff8844' },
+  brutal: { name:'BRUTAL', corridorW:1, spikeChance:0.25, gapChance:0.20, movingPlats:11, slideBoost:0.8, color:'#ff4444' },
 };
 
-const TILE = 14;
+const TILE = 12;
 
-// ── PHYSICS ────────────────────────────────────────────────────
-const GRAVITY        = 0.50;
-const GRAVITY_FALL   = 0.85;
-const MAX_FALL       = 24;
-const WALK_SPEED     = 3.0;    // intentionally sluggish ground — reward air momentum
-const ACCEL_GROUND   = 0.50;
-const FRIC_GROUND    = 0.72;
-const SPEED_CAP      = 32.0;   // sky-high ceiling — bhop chains can get insane
+// ── PHYSICS CONSTANTS (v5.1 — speeds reduced ~35%) ────────────
+const GRAVITY        = 0.46;
+const GRAVITY_FALL   = 0.72;
+const MAX_FALL       = 14;        // was 20
+const WALK_SPEED     = 3.2;       // was 5.2
+const ACCEL_GROUND   = 0.55;
+const FRIC_GROUND    = 0.68;
+const SPEED_CAP      = 14.0;      // was 22.0
+const JUMP_AIR_ACCEL = 0.70;
+const AIR_BRAKE_FACTOR= 0.085;
+const AIR_FRIC       = 0.994;
+const JUMP_VY_BASE   = -4.2;
+const JUMP_SPD_CARRY = 0.55;
+const JUMP_VX_BURST  = 2.8;      // was 4.5
+const JUMP_VY_CAP    = -4.8;
+const JUMP_HOLD_BOOST= -0.08;
+const JUMP_HOLD_MAX  = 4;
+const COYOTE_FRAMES  = 9;
+const DJUMP_VY_BASE  = -2.8;
+const DJUMP_SPD_CARRY= 0.40;
+const WALL_LAUNCH_X  = 5.0;      // was 7.2
+const WALL_LAUNCH_Y  = -7.0;     // was -8.2
+const WALL_LOCK      = 12;
+const WALL_SLIDE_MAX = 1.5;
+const VAULT_SPD_MIN  = WALK_SPEED * 0.7;
+const VAULT_VX_BOOST = 1.8;      // was 3.0
+const VAULT_VY       = -5.0;
+const VAULT_CD       = 18;
+const SLIDE_MIN_SPD  = 2.0;      // was 2.5
+const SLIDE_VX       = 5.5;      // was 9.2
+const SLIDE_FRAMES   = 32;
+const SLIDE_H        = 5;
+const NORMAL_H       = 12;
+const SLIDE_FRIC     = 0.912;
+const FF_ACCEL       = 2.0;      // was 3.2
+const FF_MAX         = 16;       // was 26
+const BHOP_BOOST     = 1.12;     // was 1.22
+const FLOW_MAX       = 100;
+const FLOW_DECAY     = 0.04;
+const FLOW_SPD_GAIN  = 0.055;
+const FLOW_LAND_GAIN = 11;
+const FLOW_VAULT_GAIN= 15;
+const FLOW_WALL_GAIN = 14;
+const FLOW_BHOP_GAIN = 20;
+const FLOW_SPD_BONUS = 0.55;     // was 0.75
+const ROUND_TIME     = 120;
+const LAVA_RISE      = 0.30;
 
-// Air: zero friction, full momentum carry
-const JUMP_AIR_ACCEL  = 0.28;
-const AIR_BRAKE_FACTOR = 0.02;  // almost no brake from air input
-const AIR_FRIC        = 1.0;   // ZERO air drag — speed never decays in air
-
-// Jump: speed carry is the whole game
-const JUMP_VY_BASE    = -5.2;   // standing still = small hop
-const JUMP_SPD_CARRY  = 0.45;   // BIG: fast run = massive jump arc
-const JUMP_VY_CAP     = -15.0;  // at max speed, jumps are enormous
-const JUMP_HOLD_BOOST = -0.44;
-const JUMP_HOLD_MAX   = 16;
-const COYOTE_FRAMES   = 10;
-const JUMP_BUF_FRAMES = 10;
-
-const DJUMP_VY_BASE   = -4.8;
-const DJUMP_SPD_CARRY = 0.30;
-
-// Wall hop: ADDS to existing speed (doesn't reset it)
-const WALL_ADD_X      = 9.0;   // added speed away from wall — stacks with carry
-const WALL_LAUNCH_Y   = -9.0;
-const WALL_LOCK       = 10;
-const WALL_SLIDE_MAX  = 1.2;
-
-const VAULT_SPD_MIN   = WALK_SPEED * 0.7;
-const VAULT_VX_BOOST  = 4.0;
-const VAULT_VY        = -5.5;
-const VAULT_CD        = 16;
-
-const SLIDE_MIN_SPD   = 1.5;
-const SLIDE_VX        = 11.0;
-const SLIDE_FRAMES    = 30;
-const SLIDE_H         = 9;
-const NORMAL_H        = 22;
-const SLIDE_FRIC      = 0.93;   // slides carry speed a long time
-
-// Slopes: serious acceleration — hit one going fast and you rocket
-const SLOPE_ACCEL     = 1.2;
-const SLOPE_MAX_BONUS = 10.0;
-
-const FF_ACCEL        = 4.0;
-const FF_MAX          = 28;
-
-// Bhop: each bhop multiplies speed meaningfully, chains build fast
-const BHOP_WINDOW     = 10;
-const BHOP_BOOST      = 1.30;   // 30% per bhop — chains get CoD-fast quick
-const BHOP_MAX_STACK  = 6;      // cap stacks to prevent infinite
-
-const FLOW_MAX        = 100;
-const FLOW_DECAY      = 0.03;
-const FLOW_SPD_GAIN   = 0.06;
-const FLOW_LAND_GAIN  = 12;
-const FLOW_VAULT_GAIN = 16;
-const FLOW_WALL_GAIN  = 16;
-const FLOW_BHOP_GAIN  = 22;
-const FLOW_SLOPE_GAIN = 0.12;
-const FLOW_SPD_BONUS  = 0.50;
-
-const ROUND_TIME      = 120;
-const LAVA_RISE       = 0.30;
-
-// ── BIOMES ─────────────────────────────────────────────────────
-const BIOMES = [
-  {name:'URBAN MAZE',    icon:'🏙', tileCol:'#445566', bg:'#0d1520', groundCol:'#223344', accent:'#5588bb', fogCol:'#1a2535'},
-  {name:'NEON DUNGEON',  icon:'⚡', tileCol:'#1a0a2e', bg:'#060010', groundCol:'#0d0520', accent:'#cc00ff', fogCol:'#100018'},
-  {name:'RUINS',         icon:'🏛', tileCol:'#5a4a36', bg:'#12100d', groundCol:'#3d3025', accent:'#cc9944', fogCol:'#1a1510'},
-  {name:'ICY CAVERN',    icon:'❄', tileCol:'#5588aa', bg:'#0a1520', groundCol:'#3366aa', accent:'#88ddff', fogCol:'#0d1e30'},
-  {name:'VOLCANIC',      icon:'🌋', tileCol:'#552211', bg:'#100500', groundCol:'#331100', accent:'#ff5500', fogCol:'#180800'},
-  {name:'OVERGROWN',     icon:'🌿', tileCol:'#2a5520', bg:'#0a1205', groundCol:'#1a3a10', accent:'#55ff44', fogCol:'#0d1a08'},
+// ── ERAS ──────────────────────────────────────────────────────
+const ERAS = [
+  {
+    name:'NEON METRO',     icon:'🌆',
+    bg:'#07030f', tileCol:'#1e0a30', groundCol:'#120620', topEdge:'#8800cc',
+    accent:'#ff00cc', fogCol:'#100018', paralaxFar:'#050008', paralaxMid:'#0e0520',
+    particleCol:'#ff00cc', tileShine:'rgba(255,0,200,0.10)',
+    mechanic:'boost_rails',  mechanicDesc:'BOOST RAILS — Ride for instant speed',
+    physMod:{ speedMult:1.10 },
+    color:'#ff00cc',
+  },
+  {
+    name:'SKY ISLANDS',    icon:'☁',
+    bg:'#04080f', tileCol:'#1a2840', groundCol:'#0e1828', topEdge:'#5599dd',
+    accent:'#88ccff', fogCol:'#080e18', paralaxFar:'#020508', paralaxMid:'#0a1220',
+    particleCol:'#88ccff', tileShine:'rgba(136,204,255,0.10)',
+    mechanic:'low_gravity', mechanicDesc:'LOW GRAVITY — Float further, fall slower',
+    physMod:{ gravityMult:0.5, jumpMult:1.25 },
+    color:'#88ccff',
+  },
+  {
+    name:'COLLAPSING RUINS',icon:'🏚',
+    bg:'#100a06', tileCol:'#3a2818', groundCol:'#221608', topEdge:'#aa6622',
+    accent:'#dd9944', fogCol:'#180e08', paralaxFar:'#080502', paralaxMid:'#140a04',
+    particleCol:'#dd9944', tileShine:'rgba(221,153,68,0.08)',
+    mechanic:'breakable',    mechanicDesc:'BREAKABLE FLOORS — Platforms crumble on landing',
+    physMod:{},
+    color:'#dd9944',
+  },
+  {
+    name:'VOID DRIFT',     icon:'🌌',
+    bg:'#000308', tileCol:'#08102a', groundCol:'#040a18', topEdge:'#3344aa',
+    accent:'#5566ff', fogCol:'#020408', paralaxFar:'#010206', paralaxMid:'#060e1c',
+    particleCol:'#5566ff', tileShine:'rgba(85,102,255,0.12)',
+    mechanic:'air_dash',     mechanicDesc:'AIR DASH — One free dash per jump',
+    physMod:{ gravityMult:0.65, airFricMult:1.012 },
+    color:'#5566ff',
+  },
+  {
+    name:'INFERNO',        icon:'🌋',
+    bg:'#0c0400', tileCol:'#3a1408', groundCol:'#220c00', topEdge:'#cc3300',
+    accent:'#ff6600', fogCol:'#180800', paralaxFar:'#080200', paralaxMid:'#150600',
+    particleCol:'#ff6600', tileShine:'rgba(255,102,0,0.10)',
+    mechanic:'lava_fast',    mechanicDesc:'FAST LAVA — Eruption starts immediately',
+    physMod:{ speedMult:1.06 },
+    color:'#ff6600',
+  },
+  {
+    name:'STORM SURGE',    icon:'⚡',
+    bg:'#060810', tileCol:'#141c2c', groundCol:'#0a1018', topEdge:'#4466aa',
+    accent:'#aaccff', fogCol:'#080c16', paralaxFar:'#030408', paralaxMid:'#0a1020',
+    particleCol:'#aaccff', tileShine:'rgba(170,204,255,0.08)',
+    mechanic:'wind_zones',   mechanicDesc:'WIND — Gusts push you horizontally',
+    physMod:{},
+    color:'#aaccff',
+  },
+  {
+    name:'URBAN MAZE',     icon:'🏙',
+    bg:'#0e1219', tileCol:'#2a3340', groundCol:'#1a2230', topEdge:'#3d5a7a',
+    accent:'#00e5ff', fogCol:'#1a2535', paralaxFar:'#0a0f16', paralaxMid:'#111827',
+    particleCol:'#00e5ff', tileShine:'rgba(0,229,255,0.08)',
+    mechanic:'standard',     mechanicDesc:'STANDARD — Pure movement mastery',
+    physMod:{},
+    color:'#00e5ff',
+  },
+  {
+    name:'ICY CAVERN',     icon:'❄',
+    bg:'#080e18', tileCol:'#1e3a5a', groundCol:'#122440', topEdge:'#66aadd',
+    accent:'#aaddff', fogCol:'#0d1e30', paralaxFar:'#050b12', paralaxMid:'#0d1c30',
+    particleCol:'#aaddff', tileShine:'rgba(170,221,255,0.10)',
+    mechanic:'slippery',     mechanicDesc:'ICE PHYSICS — Less ground friction',
+    physMod:{ groundFricMult:1.6 },
+    color:'#aaddff',
+  },
+  {
+    name:'OVERGROWN',      icon:'🌿',
+    bg:'#060d04', tileCol:'#1a3a12', groundCol:'#0e2208', topEdge:'#3a8a22',
+    accent:'#66ff44', fogCol:'#0d1a08', paralaxFar:'#040a02', paralaxMid:'#0a1806',
+    particleCol:'#66ff44', tileShine:'rgba(102,255,68,0.08)',
+    mechanic:'standard',     mechanicDesc:'PURE FLOW — Max flow builds faster',
+    physMod:{ flowGainMult:1.4 },
+    color:'#66ff44',
+  },
 ];
 
 // ── GAME STATE ─────────────────────────────────────────────────
@@ -299,18 +690,31 @@ const GS = {
   roundTime:ROUND_TIME,
   suddenDeath:false, lavaY:99999,
   running:false, paused:false,
-  currentBiome:0, roundWinner:null,
+  currentEraIdx:0,
+  currentEra: null,
+  roundWinner:null,
   choiceTimeout:null, _glitchIv:null,
   frame:0,
   difficulty:'normal',
   voidFloor:true,
   _lowGravity:false, _speedDemon:false, _darkMap:false, _gravityFlip:false,
+  _eraBoostRails:[],
+  _eraWindZones:[],
+  _eraBreakable:{},
+  _eraLightning:[],
+  winStreak:0,
+  maxStreak:0,
+  _ghostRecording:[],
+  _ghostPlayback:[],
+  _ghostFrameIdx:0,
+  isDaily:false,
+  dailyStartTime:0,
+  _fps:0, _fpsCounter:0, _fpsTimer:0,
 };
 
 const PLAYER_COLORS = ['#ff5555','#55aaff','#55ff88','#ffdd55','#ff88ff','#ff9944','#55ffff','#ff55aa'];
 const PLAYER_NAMES  = ['RED','BLUE','GREEN','YELLOW','PINK','ORANGE','CYAN','MAGENTA'];
-const PLAYER_W      = 16;
-const PLAYER_CTRLS = [
+const PLAYER_CTRLS  = [
   {left:'KeyA',     right:'KeyD',      up:'KeyW',    down:'KeyS',     powerup:'KeyF'},
   {left:'KeyJ',     right:'KeyL',      up:'KeyI',    down:'KeyK',     powerup:'KeyH'},
   {left:'ArrowLeft',right:'ArrowRight',up:'ArrowUp', down:'ArrowDown',powerup:'Minus'},
@@ -323,15 +727,17 @@ const just = {};
 window.addEventListener('keydown', e => {
   if(!keys[e.code]){ keys[e.code]=true; just[e.code]=true; onKeyDown(e.code); }
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.key)) e.preventDefault();
+  if(e.code==='Escape' && GS.running){ showMenu(); }
 });
 window.addEventListener('keyup', e => { keys[e.code]=false; });
 function clearJust(){ for(const k in just) delete just[k]; }
+
 function onKeyDown(code){
   if(document.getElementById('lobbyScreen').style.display==='flex')
     PLAYER_CTRLS.forEach((c,i)=>{ if(code===c.up) tryJoinLobby(i); });
-  if(code==='KeyD' && GS.running){
-    const d=document.getElementById('debugOverlay');
-    d.style.display = d.style.display==='none'?'block':'none';
+  if(code==='KeyZ' && GS.running){
+    SETT.debug=!SETT.debug;
+    document.getElementById('debugOverlay').style.display=SETT.debug?'block':'none';
   }
 }
 
@@ -346,557 +752,339 @@ function mulberry32(seed){
 }
 let rng = mulberry32(GS.seed);
 
-// ════════════════════════════════════════════════════════════════
-//  MAP GENERATOR v6
-//  KEY CHANGES:
-//  - Bigger chunk interiors (more space, wider corridors)
-//  - Spikes validated: only placed on open floor/wall tiles (no embedded)
-//  - Speed ramp tiles: slope objects that accelerate players
-//  - "gauntlet_end" chunk type: used for last 2 chunks before finish
-//  - Finish position ALWAYS derived from map, never stale
-//  - FIX: redraw_maze now correctly updates finish from the new map
-// ════════════════════════════════════════════════════════════════
+function getDailySeed(){
+  const d = new Date();
+  return d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+}
 
-const CHUNK_W  = 30;  // wider chunks = longer runs
-const CHUNK_H  = 24;
-const WALL_T   = 2;
-const GRID_W   = 4;
-const GRID_H   = 3;
+// ── ERA SELECTION ──────────────────────────────────────────────
+function pickRandomEra(){
+  const idx = Math.floor(Math.random() * ERAS.length);
+  setCurrentEra(idx);
+  return idx;
+}
+function setCurrentEra(idx){
+  GS.currentEraIdx = idx;
+  GS.currentEra = ERAS[idx % ERAS.length];
+}
 
-const DOOR_H   = 10;  // very tall doors — easy to run through at speed
-const DOOR_W   = 12;  // very wide doors
-const PUNCH_H  = WALL_T * 2 + 4;
-const PUNCH_W  = WALL_T * 2 + 4;
+function showEraSplash(era, onDone){
+  const sp = document.getElementById('eraSplash');
+  const bg = document.getElementById('eraSplashBg');
+  const nm = document.getElementById('eraSplashName');
+  const sb = document.getElementById('eraSplashSub');
+  const mk = document.getElementById('eraSplashMech');
 
-function generateMap(seed, biomeIdx, diffKey) {
+  sp.style.display='flex';
+  bg.style.background = `radial-gradient(ellipse at center, ${era.color}22 0%, transparent 70%)`;
+  nm.style.color = era.color;
+  nm.textContent = era.icon + ' ' + era.name;
+  sb.textContent = 'ERA BEGIN';
+  mk.textContent = era.mechanicDesc;
+
+  void sp.offsetHeight;
+  bg.style.opacity='1';
+  nm.style.opacity='1'; nm.style.transform='scale(1) translateY(0)';
+  sb.style.opacity='1'; sb.style.transform='translateY(0)';
+  mk.style.opacity='1';
+
+  setTimeout(()=>{
+    nm.style.opacity='0'; nm.style.transform='scale(1.2) translateY(-10px)';
+    sb.style.opacity='0';
+    mk.style.opacity='0';
+    bg.style.opacity='0';
+    setTimeout(()=>{
+      sp.style.display='none';
+      nm.style.transition='none'; sb.style.transition='none'; mk.style.transition='none';
+      void sp.offsetHeight;
+      nm.style.opacity='0'; nm.style.transform='scale(0.7) translateY(20px)';
+      sb.style.opacity='0'; sb.style.transform='translateY(10px)';
+      mk.style.opacity='0';
+      setTimeout(()=>{
+        nm.style.transition='all 0.3s cubic-bezier(0.34,1.56,0.64,1)';
+        sb.style.transition='all 0.3s 0.15s';
+        mk.style.transition='all 0.3s 0.25s';
+        if(onDone) onDone();
+      }, 50);
+    }, 350);
+  }, 2000);
+}
+
+// ── ERA MECHANICS INIT ─────────────────────────────────────────
+function initEraMechanics(map){
+  const era = GS.currentEra;
+  GS._eraBoostRails = [];
+  GS._eraWindZones  = [];
+  GS._eraBreakable  = {};
+  GS._eraLightning  = [];
+
+  if(!map) return;
+  const rng2 = mulberry32(GS.seed + 99);
+
+  if(era.mechanic === 'boost_rails'){
+    for(let i=0;i<6;i++){
+      const tx = Math.floor(rng2()*map.W*0.7 + map.W*0.1);
+      const ty = Math.floor(rng2()*map.H*0.8 + 2);
+      if(map.tiles[ty*map.W+tx]===0 && map.tiles[(ty+1)*map.W+tx]===1){
+        GS._eraBoostRails.push({x:tx, y:ty, w:4+Math.floor(rng2()*5), dir:rng2()<0.5?1:-1});
+      }
+    }
+  }
+
+  if(era.mechanic === 'wind_zones'){
+    for(let i=0;i<5;i++){
+      const col = Math.floor(rng2()*3 + 1);
+      const rowY = Math.floor(rng2()*map.H*0.7 + 4);
+      GS._eraWindZones.push({
+        x:col*Math.floor(map.W/4), y:rowY,
+        w:Math.floor(map.W/4), h:8,
+        force:(rng2()<0.5?1:-1)*(1.5+rng2()*1.5),
+        t:rng2()*Math.PI*2, period:180+rng2()*120
+      });
+    }
+  }
+
+  if(era.mechanic === 'lava_fast'){
+    setTimeout(()=>{ if(GS.running) activateSuddenDeath(); }, 3000);
+  }
+}
+
+function updateEraMechanics(){
+  const era = GS.currentEra;
+  if(!era || !GS.map) return;
+
+  if(era.mechanic === 'boost_rails'){
+    GS.players.forEach(p=>{
+      if(!p.alive) return;
+      GS._eraBoostRails.forEach(rail=>{
+        const rx=rail.x*TILE, ry=rail.y*TILE;
+        if(p.x+p.w > rx && p.x < rx+rail.w*TILE &&
+           Math.abs(p.y+p.h - ry) < TILE*1.5 && p.onGround){
+          p.vx += rail.dir * 1.2;
+          p.vx = Math.max(-SPEED_CAP, Math.min(SPEED_CAP, p.vx));
+          gainFlow(p, 0.8);
+        }
+      });
+    });
+  }
+
+  if(era.mechanic === 'wind_zones'){
+    GS._eraWindZones.forEach(zone=>{
+      zone.t++;
+      const active = Math.sin(zone.t / (zone.period/Math.PI)) > 0;
+      if(!active) return;
+      GS.players.forEach(p=>{
+        if(!p.alive) return;
+        const zx=zone.x*TILE, zy=zone.y*TILE;
+        if(p.x+p.w>zx && p.x<zx+zone.w*TILE &&
+           p.y+p.h>zy && p.y<zy+zone.h*TILE){
+          p.vx += zone.force * 0.04;
+          p.vx = Math.max(-SPEED_CAP, Math.min(SPEED_CAP, p.vx));
+        }
+      });
+    });
+  }
+
+  if(era.mechanic === 'breakable'){
+    const toBreak=[];
+    for(const [key,timer] of Object.entries(GS._eraBreakable)){
+      GS._eraBreakable[key]--;
+      if(GS._eraBreakable[key]<=0){
+        const [tx,ty] = key.split(',').map(Number);
+        GS.map.tiles[ty*GS.map.W+tx]=0;
+        GS.map.glitchTiles.push({x:tx,y:ty,age:0});
+        toBreak.push(key);
+      }
+    }
+    toBreak.forEach(k=>delete GS._eraBreakable[k]);
+  }
+}
+
+function getEraPhysics(){
+  const pm = GS.currentEra?.physMod || {};
+  return {
+    gravity:    GRAVITY * (pm.gravityMult||1) * (GS._lowGravity?0.4:1) * (GS._gravityFlip?-1:1),
+    gravFall:   GRAVITY_FALL * (pm.gravityMult||1) * (GS._lowGravity?0.4:1) * (GS._gravityFlip?-1:1),
+    speedMult:  (pm.speedMult||1) * (GS._speedDemon?1.5:1),
+    groundFric: FRIC_GROUND * (pm.groundFricMult||1),
+    airFric:    AIR_FRIC * (pm.airFricMult||1),
+    jumpMult:   pm.jumpMult||1,
+    flowGainMult: pm.flowGainMult||1,
+  };
+}
+
+// ── MAP GENERATOR ─────────────────────────────────────────────
+function generateMap(seed, eraIdx, diffKey){
   rng = mulberry32(seed);
   const diff  = DIFFICULTIES[diffKey] || DIFFICULTIES.normal;
-  const biome = BIOMES[biomeIdx % BIOMES.length];
+  const era   = ERAS[eraIdx % ERAS.length];
 
-  const TW = CHUNK_W * GRID_W;
-  const TH = CHUNK_H * GRID_H;
-
+  const TW = 80, TH = 60;
   const tiles = new Uint8Array(TW * TH).fill(1);
-  const clr = (x,y,w,h) => {
-    for(let dy=0;dy<h;dy++) for(let dx=0;dx<w;dx++){
-      const px=x+dx,py=y+dy;
-      if(px>=0&&px<TW&&py>=0&&py<TH) tiles[py*TW+px]=0;
-    }
-  };
-  const sol = (x,y,w,h) => {
-    for(let dy=0;dy<h;dy++) for(let dx=0;dx<w;dx++){
-      const px=x+dx,py=y+dy;
-      if(px>=0&&px<TW&&py>=0&&py<TH) tiles[py*TW+px]=1;
-    }
-  };
+  const st  = (x,y,v) => { if(x>=0&&x<TW&&y>=0&&y<TH) tiles[y*TW+x]=v; };
+  const clr = (x,y,w,h) => { for(let dy=0;dy<h;dy++) for(let dx=0;dx<w;dx++) st(x+dx,y+dy,0); };
+  const sol = (x,y,w,h) => { for(let dy=0;dy<h;dy++) for(let dx=0;dx<w;dx++) st(x+dx,y+dy,1); };
   const gt  = (x,y) => (x<0||x>=TW||y<0||y>=TH) ? 1 : tiles[y*TW+x];
 
-  const IW = CHUNK_W - WALL_T*2;
-  const IH = CHUNK_H - WALL_T*2;
-  const gI  = (gx,gy) => gy*GRID_W+gx;
-
-  // ── DIAGONAL CORNERS ────────────────────────────────────────
+  const CORR_H = diff.corridorW + 6;
+  const CORR_BORDER = 2;
+  const ROW_BAND  = CORR_H + CORR_BORDER;
+  const NUM_ROWS  = Math.floor((TH - CORR_BORDER) / ROW_BAND);
   const startLeft = rng() < 0.5;
-  const SC = { gx: startLeft ? 0 : GRID_W-1, gy: 0 };
-  const FC = { gx: startLeft ? GRID_W-1 : 0, gy: GRID_H-1 };
 
-  // ── BUILD PATH ───────────────────────────────────────────────
-  // Strategy: walk from SC toward FC, always moving closer.
-  // Guarantee: every step adds a connection. FC is always reachable.
-  const visited     = new Uint8Array(GRID_W * GRID_H).fill(0);
-  const connections = [];
-  const path        = [{ gx: SC.gx, gy: SC.gy }];
-  visited[gI(SC.gx, SC.gy)] = 1;
-  let cx = SC.gx, cy = SC.gy;
+  const rowCenters = [];
+  for(let row=0; row<NUM_ROWS; row++){
+    const bandTop = CORR_BORDER + row * ROW_BAND;
+    const bandBot = bandTop + ROW_BAND - CORR_BORDER;
+    const jitter  = Math.floor(rng() * (bandBot - bandTop - CORR_H));
+    rowCenters.push(bandTop + jitter);
+  }
 
-  for(let itr = 0; itr < 1200; itr++) {
-    // Stop when we've reached FC
-    if(cx === FC.gx && cy === FC.gy) break;
+  const pathSegs = [];
+  for(let row=0; row<NUM_ROWS; row++){
+    const goRight = startLeft ? (row%2===0) : (row%2!==0);
+    const y = rowCenters[row];
+    pathSegs.push({x:0, y, w:TW, h:CORR_H, row, goRight});
+    if(row < NUM_ROWS-1){
+      const nextY   = rowCenters[row+1];
+      const thisEnd = goRight ? TW-1 : 0;
+      const connW   = 3 + Math.floor(rng()*3);
+      const connX   = goRight
+        ? Math.max(0, thisEnd - connW - Math.floor(rng()*4))
+        : Math.min(TW - connW, thisEnd + Math.floor(rng()*4));
+      const connY   = y + CORR_H;
+      const connH   = nextY - (y + CORR_H);
+      if(connH > 0) pathSegs.push({x:connX, y:connY, w:connW, h:connH});
+    }
+  }
+  for(const seg of pathSegs) clr(seg.x, seg.y, seg.w, seg.h);
 
-    const choices = [];
-    const tx = FC.gx > cx ? 1 : FC.gx < cx ? -1 : 0;
+  const topRow    = rowCenters[0];
+  const bottomRow = rowCenters[NUM_ROWS-1];
+  let spawnTX, finishTX;
+  if(startLeft){
+    spawnTX  = 2;
+    finishTX = (NUM_ROWS-1)%2===0 ? TW-3 : 2;
+  } else {
+    spawnTX  = TW-3;
+    finishTX = (NUM_ROWS-1)%2===0 ? 2 : TW-3;
+  }
+  const spawnTY  = topRow + CORR_H - 1;
+  const finishTY = bottomRow;
+  sol(spawnTX-1, spawnTY, 4, 1);
+  clr(finishTX-2, finishTY, 7, CORR_H);
+  sol(finishTX-2, finishTY+CORR_H, 7, 1);
 
-    // Bias: strongly prefer moving down, then toward FC.gx
-    if(cy+1 < GRID_H && !visited[gI(cx, cy+1)])
-      choices.push({dx:0,dy:1},{dx:0,dy:1},{dx:0,dy:1});
-    if(tx !== 0 && cx+tx >= 0 && cx+tx < GRID_W && !visited[gI(cx+tx, cy)])
-      choices.push({dx:tx,dy:0},{dx:tx,dy:0});
-    if(tx !== 0 && cx-tx >= 0 && cx-tx < GRID_W && !visited[gI(cx-tx, cy)])
-      choices.push({dx:-tx,dy:0});
+  const spikes = [], bouncePads = [], movingPlats = [];
+  const SAFE_R = 6;
 
-    if(!choices.length) {
-      // Dead end — force move down if possible, otherwise we're done
-      if(cy+1 < GRID_H){
-        const ny = cy+1;
-        // Add connection even if already visited — we NEED a door here
-        if(!connections.find(c=>c.ax===cx&&c.ay===cy&&c.bx===cx&&c.by===ny)){
-          connections.push({ax:cx,ay:cy,bx:cx,by:ny,horiz:false,doorType:'doorway'});
+  const numDebris = Math.floor(NUM_ROWS * (3 + diff.corridorW));
+  for(let i=0;i<numDebris;i++){
+    const row = 1 + Math.floor(rng() * (NUM_ROWS-2));
+    const y   = rowCenters[row];
+    const bw  = 2 + Math.floor(rng() * 3);
+    const bh  = 1 + Math.floor(rng() * Math.floor(CORR_H * 0.5));
+    const bx  = 2 + Math.floor(rng() * (TW - bw - 4));
+    const by  = y + CORR_H - bh;
+    if(bx - 0 >= 3 || TW - (bx + bw) >= 3) sol(bx, by, bw, bh);
+  }
+
+  const numStal = Math.floor(NUM_ROWS * diff.spikeChance * 5);
+  for(let i=0;i<numStal;i++){
+    const row = 1 + Math.floor(rng()*(NUM_ROWS-2));
+    const y   = rowCenters[row];
+    const sw  = 1 + Math.floor(rng()*2);
+    const sh  = 1 + Math.floor(rng()*Math.floor(CORR_H*0.35));
+    const sx  = 2 + Math.floor(rng()*(TW-sw-4));
+    sol(sx, y, sw, sh);
+  }
+
+  if(GS.voidFloor){
+    const numGaps = Math.floor(NUM_ROWS * diff.gapChance * 1.5);
+    for(let i=0;i<numGaps;i++){
+      const row = 2 + Math.floor(rng()*(NUM_ROWS-3));
+      const y   = rowCenters[row] + CORR_H - 1;
+      const gw  = 2 + Math.floor(rng()*3);
+      const gx  = 3 + Math.floor(rng()*(TW-gw-6));
+      clr(gx, y, gw, 3);
+    }
+  }
+
+  const numPlatforms = Math.floor(NUM_ROWS * 0.8);
+  for(let i=0;i<numPlatforms;i++){
+    const row = 1 + Math.floor(rng()*(NUM_ROWS-2));
+    const y   = rowCenters[row] + Math.floor(CORR_H * 0.4);
+    const pw  = 3 + Math.floor(rng()*5);
+    const px  = 2 + Math.floor(rng()*(TW-pw-4));
+    if(gt(px, y) === 0) sol(px, y, pw, 1);
+  }
+
+  for(let ty=1; ty<TH-1; ty++){
+    for(let tx=1; tx<TW-1; tx++){
+      const isAir   = gt(tx,ty)===0;
+      const floorOk = gt(tx,ty+1)===1;
+      const ceilOk  = gt(tx,ty-1)===0;
+      if(isAir && floorOk && ceilOk && rng()<diff.spikeChance*0.65){
+        const dSpawn = Math.abs(tx-spawnTX)+Math.abs(ty-spawnTY);
+        if(dSpawn > SAFE_R){
+          if(tiles[ty*TW+tx]===0 && tiles[(ty+1)*TW+tx]===1 && tiles[(ty-1)*TW+tx]===0){
+            spikes.push({x:tx, y:ty});
+          }
         }
-        if(!visited[gI(cx,ny)]){ visited[gI(cx,ny)]=1; path.push({gx:cx,gy:ny}); }
-        cy = ny;
-      } else break;
-      continue;
-    }
-
-    const mv = choices[Math.floor(rng()*choices.length)];
-    const nx = cx+mv.dx, ny = cy+mv.dy;
-    if(nx<0||nx>=GRID_W||ny<0||ny>=GRID_H) continue;
-    if(visited[gI(nx,ny)]) continue;
-
-    connections.push({ax:cx,ay:cy,bx:nx,by:ny,horiz:mv.dy===0,doorType:'doorway'});
-    visited[gI(nx,ny)]=1;
-    path.push({gx:nx,gy:ny});
-    cx=nx; cy=ny;
-  }
-
-  // Final guarantee: if we ended without reaching FC, force a direct path down
-  while(cy !== FC.gy || cx !== FC.gx) {
-    let nx=cx, ny=cy;
-    if(cy < FC.gy) ny=cy+1;
-    else if(cx < FC.gx) nx=cx+1;
-    else if(cx > FC.gx) nx=cx-1;
-    else break;
-
-    // Always add a connection (door) between current and next
-    const horiz = ny===cy;
-    if(!connections.find(c=>c.ax===cx&&c.ay===cy&&c.bx===nx&&c.by===ny)){
-      connections.push({ax:cx,ay:cy,bx:nx,by:ny,horiz,doorType:'doorway'});
-    }
-    if(!visited[gI(nx,ny)]){ visited[gI(nx,ny)]=1; path.push({gx:nx,gy:ny}); }
-    cx=nx; cy=ny;
-  }
-
-  // ── ASSIGN CHUNK TYPES ───────────────────────────────────────
-  // Last 2 non-finish path chunks → gauntlet_end (tight finale)
-  const chunkType = {};
-  const pathLen = path.length;
-
-  // Mark last 2 chunks before finish as gauntlet_end
-  const endChunks = new Set();
-  if(pathLen >= 4){
-    endChunks.add(`${path[pathLen-2].gx},${path[pathLen-2].gy}`);
-  }
-  if(pathLen >= 5){
-    endChunks.add(`${path[pathLen-3].gx},${path[pathLen-3].gy}`);
-  }
-
-  for(let i=0; i<path.length; i++){
-    const {gx,gy}=path[i];
-    const key=`${gx},${gy}`;
-    if(chunkType[key]) continue;
-    if(gx===SC.gx&&gy===SC.gy){ chunkType[key]='spawn'; continue; }
-    if(gx===FC.gx&&gy===FC.gy){ chunkType[key]='finish'; continue; }
-    if(endChunks.has(key)){ chunkType[key]='gauntlet_end'; continue; }
-
-    const roll = rng();
-    const nextConn = connections.find(c=>c.ax===gx&&c.ay===gy&&!c.horiz);
-    const canPit = nextConn && i < pathLen-3;
-
-    if(canPit && roll < 0.06){       // pits much rarer
-      chunkType[key]='spike_pit_top';
-      const bKey=`${nextConn.bx},${nextConn.by}`;
-      chunkType[bKey]='spike_pit_bot';
-    } else if(roll < 0.35){ chunkType[key]='open'; }       // lots of open space
-    else if(roll < 0.65) { chunkType[key]='speed_run'; }   // speed ramps dominate
-    else if(roll < 0.75) { chunkType[key]='platform'; }    // some platforms
-    else if(roll < 0.83) { chunkType[key]='bounce_room'; }
-    else if(roll < 0.90) { chunkType[key]='corridor'; }
-    else                 { chunkType[key]='normal'; }
-  }
-
-  // ── ASSIGN DOOR TYPES ────────────────────────────────────────
-  for(const conn of connections){
-    const {ax,ay,bx,by,horiz}=conn;
-    const isSpawnExit=(ax===SC.gx&&ay===SC.gy);
-    const isFinishEntry=(bx===FC.gx&&by===FC.gy);
-    if(isSpawnExit||isFinishEntry){ conn.doorType='doorway'; continue; }
-    const r=rng();
-    conn.doorType = horiz ? (r<0.65?'open':r<0.88?'doorway':'wait')
-                          : (r<0.50?'open':r<0.85?'doorway':'wait');
-  }
-
-  const waitDoors=[];
-
-  // ── CARVE CHUNK INTERIORS ────────────────────────────────────
-  for(const {gx,gy} of path){
-    const key=`${gx},${gy}`;
-    const type=chunkType[key]||'normal';
-    if(type==='spike_pit_top'){
-      clr(gx*CHUNK_W+WALL_T, gy*CHUNK_H+WALL_T, IW, IH);
-      clr(gx*CHUNK_W+WALL_T, (gy+1)*CHUNK_H+WALL_T, IW, IH);
-      clr(gx*CHUNK_W+WALL_T, gy*CHUNK_H+CHUNK_H-WALL_T, IW, WALL_T*2);
-    } else {
-      clr(gx*CHUNK_W+WALL_T, gy*CHUNK_H+WALL_T, IW, IH);
-    }
-  }
-
-  // ── CARVE DOORS ──────────────────────────────────────────────
-  for(const conn of connections){
-    const {ax,ay,bx,by,horiz,doorType}=conn;
-    if(horiz){
-      const leftGX=Math.min(ax,bx);
-      const wallX=leftGX*CHUNK_W+CHUNK_W-WALL_T;
-      const floorY=ay*CHUNK_H+CHUNK_H-WALL_T-1;
-      const doorTopY=floorY-DOOR_H+1;
-      if(doorType==='open'){
-        clr(wallX,ay*CHUNK_H+WALL_T,PUNCH_H,IH);
-      } else if(doorType==='wait'){
-        waitDoors.push({tx:wallX,ty:doorTopY,tw:PUNCH_H,th:DOOR_H,timer:-1,active:true,horiz:true});
-      } else {
-        clr(wallX,doorTopY,PUNCH_H,DOOR_H);
-        sol(wallX,floorY+1,PUNCH_H,1);
-      }
-    } else {
-      const topGY=Math.min(ay,by);
-      const wallY=topGY*CHUNK_H+CHUNK_H-WALL_T;
-      const intL=ax*CHUNK_W+WALL_T;
-      const maxOff=IW-DOOR_W;
-      const offX=maxOff>0?Math.floor(rng()*maxOff):0;
-      const doorX=intL+offX;
-      if(doorType==='open'){
-        clr(ax*CHUNK_W+WALL_T,wallY,IW,PUNCH_W);
-      } else if(doorType==='wait'){
-        waitDoors.push({tx:doorX,ty:wallY,tw:DOOR_W,th:PUNCH_W,timer:-1,active:true,horiz:false});
-      } else {
-        clr(doorX,wallY,DOOR_W,PUNCH_W);
       }
     }
   }
 
-  // ── SPAWN & FINISH ───────────────────────────────────────────
-  const spawnTX = SC.gx*CHUNK_W + WALL_T + 2;
-  const spawnTY = SC.gy*CHUNK_H + CHUNK_H - WALL_T - 1;
-  sol(spawnTX-1, spawnTY+1, 7, 1);
+  const numBounce = 3 + Math.floor(rng()*5);
+  for(let i=0;i<numBounce;i++){
+    const bx=2+Math.floor(rng()*(TW-4)), by=2+Math.floor(rng()*(TH-4));
+    if(gt(bx,by)===0 && gt(bx,by+1)===1) bouncePads.push({x:bx,y:by});
+  }
 
-  // Finish chunk: completely clear interior, open ALL walls for entry, flag on floor center
-  const finChunkX = FC.gx * CHUNK_W;
-  const finChunkY = FC.gy * CHUNK_H;
-  // Clear full interior
-  clr(finChunkX, finChunkY, CHUNK_W, CHUNK_H);
-  // Restore outer boundary walls except the one that connects to the path
-  // Top wall
-  sol(finChunkX, finChunkY, CHUNK_W, WALL_T);
-  // Bottom wall
-  sol(finChunkX, finChunkY + CHUNK_H - WALL_T, CHUNK_W, WALL_T);
-  // Left wall
-  sol(finChunkX, finChunkY, WALL_T, CHUNK_H);
-  // Right wall
-  sol(finChunkX + CHUNK_W - WALL_T, finChunkY, WALL_T, CHUNK_H);
-  // Now punch wide openings in all 4 walls so player can enter from any direction
-  const midX = finChunkX + Math.floor(CHUNK_W/2) - Math.floor(IW/3);
-  const openW = Math.floor(IW * 2/3);
-  const midY = finChunkY + Math.floor(CHUNK_H/2) - Math.floor(IH/3);
-  const openH = Math.floor(IH * 2/3);
-  clr(midX, finChunkY, openW, WALL_T + 1);                        // top gap
-  clr(midX, finChunkY + CHUNK_H - WALL_T - 1, openW, WALL_T + 1); // bottom gap
-  clr(finChunkX, midY, WALL_T + 1, openH);                        // left gap
-  clr(finChunkX + CHUNK_W - WALL_T - 1, midY, WALL_T + 1, openH); // right gap
-  // Solid floor at bottom of interior
-  const finFloorTY = finChunkY + CHUNK_H - WALL_T - 1;
-  sol(finChunkX + WALL_T, finFloorTY, IW, 1);
-  // Flag sits on that floor, horizontally centered in the chunk
-  const finishTX = finChunkX + Math.floor(CHUNK_W / 2);
-  const finishTY = finFloorTY;
-
-  // ── SPEED RAMPS ──────────────────────────────────────────────
-  // Slope data: {x, y, dir: 'left'|'right'} — pixels coords, drawn diagonally
-  const speedRamps = [];
-
-  // ── CHUNK DECORATION ─────────────────────────────────────────
-  const spikes=[], bouncePads=[], movingPlats=[];
-
-  // Helper: check tile is open air above solid floor (valid spike location)
-  const validSpikeUp = (sx,sy) =>
-    sx>0 && sx<TW && sy>0 && sy<TH &&
-    tiles[sy*TW+sx]===0 &&       // tile itself is air
-    sy+1<TH && tiles[(sy+1)*TW+sx]===1; // solid below
-
-  const validSpikeWall = (sx,sy,dir) => {
-    if(sx<0||sx>=TW||sy<0||sy>=TH) return false;
-    if(tiles[sy*TW+sx]!==0) return false;  // must be air
-    // Also check the two tiles tall of the player must be hittable
-    if(sy-1<0||tiles[(sy-1)*TW+sx]!==0) return false;
-    return true;
-  };
-
-  for(const {gx,gy} of path){
-    const key=`${gx},${gy}`;
-    const type=chunkType[key]||'normal';
-    if(type==='spawn'||type==='finish') continue;
-
-    const bx=gx*CHUNK_W+WALL_T;
-    const by=gy*CHUNK_H+WALL_T;
-    const floorY=gy*CHUNK_H+CHUNK_H-WALL_T-1; // interior floor tile y
-
-    switch(type){
-
-      case 'open': {
-        // Wide open — few obstacles, 1-2 ramps pointing same direction
-        if(rng()<0.3){
-          const pw=4+Math.floor(rng()*5);
-          const px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
-          const py=by+Math.floor(IH*0.35+rng()*IH*0.25);
-          if(gt(px,py)===0) sol(px,py,pw,1);
-        }
-        // 1-3 speed ramps, all pointing the same direction (creates a runway)
-        const openDir = rng()<0.5 ? 'right' : 'left';
-        const nRamps = 1+Math.floor(rng()*3);
-        for(let i=0;i<nRamps;i++){
-          const rx=bx+2+Math.floor(rng()*Math.max(1,IW-6));
-          speedRamps.push({tx:rx, ty:floorY, dir:openDir});
-        }
-        break;
-      }
-
-      case 'speed_run': {
-        // Pure speed room: flat floor, ramps everywhere, minimal blockage
-        const facing = rng()<0.5 ? 'right' : 'left';
-        const numRamps = 3+Math.floor(rng()*4);  // 3-6 ramps
-        for(let i=0;i<numRamps;i++){
-          const rx=bx+1+Math.floor(rng()*Math.max(1,IW-4));
-          speedRamps.push({tx:rx, ty:floorY, dir:facing});
-        }
-        // Maybe a single low step to jump over (adds rhythm)
-        if(rng()<0.25){
-          const pw=2+Math.floor(rng()*2);
-          const px=bx+Math.floor(IW*0.4+rng()*IW*0.2);
-          sol(px,floorY-2,pw,2);
-        }
-        break;
-      }
-
-      case 'platform': {
-        const numP=2+Math.floor(rng()*2);
-        for(let i=0;i<numP;i++){
-          const pw=4+Math.floor(rng()*6);
-          const px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
-          const py=by+2+Math.floor(rng()*(IH-5));
-          if(gt(px,py)===0) sol(px,py,pw,1);
-        }
-        // Maybe one ramp
-        if(rng()<0.4) speedRamps.push({tx:bx+2+Math.floor(rng()*Math.max(1,IW-6)), ty:floorY, dir:rng()<0.5?'right':'left'});
-        break;
-      }
-
-      case 'spike_pit_top': {
-        const numP=2+Math.floor(rng()*2);
-        for(let i=0;i<numP;i++){
-          const pw=4+Math.floor(rng()*4);
-          const px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
-          const py=gy*CHUNK_H+WALL_T+2+Math.floor(rng()*(IH+IH-4));
-          if(gt(px,py)===0) sol(px,py,pw,1);
-        }
-        break;
-      }
-
-      case 'spike_pit_bot': {
-        const pitFloorY=by+IH-1;
-        for(let sx=bx+1;sx<bx+IW-1;sx+=1+Math.floor(rng()*2)){
-          if(validSpikeUp(sx,pitFloorY)) spikes.push({x:sx,y:pitFloorY,dir:'up'});
-        }
-        const pw=5, px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
-        sol(px,by+Math.floor(IH*0.5),pw,1);
-        break;
-      }
-
-      case 'corridor': {
-        // Clean straight run
-        if(rng()<0.4){
-          const pw=2+Math.floor(rng()*3);
-          const px=bx+Math.floor(IW*0.3+rng()*IW*0.4);
-          sol(px,floorY-3,pw,3);
-        }
-        if(rng()<0.5) speedRamps.push({tx:bx+2+Math.floor(rng()*Math.max(1,IW-4)), ty:floorY, dir:rng()<0.5?'right':'left'});
-        break;
-      }
-
-      case 'bounce_room': {
-        const numB=2+Math.floor(rng()*2);
-        for(let i=0;i<numB;i++){
-          const bpx=bx+2+Math.floor(rng()*Math.max(1,IW-3));
-          if(validSpikeUp(bpx,floorY)) bouncePads.push({x:bpx,y:floorY});
-        }
-        const numP=1+Math.floor(rng()*2);
-        for(let i=0;i<numP;i++){
-          const pw=4+Math.floor(rng()*4);
-          const px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
-          const py=by+2+Math.floor(rng()*(IH-5));
-          if(gt(px,py)===0) sol(px,py,pw,1);
-        }
-        break;
-      }
-
-      case 'gauntlet_end': {
-        // Tight finale — walls closer in, some spikes, narrow platforms
-        // Build inner walls to narrow the corridor
-        const narrowW = 3+Math.floor(rng()*3);
-        const narrowX = bx + Math.floor((IW-narrowW)/2);
-        // Add ceiling platforms to narrow path
-        const numCeilP = 1+Math.floor(rng()*2);
-        for(let i=0;i<numCeilP;i++){
-          const pw=4+Math.floor(rng()*4);
-          const px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
-          const py=by+Math.floor(rng()*IH*0.4)+1;
-          if(gt(px,py)===0) sol(px,py,pw,2);
-        }
-        // Wall spikes (validated)
-        if(diff.spikeChance>0){
-          const cnt=2+Math.floor(rng()*4);
-          for(let i=0;i<cnt;i++){
-            const sy=by+2+Math.floor(rng()*(IH-4));
-            const side=rng()<0.5;
-            const sx = side ? gx*CHUNK_W+WALL_T : (gx+1)*CHUNK_W-WALL_T-1;
-            const dir = side ? 'right' : 'left';
-            if(validSpikeWall(sx,sy,dir)) spikes.push({x:sx,y:sy,dir});
-          }
-        }
-        // Floor spike gauntlet (validated)
-        if(diff.spikeChance>0){
-          for(let sx=bx+2;sx<bx+IW-2;sx+=2+Math.floor(rng()*3)){
-            if(validSpikeUp(sx,floorY) && rng()<diff.spikeChance*1.5)
-              spikes.push({x:sx,y:floorY,dir:'up'});
-          }
-        }
-        break;
-      }
-
-      default: { // 'normal'
-        const subroll=rng();
-        if(subroll<0.20){
-          /* open — nothing */
-        } else if(subroll<0.48){
-          // Platforms
-          const numP=1+Math.floor(rng()*2);
-          for(let i=0;i<numP;i++){
-            const pw=4+Math.floor(rng()*5);
-            const px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
-            const py=by+2+Math.floor(rng()*(IH-5));
-            if(gt(px,py)===0) sol(px,py,pw,1);
-          }
-        } else if(subroll<0.65){
-          // Floor spikes (validated)
-          const cnt=1+Math.floor(rng()*3);
-          for(let i=0;i<cnt;i++){
-            const sx=bx+1+Math.floor(rng()*(IW-2));
-            if(validSpikeUp(sx,floorY)) spikes.push({x:sx,y:floorY,dir:'up'});
-          }
-        } else if(subroll<0.80&&diff.spikeChance>0){
-          // Wall spikes (validated)
-          const side=rng()<0.5;
-          const cnt=1+Math.floor(rng()*3);
-          for(let i=0;i<cnt;i++){
-            const sy=by+2+Math.floor(rng()*(IH-4));
-            const sx = side ? gx*CHUNK_W+WALL_T : (gx+1)*CHUNK_W-WALL_T-1;
-            const dir = side ? 'right' : 'left';
-            if(validSpikeWall(sx,sy,dir)) spikes.push({x:sx,y:sy,dir});
-          }
-        } else {
-          // Mixed
-          const pw=3+Math.floor(rng()*4);
-          const px=bx+1+Math.floor(rng()*Math.max(1,IW-pw-2));
-          const py=by+2+Math.floor(rng()*(IH-5));
-          if(gt(px,py)===0) sol(px,py,pw,1);
-          if(rng()<0.4) speedRamps.push({tx:bx+2+Math.floor(rng()*Math.max(1,IW-4)), ty:floorY, dir:rng()<0.5?'right':'left'});
-        }
-        // Moving platform chance
-        if(rng()<0.18){
-          const mx=bx+1+Math.floor(rng()*Math.max(1,IW-5));
-          const my=by+2+Math.floor(rng()*(IH-5));
-          if(gt(mx,my)===0){
-            movingPlats.push({x:mx,y:my,origX:mx,origY:my,w:3+Math.floor(rng()*3),
-              range:6+Math.floor(rng()*10),speed:0.4+rng()*0.8,vert:rng()<0.3,t:rng()*Math.PI*2});
-          }
-        }
-        break;
-      }
+  for(let i=0;i<diff.movingPlats;i++){
+    const row = 1+Math.floor(rng()*(NUM_ROWS-2));
+    const y   = rowCenters[row] + 2;
+    const mx  = 3+Math.floor(rng()*(TW-8));
+    if(gt(mx,y)===0){
+      movingPlats.push({
+        x:mx, y, origX:mx, origY:y,
+        w:3+Math.floor(rng()*3),
+        range: 8+Math.floor(rng()*10),
+        speed: 0.5+rng()*0.8,
+        vert: rng()<0.3,
+        t: rng()*Math.PI*2
+      });
     }
   }
 
-  // Extra bounce pads
-  for(let i=0;i<1+Math.floor(rng()*2);i++){
-    if(path.length<3) break;
-    const pi=1+Math.floor(rng()*(path.length-2));
-    const {gx,gy}=path[pi];
-    const bpx=gx*CHUNK_W+WALL_T+1+Math.floor(rng()*Math.max(1,IW-2));
-    const bpy=gy*CHUNK_H+CHUNK_H-WALL_T-1;
-    if(bpy>0&&bpy<TH&&tiles[bpy*TW+bpx]===0&&bpy+1<TH&&tiles[(bpy+1)*TW+bpx]===1)
-      bouncePads.push({x:bpx,y:bpy});
-  }
-
-  // Extra movers
-  const numMovers=Math.max(0,diff.movingPlats-movingPlats.length);
-  for(let i=0;i<numMovers;i++){
-    if(path.length<3) break;
-    const pi=1+Math.floor(rng()*(path.length-2));
-    const {gx,gy}=path[pi];
-    const mx=gx*CHUNK_W+WALL_T+1+Math.floor(rng()*Math.max(1,IW-5));
-    const my=gy*CHUNK_H+WALL_T+2+Math.floor(rng()*Math.max(1,IH-5));
-    if(my>0&&my<TH&&tiles[my*TW+mx]===0){
-      movingPlats.push({x:mx,y:my,origX:mx,origY:my,w:3+Math.floor(rng()*4),
-        range:6+Math.floor(rng()*10),speed:0.4+rng()*0.9,vert:rng()<0.35,t:rng()*Math.PI*2});
+  const checkpoints = [];
+  for(let cp=1; cp<=3; cp++){
+    const row  = Math.floor(NUM_ROWS * cp / 4);
+    const cpY  = rowCenters[Math.min(row, NUM_ROWS-2)];
+    let cpTY = cpY + CORR_H - 1;
+    const cpTX = Math.floor(TW/2);
+    for(let y=cpY; y<cpY+CORR_H; y++){
+      if(gt(cpTX,y)===0 && gt(cpTX,y+1)===1){ cpTY=y; break; }
     }
+    checkpoints.push({x:cpTX, y:cpTY, hit:[]});
   }
-
-  // Checkpoints
-  const checkpoints=[];
-  for(let cp=1;cp<=3;cp++){
-    const pi=Math.max(0,Math.min(Math.floor(path.length*cp/4),path.length-2));
-    const {gx,gy}=path[pi];
-    checkpoints.push({x:gx*CHUNK_W+WALL_T+Math.floor(IW/2), y:gy*CHUNK_H+CHUNK_H-WALL_T-1, hit:[]});
-  }
-
-  // ── BUILD AI WAYPOINTS from path ─────────────────────────────
-  // C: Smart AI uses these waypoints to navigate
-  const aiWaypoints = path.map(({gx,gy})=>({
-    px: (gx*CHUNK_W + WALL_T + Math.floor(IW/2)) * TILE,  // center of chunk in pixels
-    py: (gy*CHUNK_H + CHUNK_H - WALL_T - 2) * TILE,
-    // Store the chunk floor y for bots to target
-    floorTY: gy*CHUNK_H + CHUNK_H - WALL_T - 1,
-    chunkType: chunkType[`${gx},${gy}`] || 'normal',
-  }));
-  // Add finish as last waypoint — point bots to the floor of the finish chunk
-  aiWaypoints.push({ px: finishTX*TILE, py: finFloorTY*TILE, floorTY: finFloorTY, chunkType:'finish' });
 
   return {
-    tiles, W:TW, H:TH, biome, diff,
-    finish:      {x:finishTX, y:finishTY},   // FIX A: always from this map
-    spawn:       {x:spawnTX,  y:spawnTY-1},
+    tiles, W:TW, H:TH, era,
+    diff,
+    finish:  {x:finishTX, y:finishTY},
+    spawn:   {x:spawnTX,  y:spawnTY - 1},
     checkpoints, spikes, bouncePads, movingPlats,
-    speedRamps,
     glitchTiles:[], _teleporters:[],
-    waitDoors,
-    aiWaypoints,  // C: bot pathfinding
-    chunkTypes: chunkType,
-    _path:path, _SC:SC, _FC:FC,
   };
 }
 
 // ── TILE LOOKUP ────────────────────────────────────────────────
-function tileAt(map,tx,ty){
+function tileAt(map, tx, ty){
   if(!map) return 0;
   if(tx<0||tx>=map.W) return 1;
   if(ty<0) return 1;
   if(ty>=map.H) return GS.voidFloor ? 0 : 1;
-  for(const mp of map.movingPlats){
-    const mx=Math.floor(mp.x), my=Math.floor(mp.y);
-    if(ty===my && tx>=mx && tx<mx+mp.w) return 1;
-  }
-  return map.tiles[ty*map.W+tx];
-}
-
-// Bot tile check: treat active wait-door tiles as passable (bots walk through them)
-function botTileAt(map,tx,ty){
-  if(!map) return 0;
-  if(tx<0||tx>=map.W) return 1;
-  if(ty<0) return 1;
-  if(ty>=map.H) return GS.voidFloor ? 0 : 1;
-  // Wait doors: if this tile is inside an active wait door, treat as air
-  if(map.waitDoors){
-    for(const wd of map.waitDoors){
-      if(wd.active && tx>=wd.tx && tx<wd.tx+wd.tw && ty>=wd.ty && ty<wd.ty+wd.th)
-        return 0;
-    }
-  }
   for(const mp of map.movingPlats){
     const mx=Math.floor(mp.x), my=Math.floor(mp.y);
     if(ty===my && tx>=mx && tx<mx+mp.w) return 1;
@@ -909,7 +1097,7 @@ function createPlayer(idx, isBot, ctrl){
   return {
     idx, isBot, ctrl,
     x:0, y:0, vx:0, vy:0,
-    w:PLAYER_W, h:NORMAL_H,
+    w:9, h:NORMAL_H,
     onGround:false, wasOnGround:false,
     coyoteTimer:0, jumpBuffer:0,
     jumpHeld:false, jumpHoldFrames:0,
@@ -917,396 +1105,429 @@ function createPlayer(idx, isBot, ctrl){
     doubleJump:true,
     vaultCooldown:0,
     fastFalling:false,
-    bhopTimer:0, _bhopStack:0,
+    bhopTimer:0, _airTime:0,
     sliding:false, slideTimer:0,
-    onSlope:false, slopeDir:0,  // v6: slope state
     flow:0, flowInvincible:false,
     alive:true, eliminated:false, finished:false, finishTime:0,
     respawnTimer:0,
     lastCheckpoint:-1, checkpointPos:null,
     facing:1, deathCount:0,
-    powerup:null, reverseTimer:0,
+    powerup:null, reverseTimer:0, _ghostTimer:0, _trapShield:false, _tripleJump:false,
     trail:[], dustParts:[],
     glowFrames:0, hitFlash:0,
     landSquish:0, runFrame:0,
     _prevDown:false,
-    // Bot state
-    _botJump:false, _botJumpCD:0,
-    _botWaypointIdx:1,
-    _botStuckTimer:0,
-    _stuckSamples:[],
-    _botPersonality: isBot ? ['rusher','avoider','balanced'][idx % 3] : 'none',
+    _botJump:false, _botJumpCD:0, _botPathTimer:0,
     color: PLAYER_COLORS[idx],
     name:  PLAYER_NAMES[idx],
     _airBraking: false,
+    _eraDashAvail:true,
+    _eraRailBoost:false,
+    _ghostPos:[],
   };
 }
 
 // ── CAMERA ─────────────────────────────────────────────────────
-const cam = {x:0, y:0, zoom:1, shakeX:0, shakeY:0, shakeF:0};
-
+const cam = {
+  x:0, y:0, zoom:1,
+  targetZoom:1, smoothZoom:1,
+  shakeX:0, shakeY:0, shakeF:0,
+  fadeAlpha:1.0,
+};
 function updateCamera(){
   if(!GS.map) return;
-  const mapW=GS.map.W*TILE, mapH=GS.map.H*TILE;
-  // Always zoom-to-fit the entire map — no dynamic zoom
-  cam.zoom = Math.min(canvas.width/mapW, canvas.height/mapH);
-  cam.x = 0; cam.y = 0;  // centering handled by offX/offY in render
-  if(cam.shakeF>0){
-    cam.shakeX=(Math.random()-.5)*4*(cam.shakeF/10);
-    cam.shakeY=(Math.random()-.5)*4*(cam.shakeF/10);
+  const mapW = GS.map.W*TILE, mapH = GS.map.H*TILE;
+  const baseZoom = Math.min(canvas.width/mapW, canvas.height/mapH) * (SETT.cameraZoom/100);
+  let maxSpd = 0;
+  GS.players.forEach(p=>{ if(p.alive) maxSpd = Math.max(maxSpd, Math.abs(p.vx)); });
+  const speedT = Math.min(maxSpd / SPEED_CAP, 1.0);
+  cam.targetZoom = baseZoom * (1.0 - speedT * 0.08);
+  cam.smoothZoom += (cam.targetZoom - cam.smoothZoom) * 0.06;
+  cam.zoom = cam.smoothZoom;
+  cam.x = -Math.floor((canvas.width  - mapW*cam.zoom)/2) / cam.zoom;
+  cam.y = -Math.floor((canvas.height - mapH*cam.zoom)/2) / cam.zoom;
+  if(SETT.shake && cam.shakeF>0){
+    const mag = (cam.shakeF/10) * 2.5;
+    cam.shakeX = (Math.random()-.5)*mag;
+    cam.shakeY = (Math.random()-.5)*mag;
     cam.shakeF--;
   } else { cam.shakeX=0; cam.shakeY=0; }
+  if(cam.fadeAlpha > 0) cam.fadeAlpha = Math.max(0, cam.fadeAlpha - 0.035);
 }
-function shake(f){ cam.shakeF=Math.max(cam.shakeF,f); }
+function shake(f){ if(SETT.shake) cam.shakeF = Math.max(cam.shakeF, f); }
+function fadeIn(){ cam.fadeAlpha = 1.0; }
 
 // ── PLAYER PHYSICS ─────────────────────────────────────────────
 function updatePlayer(p){
-  if(!p.alive||!GS.map) return;
+  if(!p.alive || !GS.map) return;
   if(p.respawnTimer>0){ p.respawnTimer--; return; }
 
-  const ctrl=p.ctrl;
-  const rev=p.reverseTimer>0;
+  const ctrl = p.ctrl;
+  const rev  = p.reverseTimer > 0;
   if(p.reverseTimer>0) p.reverseTimer--;
+  if(p._ghostTimer>0){
+    p._ghostTimer--;
+    if(p._ghostTimer===0){ p.flowInvincible=false; p.glowFrames=0; }
+  }
 
-  let goL,goR,goU,goD,jumpPress,slidePress,powerPress;
+  const eraPhys = getEraPhysics();
+  const JUMP_BUF = SETT.jumpBuffer || 9;
+
+  let goL, goR, goU, goD, jumpPress, slidePress, powerPress;
   if(p.isBot){
-    const bi=botInput(p);
+    const bi = botInput(p);
     goL=bi.left; goR=bi.right; goU=bi.up; goD=bi.down;
     jumpPress=p._botJump; slidePress=false; powerPress=false;
     p._botJump=false;
   } else {
-    goL  =ctrl?(rev?keys[ctrl.right]:keys[ctrl.left]):false;
-    goR  =ctrl?(rev?keys[ctrl.left]:keys[ctrl.right]):false;
-    goU  =ctrl?keys[ctrl.up]:false;
-    goD  =ctrl?keys[ctrl.down]:false;
-    jumpPress =ctrl?just[ctrl.up]:false;
-    powerPress=ctrl&&ctrl.powerup?just[ctrl.powerup]:false;
-    const downJust=ctrl?(just[ctrl.down]||(!p._prevDown&&keys[ctrl.down])):false;
-    slidePress=downJust&&goD&&p.onGround&&!p.sliding;
-    p._prevDown=goD;
+    goL  = ctrl ? (rev ? keys[ctrl.right] : keys[ctrl.left])  : false;
+    goR  = ctrl ? (rev ? keys[ctrl.left]  : keys[ctrl.right]) : false;
+    goU  = ctrl ? keys[ctrl.up]   : false;
+    goD  = ctrl ? keys[ctrl.down] : false;
+    jumpPress   = ctrl ? just[ctrl.up]  : false;
+    powerPress  = ctrl && ctrl.powerup ? just[ctrl.powerup] : false;
+    const downJust = ctrl ? (just[ctrl.down] || (!p._prevDown && keys[ctrl.down])) : false;
+    slidePress = downJust && goD && p.onGround && !p.sliding;
+    p._prevDown = goD;
   }
 
-  if(powerPress&&p.powerup) usePowerup(p);
+  if(powerPress && p.powerup) usePowerup(p);
 
-  const fl=p.flow/FLOW_MAX;
-  const spBonus=fl*FLOW_SPD_BONUS*(GS._speedDemon?1.5:1);
-  const grav=GS._gravityFlip
-    ? -(GS._lowGravity?GRAVITY*0.4:GRAVITY)
-    : (GS._lowGravity?GRAVITY*0.4:GRAVITY);
-  const gravFall=GS._gravityFlip
-    ? -(GS._lowGravity?GRAVITY_FALL*0.4:GRAVITY_FALL)
-    : (GS._lowGravity?GRAVITY_FALL*0.4:GRAVITY_FALL);
+  const fl      = p.flow / FLOW_MAX;
+  const spBonus = fl * FLOW_SPD_BONUS * eraPhys.speedMult;
+  const grav    = eraPhys.gravity;
+  const gravFall= eraPhys.gravFall;
 
-  // ── SLIDE ────────────────────────────────────────────────────
-  if(slidePress&&Math.abs(p.vx)>=SLIDE_MIN_SPD){
+  if(slidePress && Math.abs(p.vx) >= SLIDE_MIN_SPD){
     p.sliding=true; p.slideTimer=SLIDE_FRAMES;
-    p.vx=p.facing*SLIDE_VX*(GS.map.diff.slideBoost||1);
-    p.y+=NORMAL_H-SLIDE_H; p.h=SLIDE_H;
-    gainFlow(p,12); dust(p,6);
+    p.vx = p.facing * SLIDE_VX * (GS.map.diff.slideBoost||1);
+    p.y += NORMAL_H - SLIDE_H; p.h = SLIDE_H;
+    gainFlow(p, 12 * eraPhys.flowGainMult); dust(p, 6);
   }
-
   if(p.sliding){
-    p.vx*=SLIDE_FRIC; p.slideTimer--;
-    const ceilOk=!tileAt(GS.map,Math.floor(p.x/TILE),Math.floor((p.y-(NORMAL_H-SLIDE_H)-1)/TILE))&&
-                 !tileAt(GS.map,Math.floor((p.x+p.w-1)/TILE),Math.floor((p.y-(NORMAL_H-SLIDE_H)-1)/TILE));
-    if((p.slideTimer<=0||!p.onGround||Math.abs(p.vx)<0.9)&&ceilOk){
-      p.y-=NORMAL_H-SLIDE_H; p.h=NORMAL_H; p.sliding=false;
-    } else if(!ceilOk&&p.slideTimer<=0){ p.slideTimer=3; }
+    p.vx *= SLIDE_FRIC;
+    p.slideTimer--;
+    const ceilOk = !tileAt(GS.map,Math.floor(p.x/TILE),Math.floor((p.y-(NORMAL_H-SLIDE_H)-1)/TILE)) &&
+                   !tileAt(GS.map,Math.floor((p.x+p.w-1)/TILE),Math.floor((p.y-(NORMAL_H-SLIDE_H)-1)/TILE));
+    if((p.slideTimer<=0 || !p.onGround || Math.abs(p.vx)<0.9) && ceilOk){
+      p.y -= NORMAL_H - SLIDE_H; p.h=NORMAL_H; p.sliding=false;
+    } else if(!ceilOk && p.slideTimer<=0){ p.slideTimer=3; }
   } else {
-    // ── HORIZONTAL MOVEMENT ──────────────────────────────────
-    const topSpd=Math.min(WALK_SPEED+spBonus,SPEED_CAP);
-    const inputDir=goR?1:goL?-1:0;
+    const topSpd = Math.min((WALK_SPEED + spBonus) * eraPhys.speedMult, SPEED_CAP);
+    const inputDir = goR ? 1 : goL ? -1 : 0;
+
     if(p.onGround){
-      const target=inputDir*topSpd;
-      if(inputDir!==0) p.vx+=(target-p.vx)*ACCEL_GROUND;
-      else p.vx*=FRIC_GROUND;
-    } else {
-      // Air: moving same direction = gentle nudge toward air-cap, no drag
-      // Air: opposite direction = lose only 50% of current momentum, then nudge
-      const sameDir=(inputDir>0&&p.vx>0)||(inputDir<0&&p.vx<0);
-      const oppDir=(inputDir>0&&p.vx<0)||(inputDir<0&&p.vx>0);
-      if(oppDir){
-        // Air brake: bleed 50% of speed toward zero, keep the rest
-        p.vx *= 0.50;
-        p._airBraking = true;
-        // Small nudge in new direction
-        p.vx += inputDir * JUMP_AIR_ACCEL * 2;
-        if((inputDir>0&&p.vx>0)||(inputDir<0&&p.vx<0)) p._airBraking=false;
-      } else if(sameDir){
-        // Same dir: gently push toward air cap, no friction
-        const airCap = Math.min(Math.max(Math.abs(p.vx), topSpd * 1.5), SPEED_CAP);
-        const target = inputDir * airCap;
-        p.vx += (target - p.vx) * JUMP_AIR_ACCEL;
-        p._airBraking = false;
-      } else if(inputDir !== 0){
-        p.vx += inputDir * JUMP_AIR_ACCEL * 1.5;
-        p._airBraking = false;
+      const movingRight = p.vx > 0.5, movingLeft = p.vx < -0.5;
+      const turningRight = goR && movingLeft, turningLeft = goL && movingRight;
+      if(inputDir !== 0){
+        if(turningRight || turningLeft){
+          const brakeForce = Math.abs(p.vx) * 0.18;
+          p.vx -= Math.sign(p.vx) * brakeForce;
+          p.vx += inputDir * 0.8;
+          if(Math.abs(p.vx) < 1.5) p.vx += inputDir * ACCEL_GROUND * topSpd * 0.5;
+        } else {
+          p.vx += (inputDir * topSpd - p.vx) * ACCEL_GROUND;
+        }
+      } else {
+        const eff_fric = FRIC_GROUND / (eraPhys.groundFric / FRIC_GROUND);
+        p.vx *= eff_fric;
       }
-      // AIR_FRIC = 1.0 so no decay applied
+    } else {
+      const sameDir = (inputDir>0&&p.vx>0)||(inputDir<0&&p.vx<0);
+      const oppDir  = (inputDir>0&&p.vx<0)||(inputDir<0&&p.vx>0);
+      p._airBraking = oppDir;
+      if(oppDir){
+        const brakeAmount = Math.abs(p.vx) * AIR_BRAKE_FACTOR;
+        p.vx += inputDir * (brakeAmount + JUMP_AIR_ACCEL * 0.5);
+        if((inputDir>0&&p.vx>0)||(inputDir<0&&p.vx<0)) p._airBraking=false;
+      } else {
+        const airRamp = Math.min(p._airTime / 18, 1.0);
+        const accel   = JUMP_AIR_ACCEL * (0.15 + 0.85 * airRamp);
+        if(inputDir !== 0) p.vx += (inputDir * topSpd - p.vx) * accel;
+        p.vx *= eraPhys.airFric;
+      }
     }
+
+    if(GS.currentEra?.mechanic === 'air_dash' && !p.onGround && p._eraDashAvail){
+      const dashPress = ctrl ? just[ctrl.powerup] : false;
+      if(dashPress && !p.powerup){
+        p.vx = p.facing * Math.max(Math.abs(p.vx) + 8, 14);
+        p.vy = Math.min(p.vy, -1);
+        p._eraDashAvail = false;
+        gainFlow(p, 15 * eraPhys.flowGainMult);
+        dust(p, 6); shake(3);
+      }
+    }
+
     p.vx = Math.max(-SPEED_CAP, Math.min(SPEED_CAP, p.vx));
     if(goR) p.facing=1;
     if(goL) p.facing=-1;
   }
 
-  // ── SPEED RAMP / SLOPE ───────────────────────────────────────
-  p.onSlope=false; p.slopeDir=0;
-  if(p.onGround&&!p.sliding&&GS.map.speedRamps){
-    const pcTileX=Math.floor((p.x+p.w/2)/TILE);
-    const pcTileY=Math.floor((p.y+p.h)/TILE);
-    for(const ramp of GS.map.speedRamps){
-      if(Math.abs(ramp.tx-pcTileX)<=1&&Math.abs(ramp.ty-pcTileY)<=1){
-        p.onSlope=true; p.slopeDir=ramp.dir==='right'?1:-1;
-        const slopeBoost=SLOPE_ACCEL*(1+(p.flow/FLOW_MAX)*0.8);
-        p.vx+=p.slopeDir*slopeBoost;
-        p.vx=Math.max(-SPEED_CAP,Math.min(SPEED_CAP,p.vx));
-        gainFlow(p,FLOW_SLOPE_GAIN);
-        break;
-      }
-    }
-  }
-
-  // ── JUMP BUFFER & COYOTE ─────────────────────────────────────
-  if(jumpPress) p.jumpBuffer=JUMP_BUF_FRAMES;
+  if(jumpPress) p.jumpBuffer = JUMP_BUF;
   else if(p.jumpBuffer>0) p.jumpBuffer--;
-  if(p.onGround) p.coyoteTimer=COYOTE_FRAMES;
-  else if(p.coyoteTimer>0) p.coyoteTimer--;
+  if(p.onGround){ p.coyoteTimer = COYOTE_FRAMES; p._airTime=0; p._eraDashAvail=true; }
+  else { if(p.coyoteTimer>0) p.coyoteTimer--; p._airTime++; }
   if(p.bhopTimer>0) p.bhopTimer--;
 
-  // ── WALL CHECK ───────────────────────────────────────────────
   const wyT=Math.floor((p.y+2)/TILE), wyB=Math.floor((p.y+p.h-2)/TILE);
   const hitL=tileAt(GS.map,Math.floor((p.x-1)/TILE),wyT)||tileAt(GS.map,Math.floor((p.x-1)/TILE),wyB);
   const hitR=tileAt(GS.map,Math.floor((p.x+p.w)/TILE),wyT)||tileAt(GS.map,Math.floor((p.x+p.w)/TILE),wyB);
   p.onWall=0;
-  if(!p.sliding&&!p.onGround&&p.wallLockTimer<=0){
-    if(hitL&&goL) p.onWall=-1;
-    if(hitR&&goR) p.onWall=1;
+  if(!p.sliding && !p.onGround && p.wallLockTimer<=0){
+    if(hitL && goL) p.onWall=-1;
+    if(hitR && goR) p.onWall= 1;
   }
   if(p.wallLockTimer>0) p.wallLockTimer--;
-  if(p.onWall!==0&&p.vy>0){ p.vy=Math.min(p.vy,WALL_SLIDE_MAX); p.fastFalling=false; }
+  if(p.onWall!==0 && p.vy>0){ p.vy=Math.min(p.vy,WALL_SLIDE_MAX); p.fastFalling=false; }
 
-  // ── JUMP ─────────────────────────────────────────────────────
-  const canGround=(p.coyoteTimer>0||p.onGround)&&!p.sliding;
-  const canWall=p.onWall!==0&&!p.onGround;
-  if(p.jumpBuffer>0&&(canGround||canWall||p.doubleJump)&&p.vy>=(!p.onGround?-1:-99)){
+  const canGround = (p.coyoteTimer>0 || p.onGround) && !p.sliding;
+  const canWall   = p.onWall !== 0 && !p.onGround;
+
+  if(p.jumpBuffer>0 && (canGround || canWall || p.doubleJump)){
     if(canWall){
-      // Wall hop: PRESERVE existing speed magnitude, ADD launch away from wall
-      // This lets wall hops rocket you if you hit the wall at speed
-      const existingSpd = Math.abs(p.vx);
-      const launchDir = -p.onWall;
-      p.vx = launchDir * (existingSpd + WALL_ADD_X);
-      p.vx = Math.max(-SPEED_CAP, Math.min(SPEED_CAP, p.vx));
-      p.vy = WALL_LAUNCH_Y;
-      p.wallLockTimer=WALL_LOCK; p.onWall=0; p.doubleJump=true;
-      gainFlow(p,FLOW_WALL_GAIN); shake(4); dust(p,5);
+      p.vx = -p.onWall * WALL_LAUNCH_X;
+      p.vy = WALL_LAUNCH_Y * (eraPhys.jumpMult||1);
+      p.wallLockTimer=WALL_LOCK; p.onWall=0;
+      p.doubleJump=true;
+      gainFlow(p,FLOW_WALL_GAIN * eraPhys.flowGainMult); shake(4); dust(p,5);
     } else if(canGround){
-      const spdCarry=Math.abs(p.vx)*JUMP_SPD_CARRY;
-      p.vy=Math.max(JUMP_VY_CAP, JUMP_VY_BASE-spdCarry);
-      if(p.bhopTimer>0&&Math.abs(p.vx)>WALK_SPEED*0.5){
-        // Bhop: multiply speed, each chain stacks
-        const stack = Math.min(p._bhopStack||0, BHOP_MAX_STACK);
-        const boost = 1 + (BHOP_BOOST-1) * (1 + stack*0.15);
-        p.vx *= boost;
+      const spdT = Math.min(Math.abs(p.vx) / SPEED_CAP, 1.0);
+      const arcBonus = spdT * 2.0;
+      p.vy = (JUMP_VY_BASE - arcBonus) * (eraPhys.jumpMult||1);
+      const burst = JUMP_VX_BURST + Math.abs(p.vx) * JUMP_SPD_CARRY;
+      p.vx += p.facing * burst;
+      p.vx = Math.max(-SPEED_CAP, Math.min(SPEED_CAP, p.vx));
+      if(p.bhopTimer>0 && Math.abs(p.vx)>WALK_SPEED*0.85){
+        p.vx *= BHOP_BOOST;
         p.vx = Math.max(-SPEED_CAP, Math.min(SPEED_CAP, p.vx));
-        p._bhopStack = (p._bhopStack||0) + 1;
-        gainFlow(p, FLOW_BHOP_GAIN + stack*3);
-      } else {
-        p._bhopStack = 0;
+        gainFlow(p, FLOW_BHOP_GAIN * eraPhys.flowGainMult);
       }
       dust(p,4);
     } else if(p.doubleJump){
-      const spdCarry=Math.abs(p.vx)*DJUMP_SPD_CARRY;
-      p.vy=Math.max(JUMP_VY_CAP, DJUMP_VY_BASE-spdCarry);
-      p.doubleJump=false; dust(p,5); shake(2);
+      p.vy = DJUMP_VY_BASE * (eraPhys.jumpMult||1);
+      const burst = JUMP_VX_BURST * 0.7 + Math.abs(p.vx) * DJUMP_SPD_CARRY;
+      p.vx += p.facing * burst;
+      p.vx = Math.max(-SPEED_CAP, Math.min(SPEED_CAP, p.vx));
+      if(p._tripleJump){ p._tripleJump=false; p.doubleJump=true; }
+      else { p.doubleJump=false; }
+      dust(p,5); shake(2);
     }
     p.jumpBuffer=0; p.coyoteTimer=0;
     p.jumpHeld=true; p.jumpHoldFrames=JUMP_HOLD_MAX;
   }
-  if(p.jumpHeld&&goU&&p.jumpHoldFrames>0){
-    p.vy+=JUMP_HOLD_BOOST; p.jumpHoldFrames--;
+
+  if(p.jumpHeld && goU && p.jumpHoldFrames>0){
+    p.vy += JUMP_HOLD_BOOST; p.jumpHoldFrames--;
   } else if(!goU){ p.jumpHeld=false; p.jumpHoldFrames=0; }
 
-  // Fast fall: aggressive downward accel, kills horizontal on landing (handled below)
-  if(goD&&!p.onGround&&!p.sliding&&p.vy>-2){
+  if(goD && !p.onGround && !p.sliding && p.vy>-2){
     p.fastFalling=true;
-    p.vy=Math.min(p.vy+FF_ACCEL, FF_MAX);
+    p.vy = Math.min(p.vy + FF_ACCEL, FF_MAX);
   }
   if(p.onGround) p.fastFalling=false;
 
-  // Vault
-  if(!p.sliding&&p.vaultCooldown<=0&&!p.onGround&&Math.abs(p.vx)>=VAULT_SPD_MIN&&p.vy>=-1){
-    const ax=p.vx>0?p.x+p.w+1:p.x-1;
-    const ftY=Math.floor((p.y+p.h-1)/TILE);
-    const knY=Math.floor((p.y+p.h-TILE-1)/TILE);
-    if(tileAt(GS.map,Math.floor(ax/TILE),ftY)&&!tileAt(GS.map,Math.floor(ax/TILE),knY)){
-      const spdCarry=Math.abs(p.vx)*JUMP_SPD_CARRY*0.7;
-      p.vy=Math.max(JUMP_VY_CAP,VAULT_VY-spdCarry);
-      p.vx+=p.facing*VAULT_VX_BOOST;
+  if(!p.sliding && p.vaultCooldown<=0 && !p.onGround && Math.abs(p.vx)>=VAULT_SPD_MIN && p.vy>=-1){
+    const ax   = p.vx>0 ? p.x+p.w+1 : p.x-1;
+    const ftY  = Math.floor((p.y+p.h-1)/TILE);
+    const knY  = Math.floor((p.y+p.h-TILE-1)/TILE);
+    if(tileAt(GS.map,Math.floor(ax/TILE),ftY) && !tileAt(GS.map,Math.floor(ax/TILE),knY)){
+      const spdCarry = Math.abs(p.vx) * JUMP_SPD_CARRY * 0.7;
+      p.vy = Math.max(JUMP_VY_CAP, VAULT_VY - spdCarry);
+      p.vx += p.facing * VAULT_VX_BOOST;
       p.vaultCooldown=VAULT_CD;
-      gainFlow(p,FLOW_VAULT_GAIN); dust(p,4);
+      gainFlow(p,FLOW_VAULT_GAIN * eraPhys.flowGainMult);
+      dust(p,4);
+      triggerVaultFlash();
     }
   }
   if(p.vaultCooldown>0) p.vaultCooldown--;
 
-  // Gravity
-  p.vy+=p.vy>0?gravFall:grav;
-  p.vy=Math.min(p.vy,MAX_FALL);
+  if(p.onGround && p.vy >= 0){ p.vy = 1.0; }
+  else { p.vy += p.vy > 0 ? gravFall : grav; p.vy = Math.min(p.vy, MAX_FALL); }
 
-  p.wasOnGround=p.onGround;
+  p.wasOnGround = p.onGround;
+  const preVy = p.vy;
   moveAndCollide(p);
 
-  if(p.onGround&&!p.wasOnGround){
-    p.doubleJump=true; p.bhopTimer=BHOP_WINDOW;
-    if(p.fastFalling){
-      // Fast fall: slam into ground, lose ALL horizontal momentum
-      p.vx = 0;
-      p._bhopStack = 0;
-      gainFlow(p, FLOW_LAND_GAIN * 1.8);
-      p.landSquish=10; dust(p,8); shake(4);
-    } else if(Math.abs(p.vy)>3){
-      // Normal hard landing: preserve speed for bhop
-      gainFlow(p, FLOW_LAND_GAIN);
-      p.landSquish=6; dust(p,5);
+  if(p.onGround && !p.wasOnGround){
+    p.doubleJump=true; p.bhopTimer=9;
+    if(preVy > 3 || p.fastFalling){
+      gainFlow(p, FLOW_LAND_GAIN*(p.fastFalling?1.6:1) * eraPhys.flowGainMult);
+      p.landSquish=7;
+      if(SETT.particles) dust(p,5);
+      if(p.fastFalling) shake(3);
     }
     p.fastFalling=false;
+
+    if(GS.currentEra?.mechanic === 'breakable'){
+      const ftx = Math.floor((p.x+p.w/2)/TILE);
+      const fty = Math.floor((p.y+p.h)/TILE);
+      const key = `${ftx},${fty}`;
+      if(GS.map.tiles[fty*GS.map.W+ftx]===1 && !(key in GS._eraBreakable)){
+        GS._eraBreakable[key] = 80;
+      }
+    }
   }
 
-  p.flow=Math.max(0,p.flow-FLOW_DECAY);
-  if(Math.abs(p.vx)>WALK_SPEED*0.9) gainFlow(p,FLOW_SPD_GAIN);
-  if(p.flow>=FLOW_MAX&&!p.flowInvincible){ p.flowInvincible=true; p.glowFrames=9999; shake(7); }
+  p.flow = Math.max(0, p.flow - FLOW_DECAY);
+  if(Math.abs(p.vx) > WALK_SPEED*0.9) gainFlow(p, FLOW_SPD_GAIN * eraPhys.flowGainMult);
+  if(p.flow>=FLOW_MAX && !p.flowInvincible){
+    p.flowInvincible=true; p.glowFrames=9999; shake(7);
+    triggerFlowMaxBurst(p);
+  }
   if(p.flow<FLOW_MAX-5){ p.flowInvincible=false; if(p.flow<=0) p.glowFrames=0; }
 
-  const spd=Math.hypot(p.vx,p.vy);
-  if(spd>2.5&&p.flow>15) p.trail.push({x:p.x+p.w/2,y:p.y+p.h/2,age:0});
+  const spd = Math.hypot(p.vx, p.vy);
+  const trailLife = Math.round(8 + (spd/SPEED_CAP)*10);
+  if(spd>1.5) p.trail.push({x:p.x+p.w/2, y:p.y+p.h/2, age:0, life:trailLife});
   p.trail.forEach(t=>t.age++);
-  p.trail=p.trail.filter(t=>t.age<10);
+  p.trail = p.trail.filter(t=>t.age<t.life);
+  if(p.trail.length>24) p.trail.shift();
   p.dustParts.forEach(d=>{d.x+=d.vx;d.y+=d.vy;d.vy+=0.18;d.age++;});
-  p.dustParts=p.dustParts.filter(d=>d.age<d.life);
+  p.dustParts = p.dustParts.filter(d=>d.age<d.life);
 
   if(p.landSquish>0) p.landSquish--;
   if(p.hitFlash>0)   p.hitFlash--;
-  if(p.glowFrames>0&&!p.flowInvincible) p.glowFrames--;
-  if(p.onGround&&Math.abs(p.vx)>0.5) p.runFrame=(p.runFrame+Math.abs(p.vx)*0.13)%4;
+  if(p.glowFrames>0 && !p.flowInvincible) p.glowFrames--;
+  if(p.onGround && Math.abs(p.vx)>0.5) p.runFrame=(p.runFrame+Math.abs(p.vx)*0.13)%4;
   else if(!p.onGround) p.runFrame=0;
 
-  // Hazard checks
   const pcx=p.x+p.w/2, pcy=p.y+p.h/2;
   for(const sp of GS.map.spikes){
-    let hit=false;
-    if(sp.dir==='up'){
-      hit=Math.abs(pcx-(sp.x+.5)*TILE)<TILE*.55&&Math.abs(pcy-(sp.y+.5)*TILE)<TILE*.55;
-    } else if(sp.dir==='right'){
-      hit=p.x<(sp.x+1)*TILE+3&&p.x+p.w>sp.x*TILE&&pcy>sp.y*TILE+2&&pcy<(sp.y+1)*TILE-2;
-    } else if(sp.dir==='left'){
-      hit=p.x+p.w>(sp.x+1)*TILE-3&&p.x<(sp.x+1)*TILE&&pcy>sp.y*TILE+2&&pcy<(sp.y+1)*TILE-2;
-    }
-    if(hit) killPlayer(p,false);
+    if(Math.abs(pcx-(sp.x+.5)*TILE)<TILE*.55 && Math.abs(pcy-(sp.y+.5)*TILE)<TILE*.55)
+      killPlayer(p,false);
   }
   for(const bp of GS.map.bouncePads){
-    if(Math.abs(pcx-(bp.x+.5)*TILE)<TILE*.85&&
-       p.y+p.h>bp.y*TILE-3&&p.y+p.h<bp.y*TILE+TILE&&p.vy>0){
-      p.vy=JUMP_VY_BASE*1.9; p.doubleJump=true;
-      gainFlow(p,FLOW_VAULT_GAIN*1.2); dust(p,6);
+    if(Math.abs(pcx-(bp.x+.5)*TILE)<TILE*.85 &&
+       p.y+p.h>bp.y*TILE-3 && p.y+p.h<bp.y*TILE+TILE && p.vy>0){
+      p.vy=JUMP_VY_BASE*1.9*(eraPhys.jumpMult||1);
+      p.doubleJump=true;
+      gainFlow(p,FLOW_VAULT_GAIN*1.2 * eraPhys.flowGainMult);
+      if(SETT.particles) dust(p,6);
     }
   }
   if(GS.map._teleporters){
     for(const tp of GS.map._teleporters){
-      if(Math.abs(pcx-(tp.ax+.5)*TILE)<TILE*1.3&&Math.abs(pcy-tp.ay*TILE)<TILE*1.5){
+      if(Math.abs(pcx-(tp.ax+.5)*TILE)<TILE*1.3 && Math.abs(pcy-tp.ay*TILE)<TILE*1.5){
         p.x=tp.bx*TILE; p.y=(tp.by-1)*TILE; p.vx*=.5; p.vy=0;
       }
     }
   }
+  if(GS.suddenDeath && p.y+p.h>GS.lavaY) killPlayer(p,true);
+  if(p.y > GS.map.H*TILE+200) killPlayer(p,false);
 
-  // Wait doors
-  if(GS.map.waitDoors){
-    for(const wd of GS.map.waitDoors){
-      if(!wd.active) continue;
-      const wx1=wd.tx*TILE,wy1=wd.ty*TILE,wx2=wx1+wd.tw*TILE,wy2=wy1+wd.th*TILE;
-      const near=p.x+p.w>wx1-TILE&&p.x<wx2+TILE&&p.y+p.h>wy1-TILE&&p.y<wy2+TILE;
-      const inside=p.x+p.w>wx1+1&&p.x<wx2-1&&p.y+p.h>wy1+1&&p.y<wy2-1;
-      if(near){
-        if(wd.timer<0) wd.timer=180;
-        if(inside){
-          const dcx=(wx1+wx2)/2,dcy=(wy1+wy2)/2;
-          const pcxd=p.x+p.w/2;
-          if(wd.horiz){ p.vx=pcxd<dcx?-2.5:2.5; p.x+=pcxd<dcx?-2:2; }
-          else { p.vy=Math.min(p.vy,-1.5); p.y-=2; }
-        }
-      }
-    }
-    if(GS.players.find(pl=>pl.alive)===p){
-      for(const wd of GS.map.waitDoors){
-        if(!wd.active||wd.timer<0) continue;
-        wd.timer--;
-        if(wd.timer<=0){
-          wd.active=false; shake(4);
-          const map=GS.map;
-          for(let dy=0;dy<wd.th;dy++) for(let dx=0;dx<wd.tw;dx++){
-            const tx=wd.tx+dx,ty=wd.ty+dy;
-            if(tx>=0&&tx<map.W&&ty>=0&&ty<map.H) map.tiles[ty*map.W+tx]=0;
-          }
-        }
-      }
-    }
-  }
-
-  if(GS.suddenDeath&&p.y+p.h>GS.lavaY) killPlayer(p,true);
-  if(p.y>GS.map.H*TILE+200) killPlayer(p,false);
   if(!p.finished){
     const fin=GS.map.finish;
-    // fin.y is the floor tile — player feet (pcy) should be near that floor
-    if(Math.abs(pcx-(fin.x+.5)*TILE)<TILE*5 && Math.abs(pcy-fin.y*TILE)<TILE*6)
+    if(Math.abs(pcx-(fin.x+.5)*TILE)<TILE*2.5 && Math.abs(pcy-fin.y*TILE)<TILE*2.8)
       playerFinished(p);
   }
   GS.map.checkpoints.forEach((cp,ci)=>{
-    if(!cp.hit.includes(p.idx)&&
-       Math.abs(pcx-(cp.x+.5)*TILE)<TILE*1.8&&
-       Math.abs(pcy-cp.y*TILE)<TILE*2){
-      cp.hit.push(p.idx); p.lastCheckpoint=ci;
-      p.checkpointPos={x:cp.x*TILE,y:(cp.y-1)*TILE};
+    if(!cp.hit.includes(p.idx) &&
+       Math.abs(pcx-(cp.x+.5)*TILE)<TILE*1.8 && Math.abs(pcy-cp.y*TILE)<TILE*2){
+      cp.hit.push(p.idx);
+      p.lastCheckpoint=ci; p.checkpointPos={x:cp.x*TILE, y:(cp.y-1)*TILE};
     }
   });
+
+  if(GS.mode==='solo' && p.idx===0 && GS.running){
+    p._ghostPos.push({x:p.x, y:p.y, vx:p.vx, facing:p.facing, sliding:p.sliding, onGround:p.onGround});
+  }
+}
+
+// ── VAULT FLASH ────────────────────────────────────────────────
+let _vaultFlashT = 0;
+function triggerVaultFlash(){
+  if(!SETT.motion) return;
+  const vf = document.getElementById('vaultFlash');
+  vf.style.background = 'rgba(255,255,255,0.12)';
+  _vaultFlashT = 3;
+}
+function updateVaultFlash(){
+  if(_vaultFlashT > 0){
+    _vaultFlashT--;
+    if(_vaultFlashT === 0) document.getElementById('vaultFlash').style.background='rgba(255,255,255,0)';
+  }
+}
+
+function triggerFlowMaxBurst(p){
+  if(!SETT.particles) return;
+  for(let i=0;i<14;i++){
+    const angle = (i/14)*Math.PI*2;
+    p.dustParts.push({
+      x:p.x+p.w/2, y:p.y+p.h/2,
+      vx:Math.cos(angle)*3.5, vy:Math.sin(angle)*3.5,
+      age:0, life:18
+    });
+  }
+  shake(7);
 }
 
 // ── MOVE AND COLLIDE ───────────────────────────────────────────
 function moveAndCollide(p){
-  const map=GS.map;
+  const map = GS.map;
   if(!map) return;
-  p.x+=p.vx;
-  const tyT=Math.floor(p.y/TILE), tyB=Math.floor((p.y+p.h-1)/TILE);
-  if(p.vx<0){
-    const txL=Math.floor(p.x/TILE);
-    for(let ty=tyT;ty<=tyB;ty++){
-      if(tileAt(map,txL,ty)){ p.x=(txL+1)*TILE; p.vx=0; break; }
-    }
-  } else if(p.vx>0){
-    const txR=Math.floor((p.x+p.w-1)/TILE);
-    for(let ty=tyT;ty<=tyB;ty++){
-      if(tileAt(map,txR,ty)){ p.x=txR*TILE-p.w; p.vx=0; break; }
+
+  let remainVx = p.vx;
+  const MAX_XSTEP = TILE - 1;
+  while(Math.abs(remainVx) > 0.001){
+    const xstep = Math.sign(remainVx) * Math.min(Math.abs(remainVx), MAX_XSTEP);
+    remainVx -= xstep;
+    p.x += xstep;
+    const tyT = Math.floor(p.y / TILE), tyB = Math.floor((p.y+p.h-1)/ TILE);
+    if(xstep < 0){
+      const txL = Math.floor(p.x / TILE);
+      let hit=false;
+      for(let ty=tyT;ty<=tyB;ty++){
+        if(tileAt(map,txL,ty)){
+          p.x=(txL+1)*TILE;
+          if(!p.onGround && Math.abs(p.vx)>3)
+            p.vy=Math.max(p.vy - Math.abs(p.vx)*0.55, -JUMP_VY_CAP*1.2);
+          p.vx=0; remainVx=0; hit=true; break;
+        }
+      }
+      if(hit) break;
+    } else if(xstep > 0){
+      const txR = Math.floor((p.x+p.w-1)/TILE);
+      let hit=false;
+      for(let ty=tyT;ty<=tyB;ty++){
+        if(tileAt(map,txR,ty)){
+          p.x=txR*TILE-p.w;
+          if(!p.onGround && Math.abs(p.vx)>3)
+            p.vy=Math.max(p.vy - Math.abs(p.vx)*0.55, -JUMP_VY_CAP*1.2);
+          p.vx=0; remainVx=0; hit=true; break;
+        }
+      }
+      if(hit) break;
     }
   }
+
   p.onGround=false;
-  let remainVy=p.vy;
-  const MAX_STEP=TILE-1;
-  while(Math.abs(remainVy)>0.001){
-    const step=Math.sign(remainVy)*Math.min(Math.abs(remainVy),MAX_STEP);
-    remainVy-=step; p.y+=step;
+  let remainVy = p.vy;
+  const MAX_STEP = TILE - 1;
+  while(Math.abs(remainVy) > 0.001){
+    const step = Math.sign(remainVy) * Math.min(Math.abs(remainVy), MAX_STEP);
+    remainVy -= step; p.y += step;
     const txL2=Math.floor(p.x/TILE), txC=Math.floor((p.x+p.w/2)/TILE), txR2=Math.floor((p.x+p.w-1)/TILE);
-    if(step<0){
+    if(step < 0){
       const tyTop=Math.floor(p.y/TILE);
       for(const tx of [txL2,txC,txR2]){
-        if(tileAt(map,tx,tyTop)){ p.y=(tyTop+1)*TILE; p.vy=0; remainVy=0; p.jumpHeld=false; break; }
+        if(tileAt(map,tx,tyTop)){
+          p.y=(tyTop+1)*TILE; p.vy=0; remainVy=0; p.jumpHeld=false; break;
+        }
       }
     } else {
       const tyBot=Math.floor((p.y+p.h-1)/TILE);
       let landed=false;
       for(const tx of [txL2,txC,txR2]){
-        if(tileAt(map,tx,tyBot)){ p.y=tyBot*TILE-p.h; p.vy=0; remainVy=0; p.onGround=true; landed=true; break; }
+        if(tileAt(map,tx,tyBot)){
+          p.y=tyBot*TILE-p.h; p.vy=0; remainVy=0; p.onGround=true; landed=true; break;
+        }
       }
       if(!landed){
         for(const mp of map.movingPlats){
           const mx=mp.x*TILE,my=mp.y*TILE,mw=mp.w*TILE;
-          if(p.x+p.w>mx&&p.x<mx+mw&&p.y+p.h>my&&p.y+p.h<my+TILE+6&&p.vy>=0){
+          if(p.x+p.w>mx && p.x<mx+mw && p.y+p.h>my && p.y+p.h<my+TILE+6 && p.vy>=0){
             p.y=my-p.h; p.vy=0; remainVy=0; p.onGround=true;
             if(!mp.vert) p.vx+=Math.sin(mp.t)*mp.speed*0.25;
             break;
@@ -1317,21 +1538,32 @@ function moveAndCollide(p){
   }
 }
 
-function gainFlow(p,a){ p.flow=Math.min(FLOW_MAX,p.flow+a); }
+function gainFlow(p,a){ p.flow = Math.min(FLOW_MAX, p.flow + a * (SETT.flowIntensity/100)); }
 function dust(p,n){
+  if(!SETT.particles) return;
   for(let i=0;i<n;i++) p.dustParts.push({
-    x:p.x+p.w/2+(Math.random()-.5)*p.w,y:p.y+p.h,
-    vx:(Math.random()-.5)*2.2,vy:-(Math.random()*1.8+.3),
-    age:0,life:10+Math.floor(Math.random()*8)
+    x:p.x+p.w/2+(Math.random()-.5)*p.w,
+    y:p.y+p.h,
+    vx:(Math.random()-.5)*2.2,
+    vy:-(Math.random()*1.8+.3),
+    age:0, life:10+Math.floor(Math.random()*8)
   });
 }
 
-function killPlayer(p,lava){
+function killPlayer(p, lava){
   if(!p.alive) return;
-  if(p.flowInvincible){ p.flow=0; p.flowInvincible=false; p.glowFrames=0; p.hitFlash=20; shake(5); return; }
+  if(p._trapShield && !lava){
+    p._trapShield=false; p.flowInvincible=false; p.glowFrames=0;
+    p.hitFlash=30; shake(6); return;
+  }
+  if(p.flowInvincible || p._ghostTimer>0){
+    if(!p._ghostTimer && !p._trapShield){ p.flow=0; p.flowInvincible=false; p.glowFrames=0; }
+    p.hitFlash=14; shake(4); return;
+  }
   if(lava){ p.eliminated=true; p.alive=false; p.flow=0; shake(8); return; }
   p.alive=false; p.flow=0; p.flowInvincible=false; p.deathCount++;
   p.respawnTimer=90;
+  GS.winStreak=0;
   setTimeout(()=>{
     if(!GS.running) return;
     p.alive=true; p.eliminated=false;
@@ -1339,123 +1571,36 @@ function killPlayer(p,lava){
     else spawnPlayer(p);
     p.vx=0; p.vy=0; p.sliding=false; p.h=NORMAL_H;
     p.coyoteTimer=0; p.jumpBuffer=0;
-  },1500);
+  }, 1500);
 }
 
 function spawnPlayer(p){
   if(!GS.map) return;
-  const sp=GS.map.spawn;
-  p.x=(sp.x+p.idx*2)*TILE; p.y=(sp.y-1)*TILE;
+  const sp = GS.map.spawn;
+  p.x = (sp.x + p.idx*2) * TILE;
+  p.y = (sp.y - 1) * TILE;
 }
 
-// ════════════════════════════════════════════════════════════════
-//  C: SMART BOT AI — WAYPOINT PATHFINDING + PERSONALITIES
-//
-//  Each bot follows GS.map.aiWaypoints[] in order.
-//  They advance to the next waypoint when close enough.
-//  Three personalities:
-//    RUSHER  (BYTE):   Charges straight to finish, ignores spikes,
-//                      loves speed ramps, higher air accel
-//    AVOIDER (GLITCH): Detects spikes ahead and goes around,
-//                      more cautious, takes extra jumps
-//    BALANCED(VOID):   Default behavior, reads the room
-//
-//  All bots: stuck detection → force jump if hasn't moved in a while
-// ════════════════════════════════════════════════════════════════
+// ── BOT AI ─────────────────────────────────────────────────────
 function botInput(p){
-  if(!GS.map||!GS.map.aiWaypoints) return {left:false,right:false,up:false,down:false};
-
-  const wps = GS.map.aiWaypoints;
-  let wpIdx = p._botWaypointIdx;
-  if(wpIdx >= wps.length) wpIdx = wps.length-1;
-
-  // Advance waypoint when close enough
-  const wp = wps[wpIdx];
-  const distX = Math.abs((p.x+p.w/2) - wp.px);
-  const distY = (p.y+p.h) - wp.py;
-  if(distX < CHUNK_W*TILE*0.55 && distY > -CHUNK_H*TILE*0.5 && wpIdx < wps.length-1){
-    p._botWaypointIdx++;
-    wpIdx = p._botWaypointIdx;
+  if(!GS.map) return {left:false,right:false,up:false,down:false};
+  const fin=GS.map.finish;
+  const tx=fin.x*TILE, ty=fin.y*TILE;
+  const bdx=tx-(p.x+p.w/2), bdy=ty-(p.y+p.h/2);
+  p._botPathTimer--;
+  if(p._botPathTimer<=0) p._botPathTimer=12+Math.floor(rng()*16);
+  const left=bdx<-3, right=bdx>3;
+  const aheadTX=Math.floor((p.x+(right?p.w+2:-2))/TILE);
+  const wallAhead=tileAt(GS.map,aheadTX,Math.floor((p.y+p.h/2)/TILE));
+  if(p.onGround&&(wallAhead||bdy<-TILE*2||rng()<0.012)&&p._botJumpCD<=0){
+    p._botJump=true; p._botJumpCD=18;
   }
-
-  const targetWp = wps[Math.min(wpIdx, wps.length-1)];
-  const tx = targetWp.px, ty = targetWp.py;
-  const pcx = p.x+p.w/2, pcy = p.y+p.h;
-  const dx = tx-pcx, dy = ty-pcy;
-
-  const goingRight = dx >  TILE*0.5;
-  const goingLeft  = dx < -TILE*0.5;
-  const left  = goingLeft;
-  const right = goingRight;
-  const moveDir = goingRight ? 1 : goingLeft ? -1 : (p.facing||1);
-
-  // Stuck detection: only flag after 60 frames of tiny movement
-  if(!p._stuckSamples) p._stuckSamples = [];
-  p._stuckSamples.push(p.x);
-  if(p._stuckSamples.length > 60) p._stuckSamples.shift();
-  const rangeX = p._stuckSamples.length >= 30
-    ? Math.max(...p._stuckSamples) - Math.min(...p._stuckSamples)
-    : 999;
-  const stuck = rangeX < TILE * 0.6 && p._stuckSamples.length >= 30;
-
-  // Look-ahead (botTileAt ignores wait doors)
-  const aheadPx  = moveDir > 0 ? p.x+p.w+2 : p.x-2;
-  const aheadTX  = Math.floor(aheadPx/TILE);
-  const midTY    = Math.floor((p.y+p.h*0.5)/TILE);
-  const groundTY = Math.floor((p.y+p.h+2)/TILE);
-
-  // Wall: only count if we're actually moving toward it
-  const wallAhead = (left||right) && botTileAt(GS.map, aheadTX, midTY) !== 0;
-
-  // Gap: floor missing ahead, only when moving
-  const stepTX = Math.floor((p.x + moveDir*(p.w + TILE*1.5))/TILE);
-  const gapAhead = p.onGround && (left||right) && !botTileAt(GS.map, stepTX, groundTY);
-  let pitDepth = 0;
-  if(gapAhead){
-    for(let d=1; d<=5; d++){
-      if(!botTileAt(GS.map, stepTX, groundTY+d)) pitDepth++;
-      else break;
-    }
-  }
-  const deepPit = pitDepth >= 3;
-
-  // Jump only when clearly necessary, with generous cooldown to prevent spam
-  const needUp = dy < -TILE*2;
-  const mustJump = (needUp || wallAhead || deepPit) && p._botJumpCD <= 0;
-  const stuckJump = stuck && p.onGround && p._botJumpCD <= 0;
-
-  if(p.onGround && (mustJump || stuckJump)){
-    p._botJump = true;
-    p._botJumpCD = wallAhead ? 30 : deepPit ? 35 : stuck ? 45 : 28;
-  }
-  if(p._botJumpCD > 0) p._botJumpCD--;
-
-  const personality = p._botPersonality || 'balanced';
-  let downPress = false;
-
-  if(personality === 'rusher'){
-    if(!p.onGround && p.vy > 0 && dy > TILE*2) downPress = true;
-  } else if(personality === 'avoider'){
-    const spikeNear = GS.map.spikes.some(sp=>{
-      if(sp.dir !== 'up') return false;
-      return Math.abs((sp.x+0.5)*TILE - pcx) < TILE*4 && Math.abs(sp.y*TILE - pcy) < TILE*3;
-    });
-    if(spikeNear && p.onGround && p._botJumpCD <= 0){
-      p._botJump = true; p._botJumpCD = 25;
-    }
-  } else {
-    if(!p.onGround && p.vy > 0 && dy > TILE*3 && Math.random() < 0.2) downPress = true;
-  }
-
-  // Air stuck recovery: double jump once
-  if(stuck && !p.onGround && p.doubleJump && Math.abs(p.vy) < 3 && p._botJumpCD <= 0){
-    p._botJump = true; p.doubleJump = false; p._botJumpCD = 20;
-  }
-
-  return {left, right, up:false, down:downPress};
+  if(p._botJumpCD>0) p._botJumpCD--;
+  const down=!p.onGround&&p.vy>3&&bdy>TILE*2&&rng()<0.35;
+  return {left,right,up:false,down};
 }
 
-// ── POWERUPS ───────────────────────────────────────────────────
+// ── POWERUP USAGE ─────────────────────────────────────────────
 function usePowerup(p){
   if(!p.powerup) return;
   const pu=p.powerup; p.powerup=null;
@@ -1465,10 +1610,10 @@ function usePowerup(p){
     case 'reverse':
       GS.players.filter(q=>q!==p&&q.alive&&!q.finished)
         .sort((a,b)=>(GS.wins[b.idx]||0)-(GS.wins[a.idx]||0))
-        .slice(0,1).forEach(q=>{ q.reverseTimer=180; });
+        .slice(0,1).forEach(q=>{q.reverseTimer=180;});
       break;
-    case 'ghost': p.flowInvincible=true; p.glowFrames=360; break;
-    case 'trap_immune': p.flowInvincible=true; p.glowFrames=120; break;
+    case 'ghost': p.flowInvincible=true; p.glowFrames=300; p._ghostTimer=300; break;
+    case 'trap_immune': p.flowInvincible=true; p.glowFrames=9999; p._trapShield=true; break;
   }
 }
 
@@ -1476,7 +1621,7 @@ function usePowerup(p){
 function updateMovingPlats(){
   if(!GS.map) return;
   GS.map.movingPlats.forEach(mp=>{
-    mp.t+=mp.speed*0.016;
+    mp.t += mp.speed*0.016;
     if(mp.vert) mp.y=mp.origY+Math.sin(mp.t)*(mp.range/TILE/2);
     else        mp.x=mp.origX+Math.sin(mp.t)*(mp.range/TILE/2);
   });
@@ -1489,210 +1634,444 @@ function activateSuddenDeath(){
   GS._glitchIv=setInterval(()=>{
     if(!GS.map) return;
     const tx=Math.floor(rng()*GS.map.W), ty=Math.floor(rng()*GS.map.H);
-    if(GS.map.tiles[ty*GS.map.W+tx]===1){ GS.map.tiles[ty*GS.map.W+tx]=0; GS.map.glitchTiles.push({x:tx,y:ty,age:0}); }
+    if(GS.map.tiles[ty*GS.map.W+tx]===1){
+      GS.map.tiles[ty*GS.map.W+tx]=0;
+      GS.map.glitchTiles.push({x:tx,y:ty,age:0});
+    }
   },300);
 }
 function updateSuddenDeath(){
   if(!GS.suddenDeath||!GS.map) return;
-  GS.lavaY-=LAVA_RISE;
+  GS.lavaY -= LAVA_RISE;
   if(GS.lavaY<0) endRound(null);
   GS.map.glitchTiles.forEach(g=>g.age++);
   GS.map.glitchTiles=GS.map.glitchTiles.filter(g=>g.age<30);
 }
 
-// ── RENDER ─────────────────────────────────────────────────────
+// ── GHOST REPLAY ──────────────────────────────────────────────
+function saveGhostReplay(){
+  if(GS.mode!=='solo') return;
+  const p0 = GS.players[0];
+  if(!p0 || !p0._ghostPos.length) return;
+  GS._ghostPlayback = [...p0._ghostPos];
+  GS._ghostFrameIdx = 0;
+}
+function drawGhostReplay(){
+  if(!GS._ghostPlayback.length || GS.mode!=='solo') return;
+  const fi = GS._ghostFrameIdx % GS._ghostPlayback.length;
+  const gp = GS._ghostPlayback[fi];
+  GS._ghostFrameIdx++;
+  const px=Math.round(gp.x), py=Math.round(gp.y);
+  ctx.save();
+  ctx.globalAlpha=0.22;
+  ctx.fillStyle='#aaaaff';
+  ctx.fillRect(px+1, py+2, 8, 12);
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════════════
 function render(){
   if(!GS.map) return;
   const W=canvas.width, H=canvas.height;
-  ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
-  const offX=Math.floor((W-GS.map.W*TILE*cam.zoom)/2)+cam.shakeX;
-  const offY=Math.floor((H-GS.map.H*TILE*cam.zoom)/2)+cam.shakeY;
+  const era=GS.map.era;
+  ctx.imageSmoothingEnabled=false;
+  ctx.fillStyle=era.bg;
+  ctx.fillRect(0,0,W,H);
+
+  if(SETT.parallax) drawParallax(W, H, era);
+
+  const offX=Math.round((W-GS.map.W*TILE*cam.zoom)/2)+Math.round(cam.shakeX);
+  const offY=Math.round((H-GS.map.H*TILE*cam.zoom)/2)+Math.round(cam.shakeY);
   ctx.save();
-  ctx.translate(offX,offY);
-  ctx.scale(cam.zoom,cam.zoom);
-  ctx.fillStyle=GS.map.biome.bg;
+  ctx.translate(offX, offY);
+  ctx.scale(cam.zoom, cam.zoom);
+
+  ctx.fillStyle=era.bg;
   ctx.fillRect(0,0,GS.map.W*TILE,GS.map.H*TILE);
-  drawFog();
+
   drawTiles();
-  drawSpeedRamps();
+  drawEraFx();
   drawMovingPlatsDraw();
   drawObjects();
+  drawGhostReplay();
   GS.players.forEach(p=>drawTrail(p));
   GS.players.forEach(p=>drawPlayer(p));
+  if(GS.currentEra?.mechanic==='breakable') drawBreakableWarnings();
   if(GS.suddenDeath) drawLava();
+
   ctx.restore();
-  if(GS._darkMap) drawDarkness(offX,offY);
+  drawVignette(W, H, era);
+  if(GS._darkMap) drawDarkness(offX, offY);
+
+  if(cam.fadeAlpha > 0){
+    ctx.fillStyle=`rgba(0,0,0,${cam.fadeAlpha})`;
+    ctx.fillRect(0,0,W,H);
+  }
   drawHUD();
 }
 
-function drawFog(){
-  const f=GS.frame*.015;
-  ctx.save(); ctx.globalAlpha=0.12;
-  ctx.fillStyle=GS.map.biome.fogCol||GS.map.biome.bg;
-  for(let i=0;i<3;i++){
-    const x=((i*400+f*20)%(GS.map.W*TILE+400))-200;
-    ctx.beginPath(); ctx.ellipse(x,GS.map.H*TILE*.7,220,60,0,0,Math.PI*2); ctx.fill();
+function drawEraFx(){
+  const era=GS.currentEra;
+  if(!era) return;
+  const t=GS.frame;
+
+  if(era.mechanic==='boost_rails'){
+    GS._eraBoostRails.forEach(rail=>{
+      const rx=rail.x*TILE, ry=rail.y*TILE;
+      ctx.save();
+      ctx.globalAlpha=0.4+Math.sin(t*0.1+rail.x)*0.15;
+      ctx.fillStyle=era.accent;
+      ctx.fillRect(rx, ry+TILE-3, rail.w*TILE, 3);
+      const sp = Math.floor((t*0.3)%(rail.w)) * TILE;
+      ctx.globalAlpha=0.7;
+      ctx.fillStyle='#ffffff';
+      ctx.fillRect(rx+sp*(rail.dir>0?1:0), ry+TILE-2, 4, 2);
+      ctx.restore();
+    });
   }
+
+  if(era.mechanic==='wind_zones'){
+    GS._eraWindZones.forEach(zone=>{
+      const active = Math.sin(zone.t / (zone.period/Math.PI)) > 0;
+      if(!active) return;
+      ctx.save();
+      ctx.globalAlpha=0.06;
+      ctx.fillStyle=zone.force>0?'#88aaff':'#ffaa88';
+      ctx.fillRect(zone.x*TILE, zone.y*TILE, zone.w*TILE, zone.h*TILE);
+      ctx.globalAlpha=0.3;
+      for(let i=0;i<zone.w;i+=4){
+        const ax = zone.x*TILE + i*TILE + (t*0.8*zone.force%TILE);
+        const ay = zone.y*TILE + zone.h/2*TILE;
+        ctx.fillStyle=zone.force>0?'#88ccff':'#ffcc88';
+        ctx.fillRect(Math.round(ax)%((zone.w+1)*TILE)+zone.x*TILE, Math.round(ay), 3, 2);
+      }
+      ctx.restore();
+    });
+  }
+}
+
+function drawBreakableWarnings(){
+  ctx.save();
+  for(const [key,timer] of Object.entries(GS._eraBreakable)){
+    const [tx,ty]=key.split(',').map(Number);
+    const frac = timer/80;
+    ctx.globalAlpha=(1-frac)*0.6;
+    ctx.fillStyle='#ff4400';
+    ctx.fillRect(tx*TILE, ty*TILE, TILE, TILE);
+    ctx.globalAlpha=(1-frac)*0.8;
+    ctx.fillStyle='#550000';
+    ctx.fillRect(tx*TILE+TILE/2, ty*TILE, 1, TILE);
+    ctx.fillRect(tx*TILE, ty*TILE+TILE/2, TILE, 1);
+  }
+  ctx.restore();
+}
+
+function drawParallax(W, H, era){
+  const t=GS.frame, bi=GS.currentEraIdx||0;
+  if(bi===0||bi===5) drawBg_Neon(W,H,t,era);
+  else if(bi===1) drawBg_Sky(W,H,t,era);
+  else if(bi===2) drawBg_Ruins(W,H,t,era);
+  else if(bi===3) drawBg_Void(W,H,t,era);
+  else if(bi===4) drawBg_Volcanic(W,H,t,era);
+  else if(bi===6) drawBg_Urban(W,H,t,era);
+  else if(bi===7) drawBg_Ice(W,H,t,era);
+  else drawBg_Urban(W,H,t,era);
+}
+
+function drawBg_Urban(W,H,t,b){
+  const sky=ctx.createLinearGradient(0,0,0,H*0.7);
+  sky.addColorStop(0,'#060c14'); sky.addColorStop(1,'#0e1c2e');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+  ctx.save();
+  for(let i=0;i<12;i++){
+    const bx=Math.round(((i*97+13)%(W+80))-40+t*0.04);
+    const bh=H*(0.18+(i%5)*0.07), bw=14+i%4*8, by=H*0.55-bh;
+    ctx.fillStyle='#0d1828'; ctx.fillRect(Math.round(bx),Math.round(by),bw,bh);
+    ctx.fillStyle='#1a3a55';
+    for(let wy=Math.round(by+4);wy<H*0.55-4;wy+=7)
+      for(let wx=Math.round(bx+3);wx<bx+bw-3;wx+=6){
+        if((wx*3+wy*7+i*11)%5!==0) continue;
+        ctx.fillStyle=Math.random()<0.01?'#ffdd88':'#1a3a55';
+        ctx.fillRect(wx,wy,3,4);
+      }
+  }
+  ctx.restore();
+  const refl=ctx.createLinearGradient(0,H*0.62,0,H*0.75);
+  refl.addColorStop(0,'rgba(0,229,255,0.07)'); refl.addColorStop(1,'transparent');
+  ctx.fillStyle=refl; ctx.fillRect(0,H*0.62,W,H*0.13);
+}
+
+function drawBg_Neon(W,H,t,b){
+  ctx.fillStyle='#050008'; ctx.fillRect(0,0,W,H);
+  ctx.save(); ctx.globalAlpha=0.05; ctx.fillStyle='#6600cc';
+  for(let x=0;x<W;x+=40) ctx.fillRect(x,0,1,H);
+  for(let y=0;y<H;y+=40) ctx.fillRect(0,y,W,1);
+  ctx.restore();
+  ctx.save();
+  for(let i=0;i<10;i++){
+    const ox=((i*157+30)%(W+60))-30+Math.sin(t*0.006+i)*20;
+    const oy=H*(0.08+i*0.07)+Math.sin(t*0.009+i*1.3)*H*0.04;
+    const pulse=0.12+Math.sin(t*0.04+i*0.7)*0.06;
+    ctx.globalAlpha=pulse;
+    ctx.fillStyle=i%3===0?'#ff00cc':i%3===1?'#8800ff':'#00ccff';
+    const r=3+i%3*2;
+    ctx.fillRect(Math.round(ox-r/2),Math.round(oy-r/2),r,r);
+  }
+  ctx.restore();
+}
+
+function drawBg_Sky(W,H,t,b){
+  const sky=ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#020810'); sky.addColorStop(1,'#0a2040');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+  ctx.save();
+  for(let i=0;i<30;i++){
+    const sx=(i*137+71)%W, sy=(i*97+23)%(H*0.6);
+    ctx.globalAlpha=0.3+Math.sin(t*0.04+i*0.8)*0.2;
+    ctx.fillStyle='#ddeeff'; ctx.fillRect(Math.round(sx),Math.round(sy),1,1);
+  }
+  ctx.restore();
+  ctx.save();
+  for(let i=0;i<6;i++){
+    const cx=((i*280+t*(0.4+i*0.2))%(W+200))-100;
+    const cy=H*(0.15+i*0.06);
+    const cw=80+i*30, ch=12+i*4;
+    ctx.globalAlpha=0.15+i%3*0.04;
+    ctx.fillStyle='#ddeeff';
+    ctx.fillRect(Math.round(cx),Math.round(cy),cw,ch);
+  }
+  ctx.restore();
+}
+
+function drawBg_Ruins(W,H,t,b){
+  const sky=ctx.createLinearGradient(0,0,0,H*0.65);
+  sky.addColorStop(0,'#0f0804'); sky.addColorStop(0.75,'#5a2200'); sky.addColorStop(1,'#8a3800');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+  ctx.save(); ctx.fillStyle='#0c0703';
+  for(let i=0;i<6;i++){
+    const rx=Math.round(((i*190+20)%(W+120))-60+t*0.05);
+    const rh=H*(0.18+i%3*0.08), rw=18+i%4*10, ry=H*0.58-rh;
+    ctx.fillRect(Math.round(rx),Math.round(ry),rw,rh);
+  }
+  ctx.restore();
+  ctx.save();
+  for(let i=0;i<8;i++){
+    const ex=((i*113+40)%W)+Math.sin(t*0.007+i)*30;
+    const ey=H*(0.3+i*0.06)-((t*0.25+i*40)%(H*0.6));
+    ctx.globalAlpha=Math.max(0,0.4-((t*0.25+i*40)%(H*0.6))/(H*0.6)*0.4);
+    ctx.fillStyle=i%2===0?'#ff8822':'#ffcc44';
+    ctx.fillRect(Math.round(ex),Math.round(ey),i%2+1,i%2+1);
+  }
+  ctx.restore();
+}
+
+function drawBg_Void(W,H,t,b){
+  ctx.fillStyle='#000308'; ctx.fillRect(0,0,W,H);
+  ctx.save(); ctx.globalAlpha=0.04; ctx.fillStyle='#3344aa';
+  for(let x=0;x<W;x+=50) ctx.fillRect(x,0,1,H);
+  for(let y=0;y<H;y+=50) ctx.fillRect(0,y,W,1);
+  ctx.restore();
+  ctx.save();
+  for(let i=0;i<20;i++){
+    const sx=(i*97+41)%W, sy=(i*113+19)%H;
+    ctx.globalAlpha=0.15+Math.sin(t*0.05+i)*0.1;
+    ctx.fillStyle='#5566ff'; ctx.fillRect(sx,sy,1+(i%3===0?1:0),1);
+  }
+  ctx.restore();
+  const glw=ctx.createLinearGradient(0,H*0.6,0,H);
+  glw.addColorStop(0,'rgba(50,60,180,0.06)'); glw.addColorStop(1,'transparent');
+  ctx.fillStyle=glw; ctx.fillRect(0,H*0.6,W,H*0.4);
+}
+
+function drawBg_Volcanic(W,H,t,b){
+  const sky=ctx.createLinearGradient(0,0,0,H*0.7);
+  sky.addColorStop(0,'#080200'); sky.addColorStop(1,'#2a0c00');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+  const glw=ctx.createLinearGradient(0,H*0.55,0,H);
+  glw.addColorStop(0,'rgba(255,80,0,0.12)'); glw.addColorStop(1,'rgba(255,30,0,0.22)');
+  ctx.fillStyle=glw; ctx.fillRect(0,H*0.55,W,H*0.45);
+  ctx.save(); ctx.fillStyle='#0c0300';
+  for(let i=0;i<4;i++){
+    const mx=Math.round(((i*240+40)%(W+150))-75+t*0.04);
+    const mh=H*(0.32+i%3*0.12), mw=80+i%3*50, my=H*0.6;
+    ctx.beginPath(); ctx.moveTo(mx+mw/2,my-mh); ctx.lineTo(mx+mw,my); ctx.lineTo(mx,my); ctx.fill();
+  }
+  ctx.restore();
+  ctx.save();
+  for(let i=0;i<12;i++){
+    const ax=((i*113+50)%W);
+    const ay=((t*0.4*(0.5+i%3*0.4)+i*60)%(H*0.7));
+    ctx.globalAlpha=0.15; ctx.fillStyle='#553322';
+    ctx.fillRect(Math.round(ax),Math.round(ay),1,1+(i%2));
+  }
+  ctx.restore();
+}
+
+function drawBg_Ice(W,H,t,b){
+  const sky=ctx.createLinearGradient(0,0,0,H*0.7);
+  sky.addColorStop(0,'#040a12'); sky.addColorStop(1,'#0a1e35');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+  ctx.save();
+  for(let i=0;i<40;i++){
+    const sx=(i*137+71)%W, sy=(i*97+23)%(H*0.55);
+    ctx.globalAlpha=0.2+Math.sin(t*0.04+i*0.8)*0.4;
+    ctx.fillStyle='#ddeeff'; ctx.fillRect(Math.round(sx),Math.round(sy),1,1);
+  }
+  ctx.restore();
+  const mist=ctx.createLinearGradient(0,H*0.65,0,H*0.78);
+  mist.addColorStop(0,'rgba(140,200,255,0.08)'); mist.addColorStop(1,'transparent');
+  ctx.fillStyle=mist; ctx.fillRect(0,H*0.65,W,H*0.13);
+}
+
+function drawVignette(W,H,b){
+  ctx.save();
+  const edgeW=Math.min(W,H)*0.22, alpha=0.55;
+  const gL=ctx.createLinearGradient(0,0,edgeW,0); gL.addColorStop(0,`rgba(0,0,0,${alpha})`); gL.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=gL; ctx.fillRect(0,0,edgeW,H);
+  const gR=ctx.createLinearGradient(W,0,W-edgeW,0); gR.addColorStop(0,`rgba(0,0,0,${alpha})`); gR.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=gR; ctx.fillRect(W-edgeW,0,edgeW,H);
+  const gT=ctx.createLinearGradient(0,0,0,edgeW); gT.addColorStop(0,`rgba(0,0,0,${alpha*0.6})`); gT.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=gT; ctx.fillRect(0,0,W,edgeW);
+  const gB=ctx.createLinearGradient(0,H,0,H-edgeW); gB.addColorStop(0,`rgba(0,0,0,${alpha*0.7})`); gB.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=gB; ctx.fillRect(0,H-edgeW,W,edgeW);
   ctx.restore();
 }
 
 function drawTiles(){
-  const map=GS.map, b=map.biome;
-  for(let ty=0;ty<map.H;ty++){
-    for(let tx=0;tx<map.W;tx++){
+  const map=GS.map, b=map.era;
+  const vx0=Math.max(0,Math.floor(-cam.x/TILE)-1);
+  const vx1=Math.min(map.W, vx0+Math.ceil(canvas.width/(TILE*cam.zoom))+3);
+  const vy0=Math.max(0,Math.floor(-cam.y/TILE)-1);
+  const vy1=Math.min(map.H, vy0+Math.ceil(canvas.height/(TILE*cam.zoom))+3);
+  for(let ty=vy0;ty<vy1;ty++){
+    for(let tx=vx0;tx<vx1;tx++){
       if(map.tiles[ty*map.W+tx]===0) continue;
       const px=tx*TILE, py=ty*TILE;
-      const topOpen=ty>0&&map.tiles[(ty-1)*map.W+tx]===0;
-      ctx.fillStyle=topOpen?b.tileCol:b.groundCol;
+      const topOpen   = ty>0 && map.tiles[(ty-1)*map.W+tx]===0;
+      const leftOpen  = tx>0 && map.tiles[ty*map.W+(tx-1)]===0;
+      const rightOpen = tx<map.W-1 && map.tiles[ty*map.W+(tx+1)]===0;
+      ctx.fillStyle = topOpen ? b.tileCol : b.groundCol;
       ctx.fillRect(px,py,TILE,TILE);
       if(topOpen){
-        ctx.fillStyle='rgba(255,255,255,0.14)'; ctx.fillRect(px,py,TILE,2);
-        ctx.fillStyle='rgba(0,0,0,0.22)';       ctx.fillRect(px,py+TILE-2,TILE,2);
-        ctx.fillStyle=b.accent+'33';             ctx.fillRect(px,py,TILE,1);
+        ctx.fillStyle=b.topEdge||b.accent; ctx.fillRect(px,py,TILE,2);
+        if(b.tileShine){ ctx.fillStyle=b.tileShine; ctx.fillRect(px,py+2,TILE,3); }
+        ctx.fillStyle='rgba(0,0,0,0.30)'; ctx.fillRect(px,py+TILE-2,TILE,2);
       }
+      if(leftOpen){ ctx.fillStyle='rgba(0,0,0,0.18)'; ctx.fillRect(px,py,2,TILE); }
+      if(rightOpen){ ctx.fillStyle='rgba(0,0,0,0.18)'; ctx.fillRect(px+TILE-2,py,2,TILE); }
+      if((tx+ty)%3===0){ ctx.fillStyle='rgba(0,0,0,0.06)'; ctx.fillRect(px,py,TILE,TILE); }
     }
   }
   map.glitchTiles.forEach(g=>{
     const a=1-g.age/30;
-    ctx.save(); ctx.globalAlpha=a*.9;
-    ctx.fillStyle=`hsl(${g.age*14%360},100%,60%)`;
-    ctx.fillRect(g.x*TILE+(Math.random()-.5)*3,g.y*TILE+(Math.random()-.5)*3,TILE,TILE);
+    ctx.save(); ctx.globalAlpha=a*0.85;
+    ctx.fillStyle=`hsl(${(g.age*22+GS.frame*8)%360},100%,65%)`;
+    const jx=(GS.frame%3-1)*1, jy=(GS.frame%2)*1;
+    ctx.fillRect(g.x*TILE+jx,g.y*TILE+jy,TILE,TILE);
+    ctx.globalAlpha=a*0.3;
+    ctx.fillStyle=`hsl(${(g.age*22+120+GS.frame*8)%360},100%,65%)`;
+    ctx.fillRect(g.x*TILE+jx+2,g.y*TILE+jy,TILE,TILE);
     ctx.restore();
   });
-}
 
-// v6: Draw speed ramps as diagonal wedges
-function drawSpeedRamps(){
-  if(!GS.map.speedRamps) return;
-  const t=GS.frame;
-  GS.map.speedRamps.forEach(ramp=>{
-    const px=ramp.tx*TILE, py=ramp.ty*TILE;
-    // Glowing orange wedge
-    const pulse=0.7+Math.sin(t*0.08+ramp.tx)*0.3;
-    ctx.save();
-    ctx.globalAlpha=pulse;
-    // Draw ramp wedge
-    ctx.fillStyle='#ff8800';
-    ctx.beginPath();
-    if(ramp.dir==='right'){
-      ctx.moveTo(px,py+TILE); ctx.lineTo(px+TILE,py+TILE); ctx.lineTo(px+TILE,py);
-    } else {
-      ctx.moveTo(px,py); ctx.lineTo(px,py+TILE); ctx.lineTo(px+TILE,py+TILE);
-    }
-    ctx.closePath(); ctx.fill();
-    // Arrow indicator
-    ctx.globalAlpha=1;
-    ctx.fillStyle='#ffdd00';
-    ctx.font=`${TILE-2}px sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(ramp.dir==='right'?'→':'←', px+TILE/2, py+TILE*0.7);
+  if(SETT.hitbox){
+    ctx.save(); ctx.globalAlpha=0.15;
+    ctx.fillStyle='#ff0000';
+    GS.players.forEach(p=>{
+      if(!p.alive) return;
+      ctx.fillRect(Math.round(p.x),Math.round(p.y),p.w,p.h);
+    });
     ctx.restore();
-  });
+  }
 }
 
 function drawMovingPlatsDraw(){
+  const b=GS.map.era;
   GS.map.movingPlats.forEach(mp=>{
-    const px=mp.x*TILE,py=mp.y*TILE,pw=mp.w*TILE;
-    ctx.fillStyle='#664422'; ctx.fillRect(px,py,pw,TILE);
-    ctx.fillStyle='rgba(255,180,60,0.38)'; ctx.fillRect(px,py,pw,3);
+    const px=Math.round(mp.x*TILE), py=Math.round(mp.y*TILE), pw=mp.w*TILE;
+    ctx.fillStyle=b.tileCol; ctx.fillRect(px,py,pw,TILE);
+    ctx.fillStyle=b.topEdge||b.accent; ctx.fillRect(px,py,pw,2);
+    const pulse=Math.abs(Math.sin(GS.frame*0.08+mp.origX*0.1));
+    ctx.save(); ctx.globalAlpha=0.25+pulse*0.25; ctx.fillStyle=b.accent;
+    ctx.fillRect(px+1,py+3,Math.round((pw-2)*pulse),2); ctx.restore();
+    ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.fillRect(px,py+TILE-2,pw,2);
   });
 }
 
 function drawObjects(){
-  const map=GS.map, t=GS.frame;
+  const map=GS.map, t=GS.frame, b=map.era;
   map.checkpoints.forEach(cp=>{
-    const px=cp.x*TILE,py=cp.y*TILE;
-    ctx.fillStyle='#335533'; ctx.fillRect(px+TILE/2-1,py-TILE*1.5,2,TILE*1.5);
-    ctx.fillStyle=cp.hit.length?'#224422':'#55ffaa';
-    ctx.fillRect(px+TILE/2+1,py-TILE*1.5,TILE*.6,TILE*.5);
+    const px=Math.round(cp.x*TILE), py=Math.round(cp.y*TILE);
+    const hit=cp.hit.length>0;
+    ctx.fillStyle=hit?'#334433':'#667755';
+    ctx.fillRect(px+TILE/2-1,py-TILE*2,2,TILE*2);
+    ctx.fillStyle=hit?'#336633':'#88ffaa';
+    ctx.beginPath(); ctx.moveTo(px+TILE/2+1,py-TILE*2); ctx.lineTo(px+TILE/2+1+Math.round(TILE*.7),py-TILE*1.75); ctx.lineTo(px+TILE/2+1,py-TILE*1.5); ctx.fill();
+    if(!hit){ ctx.save(); ctx.globalAlpha=0.15+Math.sin(t*0.1)*0.08; ctx.fillStyle='#88ffaa'; ctx.beginPath(); ctx.arc(px+TILE/2,py-TILE*1.5,TILE*0.9,0,Math.PI*2); ctx.fill(); ctx.restore(); }
   });
-
   const fin=map.finish;
-  const fpx=fin.x*TILE, fpy=fin.y*TILE;  // fpy is floor tile y → draw flag pole upward
-  const wv=Math.sin(t*.09)*2;
-  ctx.save();
-  ctx.globalAlpha=0.3+Math.sin(t*.07)*.15;
+  const fpx=Math.round(fin.x*TILE), fpy=Math.round(fin.y*TILE);
+  ctx.save(); ctx.globalAlpha=0.12+Math.sin(t*0.07)*0.06; ctx.fillStyle='#ffdd00';
+  ctx.beginPath(); ctx.arc(fpx+TILE/2,fpy-TILE*2.5,TILE*2.5,0,Math.PI*2); ctx.fill(); ctx.restore();
+  ctx.fillStyle='#aaaaaa'; ctx.fillRect(fpx+TILE/2-1,fpy-TILE*3.5,2,TILE*3.5);
+  const wv=Math.sin(t*0.1)*2.5;
   ctx.fillStyle='#ffdd00';
-  ctx.beginPath(); ctx.arc(fpx+TILE/2,fpy-TILE*2,TILE*2.5,0,Math.PI*2); ctx.fill();
-  ctx.restore();
-  ctx.fillStyle='#ccc'; ctx.fillRect(fpx+TILE/2,fpy-TILE*4,2,TILE*4);
-  ctx.fillStyle='#ffdd00';
-  ctx.beginPath();
-  ctx.moveTo(fpx+TILE/2+2,fpy-TILE*4);
-  ctx.lineTo(fpx+TILE*1.8+wv,fpy-TILE*3.5);
-  ctx.lineTo(fpx+TILE/2+2,fpy-TILE*3);
-  ctx.fill();
-
-  // Spikes (directional)
+  ctx.beginPath(); ctx.moveTo(fpx+TILE/2+1,fpy-TILE*3.5); ctx.lineTo(fpx+TILE/2+1+TILE+wv,fpy-TILE*3.2+wv*0.3); ctx.lineTo(fpx+TILE/2+1,fpy-TILE*2.8); ctx.fill();
+  ctx.fillStyle='#cc9900';
+  ctx.fillRect(fpx+TILE/2+2,fpy-TILE*3.5,Math.round(TILE*0.5),Math.round(TILE*0.35));
+  ctx.fillRect(fpx+TILE/2+2+Math.round(TILE*0.5),fpy-TILE*3.5+Math.round(TILE*0.35),Math.round(TILE*0.5),Math.round(TILE*0.35));
   map.spikes.forEach(sp=>{
-    const sx=sp.x*TILE, sy=sp.y*TILE;
-    if(!sp.dir||sp.dir==='up'){
-      ctx.fillStyle='#993333';
-      ctx.beginPath(); ctx.moveTo(sx+TILE/2,sy); ctx.lineTo(sx+TILE,sy+TILE); ctx.lineTo(sx,sy+TILE); ctx.fill();
-      ctx.fillStyle='#ff5555';
-      ctx.beginPath(); ctx.moveTo(sx+TILE/2,sy+2); ctx.lineTo(sx+TILE*.72,sy+TILE-2); ctx.lineTo(sx+TILE*.28,sy+TILE-2); ctx.fill();
-    } else if(sp.dir==='right'){
-      ctx.fillStyle='#993333';
-      ctx.beginPath(); ctx.moveTo(sx+TILE,sy+TILE/2); ctx.lineTo(sx,sy+TILE); ctx.lineTo(sx,sy); ctx.fill();
-      ctx.fillStyle='#ff5555';
-      ctx.beginPath(); ctx.moveTo(sx+TILE-2,sy+TILE/2); ctx.lineTo(sx+2,sy+TILE*.72); ctx.lineTo(sx+2,sy+TILE*.28); ctx.fill();
-    } else if(sp.dir==='left'){
-      ctx.fillStyle='#993333';
-      ctx.beginPath(); ctx.moveTo(sx,sy+TILE/2); ctx.lineTo(sx+TILE,sy+TILE); ctx.lineTo(sx+TILE,sy); ctx.fill();
-      ctx.fillStyle='#ff5555';
-      ctx.beginPath(); ctx.moveTo(sx+2,sy+TILE/2); ctx.lineTo(sx+TILE-2,sy+TILE*.72); ctx.lineTo(sx+TILE-2,sy+TILE*.28); ctx.fill();
-    }
+    const sx=Math.round(sp.x*TILE), sy=Math.round(sp.y*TILE);
+    ctx.save(); ctx.globalAlpha=0.22+Math.sin(t*0.12+sp.x)*0.08; ctx.fillStyle='#ff2222';
+    ctx.beginPath(); ctx.arc(sx+TILE/2,sy+TILE*0.7,TILE*0.8,0,Math.PI*2); ctx.fill(); ctx.restore();
+    ctx.fillStyle='#550000'; ctx.fillRect(sx,sy+TILE-3,TILE,3);
+    ctx.fillStyle='#cc2222'; ctx.beginPath(); ctx.moveTo(sx+TILE/2,sy+1); ctx.lineTo(sx+TILE-1,sy+TILE-1); ctx.lineTo(sx+1,sy+TILE-1); ctx.fill();
+    ctx.fillStyle='#ff6666'; ctx.fillRect(sx+TILE/2-1,sy+1,2,4);
   });
-
   map.bouncePads.forEach(bp=>{
-    const bx=bp.x*TILE,by=bp.y*TILE,bob=Math.sin(t*.1)*1;
-    ctx.fillStyle='#22bb77'; ctx.fillRect(bx,by+TILE-5+bob,TILE,5);
-    ctx.fillStyle='#88ffcc'; ctx.fillRect(bx+2,by+TILE-5+bob,TILE-4,2);
+    const bx=Math.round(bp.x*TILE), by=Math.round(bp.y*TILE);
+    const spring=Math.abs(Math.sin(t*0.12))*2;
+    ctx.fillStyle='#115533'; ctx.fillRect(bx,by+TILE-6,TILE,6);
+    ctx.fillStyle='#22ee88'; ctx.fillRect(bx+1,by+TILE-4+Math.round(spring),TILE-2,3);
+    ctx.fillStyle='#88ffcc'; ctx.fillRect(bx+2,by+TILE-4+Math.round(spring),TILE-4,1);
+    ctx.save(); ctx.globalAlpha=0.15+spring*0.04; ctx.fillStyle='#22ee88';
+    ctx.beginPath(); ctx.arc(bx+TILE/2,by+TILE-3,TILE*0.9,0,Math.PI*2); ctx.fill(); ctx.restore();
   });
-
   (map._teleporters||[]).forEach(tp=>{
     [[tp.ax,tp.ay],[tp.bx,tp.by]].forEach(([x,y])=>{
-      ctx.save(); ctx.globalAlpha=.65+Math.sin(t*.12)*.3;
-      ctx.fillStyle='#9900ff';
-      ctx.beginPath(); ctx.arc((x+.5)*TILE,(y+.5)*TILE,TILE*.8,0,Math.PI*2); ctx.fill();
-      ctx.restore();
+      const cx=(x+.5)*TILE, cy=(y+.5)*TILE;
+      ctx.save(); ctx.globalAlpha=0.7+Math.sin(t*0.12)*0.2; ctx.fillStyle='#6600cc';
+      ctx.beginPath(); ctx.arc(cx,cy,TILE*0.9,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=0.5+Math.sin(t*0.18+1)*0.2; ctx.fillStyle='#aa44ff';
+      ctx.beginPath(); ctx.arc(cx,cy,TILE*0.55,0,Math.PI*2); ctx.fill(); ctx.restore();
     });
-  });
-
-  (map.waitDoors||[]).forEach(wd=>{
-    if(!wd.active) return;
-    const wx=wd.tx*TILE,wy=wd.ty*TILE,ww=wd.tw*TILE,wh=wd.th*TILE;
-    const counting=wd.timer>0;
-    const pulse=Math.sin(GS.frame*(counting?0.25:0.06))*0.2+0.6;
-    ctx.save();
-    ctx.globalAlpha=counting?pulse*.85:.55;
-    const grad=ctx.createLinearGradient(wx,wy,wx+ww,wy+wh);
-    if(counting){ grad.addColorStop(0,'#ff9900'); grad.addColorStop(.5,'#ffdd00'); grad.addColorStop(1,'#ff6600'); }
-    else { grad.addColorStop(0,'#00aaff'); grad.addColorStop(.5,'#88ddff'); grad.addColorStop(1,'#0066cc'); }
-    ctx.fillStyle=grad; ctx.fillRect(wx,wy,ww,wh);
-    ctx.globalAlpha=.9; ctx.strokeStyle=counting?'#ffdd00':'#88ddff';
-    ctx.lineWidth=2; ctx.strokeRect(wx+1,wy+1,ww-2,wh-2);
-    if(counting){
-      const secs=Math.ceil(wd.timer/60);
-      ctx.globalAlpha=1; ctx.fillStyle='#fff';
-      ctx.font=`bold ${Math.floor(wh*.65)}px monospace`;
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.shadowColor='#ff6600'; ctx.shadowBlur=8;
-      ctx.fillText(secs,wx+ww/2,wy+wh/2); ctx.shadowBlur=0;
-    }
-    ctx.restore();
   });
 }
 
 function drawTrail(p){
-  if(!p.trail.length) return;
+  if(!p.alive) return;
+  const spd=Math.hypot(p.vx,p.vy);
+  if(!p.trail.length && spd<3) return;
   ctx.save();
   p.trail.forEach(tr=>{
-    const a=(1-tr.age/10)*(p.flow/FLOW_MAX)*.5;
-    if(a<=0) return;
+    const flowFactor=Math.max(0.3,p.flow/FLOW_MAX);
+    const a=(1-tr.age/10)*flowFactor*(0.6*(SETT.flowIntensity/100));
+    if(a<=0.01) return;
     ctx.globalAlpha=a; ctx.fillStyle=p.color;
-    const s=4*(1-tr.age/10);
-    ctx.fillRect(tr.x-s/2,tr.y-s/2,s,s);
+    const s=Math.round(2*(1-tr.age/10)*flowFactor+1);
+    ctx.fillRect(Math.round(tr.x-s/2),Math.round(tr.y-s/2),s,s);
   });
+  if(SETT.motion && spd > SPEED_CAP * 0.65 && !p.onGround){
+    const spdT=Math.min((spd-SPEED_CAP*0.65)/(SPEED_CAP*0.35),1.0);
+    for(let i=0;i<3;i++){
+      const ly=Math.round(p.y+3+i*3.5), lx=Math.round(p.x+p.w/2);
+      const llen=Math.round(spdT*10*(1-i*0.25));
+      ctx.globalAlpha=spdT*(0.35-i*0.1); ctx.fillStyle=p.color;
+      ctx.fillRect(lx-llen*(p.facing>0?1:0),ly,llen,1);
+    }
+  }
   ctx.restore();
 }
 
@@ -1700,162 +2079,190 @@ function drawPlayer(p){
   if(!p.alive) return;
   const px=Math.round(p.x), py=Math.round(p.y);
   const w=p.w, h=p.h, fc=p.facing;
+  const spd=Math.abs(p.vx), t=GS.frame;
 
   p.dustParts.forEach(d=>{
-    const a=1-d.age/d.life;
-    ctx.save(); ctx.globalAlpha=a*.55; ctx.fillStyle='#ccc';
-    ctx.fillRect(d.x-1.5,d.y-1.5,3,3); ctx.restore();
+    const a=(1-d.age/d.life)*0.7;
+    ctx.save(); ctx.globalAlpha=a; ctx.fillStyle='#d0c8b0';
+    const ds=Math.round(2*(1-d.age/d.life));
+    ctx.fillRect(Math.round(d.x-ds/2),Math.round(d.y-ds/2),ds,ds); ctx.restore();
   });
 
-  if(p.flowInvincible||p.glowFrames>0){
-    ctx.save(); ctx.globalAlpha=.38+Math.sin(GS.frame*.2)*.22;
-    ctx.shadowColor=p.color; ctx.shadowBlur=20; ctx.fillStyle=p.color;
-    ctx.fillRect(px-6,py-6,w+12,h+12); ctx.restore();
+  if(p.flowInvincible){
+    ctx.save();
+    const pulse=0.4+Math.sin(t*0.25)*0.2*(SETT.flowIntensity/100);
+    ctx.globalAlpha=pulse; ctx.fillStyle=p.color;
+    ctx.fillRect(px-2,py-2,w+4,h+4);
+    ctx.globalAlpha=pulse*0.4; ctx.fillRect(px-4,py-4,w+8,h+8); ctx.restore();
+  }
+  if(p.glowFrames>0&&!p.flowInvincible){
+    ctx.save(); ctx.globalAlpha=(p.glowFrames/20)*0.35*(SETT.flowIntensity/100);
+    ctx.fillStyle=p.color; ctx.fillRect(px-3,py-3,w+6,h+6); ctx.restore();
   }
   if(p.reverseTimer>0){
-    ctx.save(); ctx.globalAlpha=.45+Math.sin(GS.frame*.25)*.3;
-    ctx.fillStyle='#ff00ff'; ctx.fillRect(px-4,py-4,w+8,h+8); ctx.restore();
-  }
-  if(p.hitFlash>0&&p.hitFlash%4<2){
-    ctx.save(); ctx.globalAlpha=.85; ctx.fillStyle='#fff';
-    ctx.fillRect(px,py,w,h); ctx.restore(); return;
+    ctx.save(); ctx.globalAlpha=0.4+Math.sin(t*0.3)*0.2;
+    ctx.fillStyle='#ee00dd'; ctx.fillRect(px-2,py-2,w+4,h+4); ctx.restore();
   }
 
-  // Speed ramp aura (v6)
-  if(p.onSlope&&p.onGround){
-    ctx.save(); ctx.globalAlpha=.35+Math.sin(GS.frame*.15)*.2;
-    ctx.fillStyle='#ff8800'; ctx.fillRect(px-4,py-4,w+8,h+8); ctx.restore();
-  }
+  if(p.hitFlash>0&&p.hitFlash%4<2){ ctx.fillStyle='#ffffff'; ctx.fillRect(px,py,w,h); return; }
 
   const sq=p.landSquish;
-  const scX=1+sq*.09, scY=1-sq*.09;
+  let scX=1, scY=1;
+  if(SETT.motion){
+    if(sq>0){ scX=1+sq*0.12; scY=1-sq*0.12; }
+    else if(!p.onGround&&p.vy<-2){ scX=0.88; scY=1.14; }
+    else if(!p.onGround&&p.vy>4){ scX=0.9; scY=1.10; }
+  }
+  const tilt=SETT.motion ? Math.min(spd/SPEED_CAP,1.0)*0.18*fc : 0;
+
   ctx.save();
-  ctx.translate(px+w/2,py+h); ctx.scale(scX,scY); ctx.translate(-(px+w/2),-(py+h));
+  ctx.translate(px+w/2,py+h); ctx.rotate(tilt); ctx.scale(scX,scY); ctx.translate(-(px+w/2),-(py+h));
 
   if(p.sliding){
-    ctx.fillStyle=p.color; ctx.fillRect(px,py+h-7,w+3,7);
-    ctx.fillStyle='#f4b886'; ctx.fillRect(px+(fc>0?w-4:1),py+h-10,6,5);
-    ctx.fillStyle='#000'; ctx.fillRect(px+(fc>0?w:2),py+h-9,2,2);
-    ctx.fillStyle='#334466'; ctx.fillRect(px+(fc>0?0:w-4),py+h-5,4,5);
+    ctx.fillStyle=p.color; ctx.fillRect(px,py+h-5,w+2,5);
+    ctx.fillStyle='#e8c090'; ctx.fillRect(px+(fc>0?w-4:0),py+h-9,5,4);
+    ctx.fillStyle='#1a1a2e'; ctx.fillRect(px+(fc>0?w+0:1),py+h-8,2,2);
+    ctx.fillStyle='#223355'; ctx.fillRect(px+(fc>0?1:w-4),py+h-3,4,3);
   } else if(!p.onGround){
-    ctx.fillStyle=p.color; ctx.fillRect(px+1,py+4,w-2,h-6);
-    ctx.fillStyle='#f4b886'; ctx.fillRect(px+2,py,w-4,6);
-    ctx.fillStyle='#000'; ctx.fillRect(px+(fc>0?5:3),py+2,3,3);
-    ctx.fillStyle='#553300'; ctx.fillRect(px+1,py,w-2,2);
-    ctx.fillStyle='#334466';
-    ctx.fillRect(px+1,py+h-5,4,5); ctx.fillRect(px+w-5,py+h-5,4,5);
-    ctx.fillStyle='#f4b886'; ctx.fillRect(px+(fc>0?w-1:-3),py+6,3,5);
-  } else {
-    const rf=Math.floor(p.runFrame)%4;
-    const la=rf<2?0:1, lb=1-la;
-    ctx.fillStyle=p.color; ctx.fillRect(px+1,py+5,w-2,h-8);
-    ctx.fillStyle='#f4b886'; ctx.fillRect(px+2,py,w-4,6);
-    ctx.fillStyle='#000'; ctx.fillRect(px+(fc>0?5:3),py+2,3,3);
-    ctx.fillStyle='#553300'; ctx.fillRect(px+1,py,w-2,2);
-    ctx.fillStyle='#334466';
-    ctx.fillRect(px+1,py+h-5,4,5+la); ctx.fillRect(px+w-5,py+h-5,4,5+lb);
-    if(p.bhopTimer>0){
-      ctx.save(); ctx.globalAlpha=p.bhopTimer/BHOP_WINDOW*.7;
-      ctx.fillStyle='#ffff00'; ctx.fillRect(px,py+h,w,2); ctx.restore();
+    ctx.fillStyle=p.color; ctx.fillRect(px+1,py+3,w-2,h-6);
+    ctx.fillStyle='#e8c090'; ctx.fillRect(px+2,py,w-4,5);
+    ctx.fillStyle='#2a1a0a'; ctx.fillRect(px+1,py,w-2,2);
+    ctx.fillStyle='#1a1a2e'; ctx.fillRect(px+(fc>0?4:2),py+1,2,2);
+    ctx.fillStyle='#223355'; ctx.fillRect(px+1,py+h-5,3,5); ctx.fillRect(px+w-4,py+h-5,3,5);
+    ctx.fillStyle='#e8c090'; ctx.fillRect(px+(fc>0?w-1:-2),py+4,2,5);
+    if(p.doubleJump){
+      ctx.save(); ctx.globalAlpha=0.6; ctx.fillStyle=p.color;
+      ctx.fillRect(px+1,py-3,w-2,1); ctx.restore();
     }
-    ctx.fillStyle='#f4b886'; ctx.fillRect(px+(fc>0?w-1:-3),py+6,3,5);
+    if(GS.currentEra?.mechanic==='air_dash' && p._eraDashAvail){
+      ctx.save(); ctx.globalAlpha=0.7; ctx.fillStyle='#5566ff';
+      ctx.fillRect(px,py-5,w,2); ctx.restore();
+    }
+  } else {
+    const rf=Math.floor(p.runFrame)%4, la=rf<2?0:1, lb=1-la;
+    ctx.fillStyle=p.color; ctx.fillRect(px+1,py+4,w-2,h-7);
+    ctx.fillStyle='#e8c090'; ctx.fillRect(px+2,py,w-4,5);
+    ctx.fillStyle='#2a1a0a'; ctx.fillRect(px+1,py,w-2,2);
+    ctx.fillStyle='#1a1a2e'; ctx.fillRect(px+(fc>0?4:2),py+1,2,2);
+    ctx.fillStyle=p.color+'cc'; ctx.fillRect(px+2,py+4,w-4,1);
+    ctx.fillStyle='#223355'; ctx.fillRect(px+1,py+h-4,3,4+la); ctx.fillRect(px+w-4,py+h-4,3,4+lb);
+    ctx.fillStyle='#e8c090'; ctx.fillRect(px+(fc>0?w-1:-2),py+4,2,4+lb);
+    if(p.bhopTimer>0){
+      ctx.save(); ctx.globalAlpha=(p.bhopTimer/9)*0.85; ctx.fillStyle='#ffee44';
+      ctx.fillRect(px,py+h,w,1); ctx.restore();
+    }
   }
   ctx.restore();
 
   if(p.onWall!==0){
-    ctx.fillStyle='rgba(255,200,100,.5)';
-    ctx.fillRect(p.onWall>0?px+w:px-4,py+2,4,h-4);
+    ctx.save(); ctx.globalAlpha=0.5; ctx.fillStyle='#ffcc66';
+    const wx=p.onWall>0?px+w:px-2;
+    ctx.fillRect(wx,py+2,2,h-4);
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(wx+p.onWall,py+Math.round(h/2)+Math.round(Math.sin(t*0.4)*3),1,1);
+    ctx.restore();
   }
 
-  ctx.font='6px "Press Start 2P"'; ctx.fillStyle='#fff'; ctx.textAlign='center';
-  ctx.shadowColor='#000'; ctx.shadowBlur=4;
-  // Show personality label for bots
-  const label = p.isBot ? `${p.name}` : p.name;
-  ctx.fillText(label,px+w/2,py-5); ctx.shadowBlur=0;
+  ctx.save();
+  ctx.font='5px "Press Start 2P"'; ctx.textAlign='center';
+  ctx.fillStyle='rgba(0,0,0,0.85)'; ctx.fillText(p.name,px+w/2+1,py-2);
+  ctx.fillStyle=p.color; ctx.fillText(p.name,px+w/2,py-3);
+  ctx.restore();
 
   if(p.powerup){
-    ctx.fillStyle='#0088ff'; ctx.fillRect(px+w-1,py-7,10,8);
-    ctx.fillStyle='#fff'; ctx.font='5px sans-serif'; ctx.fillText('★',px+w+4,py-1);
-  }
-
-  // Speed dots
-  const spd=Math.abs(p.vx);
-  if(spd>WALK_SPEED*1.5&&!p.onGround){
-    const numDots=Math.floor((spd/SPEED_CAP)*5);
-    ctx.save(); ctx.globalAlpha=0.6;
-    for(let i=0;i<numDots;i++){
-      ctx.fillStyle=p.color;
-      const dotX=px+(fc<0?w+2+i*4:-4-i*4);
-      ctx.fillRect(dotX,py+h/2-1,2,2);
-    }
-    ctx.restore();
+    ctx.save(); ctx.globalAlpha=0.9; ctx.fillStyle='#0066cc';
+    ctx.fillRect(px+w,py-6,7,7); ctx.fillStyle='#44aaff'; ctx.fillRect(px+w+1,py-5,5,5);
+    ctx.fillStyle='#ffffff'; ctx.font='4px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('★',px+w+3,py); ctx.restore();
   }
 }
 
 function drawLava(){
-  const mW=GS.map.W*TILE, t=GS.frame*.06;
-  ctx.save(); ctx.shadowColor='#ff4400'; ctx.shadowBlur=36;
-  ctx.fillStyle='#bb1e00';
-  ctx.fillRect(-10,GS.lavaY,mW+20,GS.map.H*TILE-GS.lavaY+200);
-  ctx.fillStyle='#ff5500';
-  ctx.beginPath(); ctx.moveTo(-10,GS.lavaY);
-  for(let x=-10;x<mW+10;x+=7)
-    ctx.lineTo(x,GS.lavaY+Math.sin(x*.045+t)*4+Math.cos(x*.07+t*1.4)*3);
-  ctx.lineTo(mW+10,GS.lavaY+20); ctx.lineTo(-10,GS.lavaY+20); ctx.fill();
-  ctx.restore();
+  const mW=GS.map.W*TILE, t=GS.frame*0.05, ly=GS.lavaY;
+  ctx.fillStyle='#7a0c00'; ctx.fillRect(-10,ly+12,mW+20,GS.map.H*TILE-ly+200);
+  ctx.fillStyle='#cc2200'; ctx.beginPath(); ctx.moveTo(-10,ly);
+  for(let x=-10;x<mW+10;x+=6) ctx.lineTo(x,ly+Math.round(Math.sin(x*0.04+t)*3+Math.cos(x*0.065+t*1.3)*2));
+  ctx.lineTo(mW+10,ly+20); ctx.lineTo(-10,ly+20); ctx.fill();
+  ctx.fillStyle='#ff4400'; ctx.beginPath(); ctx.moveTo(-10,ly-1);
+  for(let x=-10;x<mW+10;x+=6) ctx.lineTo(x,ly-1+Math.round(Math.sin(x*0.04+t+0.4)*3+Math.cos(x*0.065+t*1.3+0.4)*2));
+  ctx.lineTo(mW+10,ly+4); ctx.lineTo(-10,ly+4); ctx.fill();
+  ctx.save(); ctx.globalAlpha=0.5; ctx.fillStyle='#ff8844';
+  ctx.fillRect(-10,ly-1,mW+20,2); ctx.restore();
 }
 
 function drawDarkness(offX,offY){
-  const oc=document.createElement('canvas');
-  oc.width=canvas.width; oc.height=canvas.height;
-  const oc2=oc.getContext('2d');
-  oc2.fillStyle='rgba(0,0,0,.96)'; oc2.fillRect(0,0,oc.width,oc.height);
+  const oc=document.createElement('canvas'); oc.width=canvas.width; oc.height=canvas.height;
+  const oc2=oc.getContext('2d'); oc2.fillStyle='rgba(0,0,0,.96)'; oc2.fillRect(0,0,oc.width,oc.height);
   oc2.globalCompositeOperation='destination-out';
   GS.players.forEach(p=>{
     if(!p.alive) return;
     const sx=(p.x+p.w/2)*cam.zoom+offX, sy=(p.y+p.h/2)*cam.zoom+offY;
-    const g=oc2.createRadialGradient(sx,sy,0,sx,sy,110);
+    const g=oc2.createRadialGradient(sx,sy,0,sx,sy,100);
     g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(1,'rgba(0,0,0,0)');
-    oc2.fillStyle=g; oc2.beginPath(); oc2.arc(sx,sy,110,0,Math.PI*2); oc2.fill();
+    oc2.fillStyle=g; oc2.beginPath(); oc2.arc(sx,sy,100,0,Math.PI*2); oc2.fill();
   });
   ctx.drawImage(oc,0,0);
 }
 
 function drawHUD(){
-  const W=canvas.width, H=canvas.height;
-  const bW=Math.min(140,(W-16)/Math.max(GS.players.length,1)-6);
-  const totW=GS.players.length*(bW+6);
-  const sx=(W-totW)/2;
+  const W=canvas.width, H=canvas.height, t=GS.frame;
+  const era=GS.currentEra;
+
+  const barW=Math.min(110,(W-20)/Math.max(GS.players.length,1)-8);
+  const barH=4;
+  const totalBars=GS.players.length*(barW+8);
+  const barStartX=(W-totalBars)/2;
+  const barY=H-18;
+
   GS.players.forEach((p,i)=>{
-    const bx=sx+i*(bW+6), by=H-30;
-    ctx.font='6px "Press Start 2P"'; ctx.textAlign='center';
-    ctx.fillStyle=p.eliminated?'#444':p.color;
-    ctx.fillText(p.name,bx+bW/2,by-10);
-    if(p.eliminated){ctx.fillStyle='#ff2200';ctx.fillText('LAVA',bx+bW/2,by+2);return;}
-    if(p.finished){ctx.fillStyle='#ffdd00';ctx.fillText('DONE!',bx+bW/2,by+2);return;}
-    ctx.fillStyle='#111'; ctx.fillRect(bx,by,bW,10);
-    ctx.strokeStyle=p.color; ctx.lineWidth=1; ctx.strokeRect(bx,by,bW,10);
-    const fw=(p.flow/FLOW_MAX)*(bW-2);
-    if(fw>0){
-      const g=ctx.createLinearGradient(bx+1,0,bx+bW-1,0);
-      g.addColorStop(0,'#ff6600'); g.addColorStop(.6,'#ffdd00'); g.addColorStop(1,'#fff');
-      ctx.fillStyle=g; ctx.fillRect(bx+1,by+1,fw,8);
+    const bx=Math.round(barStartX+i*(barW+8)), by=barY;
+    const fl=p.flow/FLOW_MAX;
+    ctx.save(); ctx.font='5px "Press Start 2P"'; ctx.textAlign='center';
+    ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillText(p.name,bx+barW/2+1,by-5);
+    ctx.fillStyle=p.eliminated?'#ff3300':p.finished?'#ffee44':p.color;
+    ctx.fillText(p.name,bx+barW/2,by-6); ctx.restore();
+    if(p.eliminated){ ctx.fillStyle='rgba(255,40,0,0.3)'; ctx.fillRect(bx,by,barW,barH); return; }
+    if(p.finished){
+      ctx.fillStyle='rgba(255,220,0,0.4)'; ctx.fillRect(bx,by,barW,barH);
+      ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.font='4px "Press Start 2P"'; ctx.textAlign='center';
+      ctx.fillStyle='#ffee44'; ctx.fillText('DONE',bx+barW/2,by+barH+8); return;
     }
+    ctx.fillStyle='rgba(255,255,255,0.07)'; ctx.fillRect(bx,by,barW,barH);
+    if(fl>0){
+      const fw=Math.round(fl*(barW-0));
+      const g=ctx.createLinearGradient(bx,0,bx+barW,0);
+      if(fl>=1.0){
+        const pulse=0.7+Math.sin(t*0.25)*0.3;
+        g.addColorStop(0,p.color); g.addColorStop(0.5,'#ffffff'); g.addColorStop(1,p.color);
+        ctx.save(); ctx.globalAlpha=pulse;
+      } else {
+        g.addColorStop(0,'#ff5500'); g.addColorStop(0.5,'#ffcc00'); g.addColorStop(1,p.color);
+      }
+      ctx.fillStyle=g; ctx.fillRect(bx,by,fw,barH);
+      if(fl>=1.0) ctx.restore();
+    }
+    ctx.fillStyle=p.color+'55'; ctx.fillRect(bx,by,barW,1);
     if(p.flowInvincible){
-      ctx.save(); ctx.globalAlpha=.5+Math.sin(GS.frame*.2)*.35;
-      ctx.fillStyle=p.color; ctx.fillRect(bx,by,bW,10); ctx.restore();
-      ctx.font='4px "Press Start 2P"'; ctx.fillStyle='#000';
-      ctx.fillText('INVINCIBLE',bx+bW/2,by+7);
+      ctx.save(); ctx.globalAlpha=0.9; ctx.font='4px "Press Start 2P"'; ctx.textAlign='center';
+      ctx.fillStyle='#ffffff';
+      if(Math.floor(t*0.15)%2===0) ctx.fillText('MAX FLOW',bx+barW/2,by+barH+8);
+      ctx.restore();
     }
-    if(p.powerup){ctx.fillStyle='#0088ff';ctx.font='5px "Press Start 2P"';ctx.fillText('★',bx+bW/2,by+21);}
-    if(p.reverseTimer>0){ctx.fillStyle='#ff00ff';ctx.font='5px "Press Start 2P"';ctx.fillText('REV!',bx+bW/2,by+21);}
-    // Show bot personality label
-    if(p.isBot){
-      const icons={'rusher':'⚡','avoider':'🛡','balanced':'⚖'};
-      ctx.fillStyle='#888'; ctx.font='4px "Press Start 2P"';
-      ctx.fillText((icons[p._botPersonality]||'?'),bx+bW/2,by+22);
-    }
+    if(p.powerup){ ctx.fillStyle='#4499ff'; ctx.fillRect(bx+barW-5,by-2,4,4); }
+    if(p.reverseTimer>0){ ctx.fillStyle='#ff44ff'; ctx.fillRect(bx,by-2,4,4); }
   });
+
+  ctx.save();
+  const panH=GS.players.length*11+8;
+  ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(6,6,84,panH);
+  ctx.font='5px "Press Start 2P"'; ctx.textAlign='left';
+  GS.players.forEach((p,i)=>{
+    ctx.fillStyle=p.color; ctx.fillText(`${p.isBot?'»':''}${p.name}`,10,14+i*11);
+    ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.fillText(`${GS.wins[p.idx]||0}`,78,14+i*11);
+  });
+  ctx.fillStyle='rgba(255,255,255,0.18)';
+  ctx.fillText(`${era?.icon||''}${era?.name?.slice(0,8)||''}`,10,14+GS.players.length*11);
+  ctx.restore();
 
   if(GS.running){
     const td=document.getElementById('timerHud');
@@ -1864,52 +2271,85 @@ function drawHUD(){
     td.textContent=`${m}:${s.toString().padStart(2,'0')}`;
     td.className='timer-hud'+(GS.roundTime<30?' danger':'');
   }
-  if(GS.running&&GS.players.length>1){
+  if(GS.running && GS.players.length>1){
     const ph=document.getElementById('placeHud'); ph.style.display='block';
     const alive=GS.players.filter(p=>p.alive&&!p.finished).sort((a,b)=>b.x-a.x);
     ph.innerHTML=alive.slice(0,3).map((p,i)=>`<span style="color:${p.color}">${['1ST','2ND','3RD'][i]} ${p.name}</span>`).join('<br>');
   }
 
-  if(GS.running&&GS.players[0]&&!GS.players[0].isBot){
-    const p=GS.players[0], spd=Math.abs(p.vx);
-    if(spd>3.0){
-      ctx.save(); ctx.font='5px "Press Start 2P"'; ctx.textAlign='left';
-      ctx.fillStyle=`rgba(${Math.floor(spd/SPEED_CAP*255)},${Math.floor((1-spd/SPEED_CAP)*200)},50,0.8)`;
-      ctx.fillText(`SPD ${Math.floor(spd*10)/10}`,10,H-42); ctx.restore();
-    }
+  if(GS.running && era){
+    const eh=document.getElementById('eraHud');
+    eh.style.display='block';
+    eh.textContent=era.icon+' '+era.name;
+    eh.style.color=(era.color||'#ffffff')+'88';
   }
 
-  const dbg=document.getElementById('debugOverlay');
-  if(dbg.style.display!=='none'&&GS.players[0]){
+  if(GS.winStreak>1){
+    const sh=document.getElementById('streakHud');
+    sh.style.display='block';
+    sh.textContent=`🔥 ${GS.winStreak} STREAK`;
+    sh.style.color=GS.winStreak>=5?'#ff4444':'#ffdd00';
+  } else {
+    document.getElementById('streakHud').style.display='none';
+  }
+
+  if(GS.isDaily && GS.running){
+    const pb=getPB('daily_'+getDailySeed());
+    const elapsed = Math.floor((Date.now()-GS.dailyStartTime)/1000);
+    const pbEl=document.getElementById('pbHud');
+    pbEl.style.display='block';
+    pbEl.innerHTML=`TIME: ${elapsed}s`+(pb?`<br>BEST: ${pb}s`:'');
+  } else { document.getElementById('pbHud').style.display='none'; }
+
+  if(SETT.fps){
+    const fpsc=document.getElementById('fpsCounter');
+    fpsc.style.display='block';
+    fpsc.textContent=`FPS: ${GS._fps}`;
+  }
+
+  if(SETT.debug && GS.players[0]){
     const p=GS.players[0];
-    dbg.textContent=`vx:${p.vx.toFixed(2)} vy:${p.vy.toFixed(2)} gnd:${p.onGround?1:0} wall:${p.onWall} flow:${Math.floor(p.flow)} slope:${p.onSlope?p.slopeDir:0} wp:${p._botWaypointIdx||'-'}`;
+    const phys=getEraPhysics();
+    const dbg=document.getElementById('debugOverlay');
+    dbg.style.display='block';
+    dbg.innerHTML=[
+      `vx:${p.vx.toFixed(2)} vy:${p.vy.toFixed(2)}`,
+      `gnd:${p.onGround?1:0} wall:${p.onWall} flow:${Math.floor(p.flow)}`,
+      `coyote:${p.coyoteTimer} buf:${p.jumpBuffer} airT:${p._airTime}`,
+      `vault:${p.vaultCooldown} bhop:${p.bhopTimer}`,
+      `era: ${GS.currentEra?.name||'—'}`,
+      `phys g:${phys.gravity.toFixed(2)} spd:${phys.speedMult.toFixed(2)}`,
+      `streak:${GS.winStreak}`,
+    ].join('<br>');
   }
-
-  ctx.font='5px "Press Start 2P"'; ctx.textAlign='left';
-  ctx.fillStyle='rgba(0,0,0,.65)';
-  ctx.fillRect(6,6,100,GS.players.length*13+14);
-  GS.players.forEach((p,i)=>{
-    ctx.fillStyle=p.color;
-    ctx.fillText(`${p.isBot?'🤖':''}${p.name}:${GS.wins[i]||0}W`,12,18+i*13);
-  });
-  ctx.fillStyle='#555';
-  ctx.fillText(`ERA ${Math.floor(GS.eraWins/5)+1}·${(GS.map?.diff?.name||'').toUpperCase()}`,12,18+GS.players.length*13+4);
 }
 
 // ── GAME LOOP ──────────────────────────────────────────────────
 let lastTime=0, rafId=null;
+let _fpsFrameCount=0, _fpsLastTime=0;
+
 function gameLoop(ts){
   rafId=requestAnimationFrame(gameLoop);
   const dt=Math.min((ts-lastTime)/16.667,3);
   lastTime=ts;
+
+  _fpsFrameCount++;
+  if(ts - _fpsLastTime >= 1000){
+    GS._fps = _fpsFrameCount;
+    _fpsFrameCount = 0;
+    _fpsLastTime = ts;
+  }
+
   if(!GS.running||GS.paused){ updateCamera(); render(); clearJust(); return; }
   GS.frame++;
-  GS.roundTime-=dt/60;
-  if(GS.roundTime<=0&&!GS.suddenDeath){ GS.roundTime=0; activateSuddenDeath(); }
+  GS.roundTime -= dt/60;
+  if(GS.roundTime<=0 && !GS.suddenDeath){ GS.roundTime=0; activateSuddenDeath(); }
   updateMovingPlats();
   updateSuddenDeath();
+  updateEraMechanics();
   GS.players.forEach(p=>updatePlayer(p));
   updateCamera();
+  updateVaultFlash();
   render();
   clearJust();
 }
@@ -1921,7 +2361,7 @@ const POWERUPS=[
   {id:'ghost',       name:'GHOST',       desc:'Invincible briefly'},
   {id:'reverse',     name:'REVERSE',     desc:'Flip 1st place 3s'},
   {id:'trap_immune', name:'IMMUNITY',    desc:'Ignore 1 trap'},
-  {id:'redraw_maze', name:'REDRAW MAZE', desc:'Regen the whole map!'},
+  {id:'redraw_maze', name:'REDRAW MAZE', desc:'Regen the whole map now!'},
 ];
 const CORRUPTIONS=[
   {id:'add_spike',    name:'ADD SPIKES',  desc:'Spikes near route'},
@@ -1943,39 +2383,52 @@ function applySpecialEvent(e){
   if(e.id==='dark_map')     GS._darkMap=true;
   if(e.id==='gravity_flip') GS._gravityFlip=true;
 }
-
 function applyCorruption(c){
   if(!GS.map) return;
-  const r2=mulberry32(Date.now())();
   switch(c.id){
-    case 'add_spike':
-      for(let i=0;i<6;i++){
-        const fin=GS.map.finish;
-        const sx=fin.x-10+Math.floor(r2*20);
-        const sy=Math.floor(r2*GS.map.H*.7);
-        if(sx>0&&sx<GS.map.W&&sy>0&&sy<GS.map.H&&GS.map.tiles[sy*GS.map.W+sx]===0
-           &&sy+1<GS.map.H&&GS.map.tiles[(sy+1)*GS.map.W+sx]===1)
-          GS.map.spikes.push({x:sx,y:sy,dir:'up'});
-      }
-      break;
-    case 'remove_block':
-      for(let i=0;i<10;i++){
-        const rx=Math.floor(GS.map.W*.3+r2*GS.map.W*.5);
-        const ry=Math.floor(r2*GS.map.H*.7);
-        if(rx<GS.map.W&&ry<GS.map.H){ GS.map.tiles[ry*GS.map.W+rx]=0; GS.map.glitchTiles.push({x:rx,y:ry,age:0}); }
-      }
-      break;
-    case 'add_moving':
-      const fin2=GS.map.finish;
-      GS.map.movingPlats.push({x:fin2.x-15,y:10,origX:fin2.x-15,origY:10,w:4,range:40,speed:.9,vert:false,t:0});
-      break;
-    case 'add_bounce':
-      for(let i=0;i<4;i++)
-        GS.map.bouncePads.push({x:Math.floor(GS.map.W*.2+r2*GS.map.W*.6),y:Math.floor(r2*GS.map.H*.7)});
-      break;
+    case 'add_spike':{
+      const rng2=mulberry32(Date.now()+1);
+      for(let i=0;i<8;i++){
+        const sx=Math.floor(GS.map.W*0.2+rng2()*GS.map.W*0.6);
+        const sy=Math.floor(rng2()*GS.map.H*0.85);
+        if(sx>0&&sx<GS.map.W&&sy>1&&sy<GS.map.H&&
+           GS.map.tiles[sy*GS.map.W+sx]===0 &&
+           GS.map.tiles[(sy+1)*GS.map.W+sx]===1)
+          GS.map.spikes.push({x:sx,y:sy});
+      } break;}
+    case 'remove_block':{
+      const rng3=mulberry32(Date.now()+2);
+      for(let i=0;i<8;i++){
+        const rx=Math.floor(GS.map.W*0.25+rng3()*GS.map.W*0.55);
+        const ry=Math.floor(rng3()*GS.map.H*0.8);
+        if(rx>0&&rx<GS.map.W&&ry>0&&ry<GS.map.H&&GS.map.tiles[ry*GS.map.W+rx]===1){
+          GS.map.tiles[ry*GS.map.W+rx]=0;
+          GS.map.glitchTiles.push({x:rx,y:ry,age:0});
+        }
+      } break;}
+    case 'add_moving':{
+      const rng5=mulberry32(Date.now()+4);
+      GS.map.movingPlats.push({
+        x:Math.floor(GS.map.W*0.2+rng5()*GS.map.W*0.6),
+        y:Math.floor(rng5()*GS.map.H*0.7)+2,
+        origX:0, origY:0,
+        w:4, range:48, speed:0.9+rng5()*0.4, vert:rng5()>0.5, t:rng5()*Math.PI*2
+      });
+      const mp=GS.map.movingPlats[GS.map.movingPlats.length-1];
+      mp.origX=mp.x; mp.origY=mp.y;
+      break;}
+    case 'add_bounce':{
+      const rng4=mulberry32(Date.now()+3);
+      for(let i=0;i<4;i++){
+        const bx=Math.floor(GS.map.W*0.15+rng4()*GS.map.W*0.7);
+        const by=Math.floor(rng4()*GS.map.H*0.8);
+        if(bx>0&&bx<GS.map.W&&by>0&&by<GS.map.H&&
+           GS.map.tiles[by*GS.map.W+bx]===0 &&
+           GS.map.tiles[(by+1)*GS.map.W+bx]===1)
+          GS.map.bouncePads.push({x:bx,y:by});
+      } break;}
     case 'add_teleport':
-      const fin3=GS.map.finish;
-      GS.map._teleporters.push({ax:8,ay:20,bx:fin3.x-5,by:15});
+      GS.map._teleporters.push({ax:8,ay:20,bx:GS.map.finish.x-5,by:15});
       break;
   }
 }
@@ -1986,43 +2439,69 @@ function startRound(){
   GS.suddenDeath=false; GS.lavaY=99999; GS.roundWinner=null;
   GS._lowGravity=false; GS._speedDemon=false; GS._darkMap=false; GS._gravityFlip=false;
   clearInterval(GS._glitchIv);
+  fadeIn();
   document.getElementById('sdBanner').style.display='none';
   document.getElementById('timerHud').style.display='block';
-
-  // Always regenerate the map for each new round (fresh maze every match)
-  GS.seed = (GS.seed + 1337 + GS.round * 7919) >>> 0;
-  GS.map = generateMap(GS.seed, GS.currentBiome, GS.difficulty);
-
+  if(GS.isDaily) GS.dailyStartTime = Date.now();
   GS.players.forEach(p=>{
     spawnPlayer(p);
     p.vx=0; p.vy=0; p.alive=true; p.eliminated=false; p.finished=false;
     p.flow=0; p.flowInvincible=false; p.lastCheckpoint=-1; p.checkpointPos=null;
     p.trail=[]; p.dustParts=[]; p.reverseTimer=0; p.respawnTimer=0;
-    p.sliding=false; p.h=NORMAL_H; p.w=PLAYER_W;
+    p.sliding=false; p.h=NORMAL_H;
     p.coyoteTimer=0; p.jumpBuffer=0; p.jumpHeld=false; p.jumpHoldFrames=0;
     p.onWall=0; p.wallLockTimer=0; p.vaultCooldown=0; p.fastFalling=false;
-    p.doubleJump=true; p.bhopTimer=0; p._bhopStack=0; p._prevDown=false; p._airBraking=false;
-    p._botJump=false; p._botJumpCD=0;
-    p._botWaypointIdx=1; p._botStuckTimer=0; p._prevX=p.x; p._stuckSamples=[];
-    p.landSquish=0; p.hitFlash=0; p.onSlope=false;
+    p.doubleJump=true; p._tripleJump=false; p._ghostTimer=0; p._trapShield=false;
+    p.bhopTimer=0; p._prevDown=false; p._airBraking=false; p._airTime=0;
+    p._botJump=false; p._botJumpCD=0; p._botPathTimer=0;
+    p.landSquish=0; p.hitFlash=0;
+    p._eraDashAvail=true; p._ghostPos=[];
   });
+  if(GS.map) GS.map.checkpoints.forEach(cp=>{cp.hit=[];});
+  initEraMechanics(GS.map);
 }
 
 function playerFinished(p){
-  p.finished=true;
-  if(!GS.roundWinner){ GS.roundWinner=p; setTimeout(()=>endRound(p),1000); }
+  p.finished=true; p.finishTime=Date.now();
+  if(!GS.roundWinner){
+    GS.roundWinner=p;
+    if((GS.mode==='solo'||GS.isDaily) && p.idx===0){
+      const elapsed=Math.round((Date.now()-GS.dailyStartTime)/1000);
+      const pbKey=GS.isDaily?`daily_${getDailySeed()}`:`solo_${GS.difficulty}`;
+      const old=getPB(pbKey);
+      if(!old||elapsed<old){
+        setPB(pbKey,elapsed);
+        GS._newPB=true;
+      } else { GS._newPB=false; }
+    }
+    saveGhostReplay();
+    setTimeout(()=>endRound(p),1000);
+  }
 }
 
 function endRound(winner){
-  GS.running=false;
-  clearInterval(GS._glitchIv);
+  GS.running=false; clearInterval(GS._glitchIv);
   if(winner){
     GS.wins[winner.idx]=(GS.wins[winner.idx]||0)+1;
     GS.totalWins[winner.idx]=(GS.totalWins[winner.idx]||0)+1;
     GS.eraWins++;
+    if(!winner.isBot){
+      GS.winStreak=(GS.winStreak||0)+1;
+      GS.maxStreak=Math.max(GS.maxStreak||0, GS.winStreak);
+    }
     if(GS.eraWins>=5){ setTimeout(showEraShift,800); return; }
-    setTimeout(()=>showChoiceScreen(winner),600);
+
+    // ── CHANGED: Only show choice screen for human winners ──────
+    // If the winner is a bot, silently auto-pick a random corruption
+    if(winner.isBot){
+      const randomCorruption = CORRUPTIONS[Math.floor(Math.random() * CORRUPTIONS.length)];
+      triggerCorruption(()=>{ applyCorruption(randomCorruption); showWinScreen(winner); });
+    } else {
+      setTimeout(()=>showChoiceScreen(winner),600);
+    }
+    // ────────────────────────────────────────────────────────────
   } else {
+    GS.winStreak=0;
     setTimeout(()=>showWinScreen(null),500);
   }
 }
@@ -2031,15 +2510,21 @@ function nextRound(){
   document.getElementById('winScreen').style.display='none';
   document.getElementById('timerHud').style.display='none';
   document.getElementById('placeHud').style.display='none';
-  startRound();
+
+  const eraIdx = pickRandomEra();
+  GS.seed = Date.now();
+  GS.map = generateMap(GS.seed, eraIdx, GS.difficulty);
+
+  showEraSplash(GS.currentEra, ()=>{ startRound(); });
 }
 
 // ── CHOICE / CORRUPTION ────────────────────────────────────────
+// NOTE: showChoiceScreen is now only called for human winners (see endRound above)
 function showChoiceScreen(winner){
-  const sc=document.getElementById('choiceScreen');
-  sc.style.display='flex';
+  const sc=document.getElementById('choiceScreen'); sc.style.display='flex';
   document.getElementById('choiceTitle').textContent=`${winner.name} WINS ROUND ${GS.round+1}!`;
   document.getElementById('choiceTitle').style.color=winner.color;
+  document.getElementById('choiceSub').textContent='You won — pick your reward or corrupt the map:';
   const opts=document.getElementById('choiceOptions'); opts.innerHTML='';
   let choices=[];
   if(Math.random()<0.15) choices.push({type:'special',data:SPECIAL_EVENTS[Math.floor(Math.random()*SPECIAL_EVENTS.length)]});
@@ -2055,15 +2540,13 @@ function showChoiceScreen(winner){
       sc.style.display='none'; clearInterval(GS.choiceTimeout);
       if(c.type==='powerup'){
         if(c.data.id==='redraw_maze'){
-          // Regenerate map immediately then go to win screen; startRound will re-gen again but that's fine
-          // The key is the seed advances so next round is truly fresh
           triggerCorruption(()=>{
-            GS.seed = (Date.now() ^ (Math.random()*0x7fffffff)) >>> 0;
+            const eraIdx=pickRandomEra();
+            GS.seed=Date.now();
+            GS.map=generateMap(GS.seed,eraIdx,GS.difficulty);
             showWinScreen(winner);
           });
-        } else {
-          winner.powerup=c.data; showWinScreen(winner);
-        }
+        } else { winner.powerup=c.data; showWinScreen(winner); }
       } else if(c.type==='special'){
         triggerCorruption(()=>{applySpecialEvent(c.data);showWinScreen(winner);});
       } else {
@@ -2077,7 +2560,14 @@ function showChoiceScreen(winner){
   GS.choiceTimeout=setInterval(()=>{
     tl--;
     document.getElementById('choiceTimer').textContent=`Auto in ${tl}s`;
-    if(tl<=0){ clearInterval(GS.choiceTimeout); sc.style.display='none'; showWinScreen(winner); }
+    if(tl<=0){
+      clearInterval(GS.choiceTimeout);
+      sc.style.display='none';
+      // Auto-pick: give the winner a random powerup on timeout
+      const autoPick = [...POWERUPS].sort(()=>Math.random()-.5)[0];
+      if(autoPick.id !== 'redraw_maze') winner.powerup = autoPick;
+      showWinScreen(winner);
+    }
   },1000);
 }
 
@@ -2086,7 +2576,7 @@ function triggerCorruption(cb){
   const bar=document.getElementById('simBar');
   const pct=document.getElementById('simPercent');
   sc.style.display='flex'; let prog=0;
-  const titles=['REALITY UNSTABLE','SIMULATION ERROR','PATCHING VOID','INJECTING CODE','CORRUPTING...'];
+  const titles=['REALITY UNSTABLE','SIMULATION ERROR','PATCHING VOID','ERA SHIFT','CORRUPTING...'];
   const tEl=document.getElementById('corruptTitle');
   const iv=setInterval(()=>{
     prog+=3+Math.random()*7; if(prog>100) prog=100;
@@ -2102,40 +2592,48 @@ function showWinScreen(winner){
   if(winner){
     document.getElementById('winTitle').textContent=`${winner.name} WINS!`;
     document.getElementById('winTitle').style.color=winner.color;
-    document.getElementById('winSub').textContent=`Round ${GS.round} · Era ${GS.eraWins}/5`;
+    document.getElementById('winSub').textContent=`Round ${GS.round} · Era ${GS.eraWins}/5 · ${GS.currentEra?.name||''}`;
   } else {
     document.getElementById('winTitle').textContent='NO WINNER';
     document.getElementById('winTitle').style.color='#ff4444';
-    document.getElementById('winSub').textContent='The lava claimed all...';
+    document.getElementById('winSub').textContent='The void claimed all...';
   }
   const sorted=[...GS.players].sort((a,b)=>(GS.wins[b.idx]||0)-(GS.wins[a.idx]||0));
   document.getElementById('scoreboard').innerHTML=sorted.map(p=>
-    `<div class="score-row"><span style="color:${p.color}">${p.isBot?`🤖${['⚡','🛡','⚖'][p.idx%3]||''}`:''} ${p.name}</span><span>${GS.wins[p.idx]||0} wins</span></div>`
+    `<div class="score-row"><span style="color:${p.color}">${p.isBot?'🤖 ':''}${p.name}</span><span>${GS.wins[p.idx]||0}W</span></div>`
   ).join('');
+  const pbN=document.getElementById('pbNotice');
+  pbN.style.display = GS._newPB ? 'block' : 'none';
+  GS._newPB=false;
 }
 
 function showEraShift(){
   GS.eraWins=0;
   const sc=document.getElementById('eraShift'); sc.style.display='flex';
   const me=document.getElementById('eraMaps'); me.innerHTML='';
-  const seeds=[Date.now(),Date.now()+1,Date.now()+2];
-  const opts=[...BIOMES].sort(()=>Math.random()-.5).slice(0,3);
-  opts.forEach((biome,i)=>{
+  const opts=[...ERAS].sort(()=>Math.random()-.5).slice(0,3);
+  opts.forEach(era=>{
     const btn=document.createElement('button'); btn.className='era-map-btn';
-    btn.innerHTML=`<span style="font-size:28px">${biome.icon}</span><span>${biome.name}</span>`;
+    btn.innerHTML=`<span class="era-icon">${era.icon}</span><span>${era.name}</span><span class="era-mech">${era.mechanicDesc}</span>`;
+    btn.style.borderColor=era.color+'88';
     btn.onclick=()=>{
       sc.style.display='none';
-      GS.seed=seeds[i]; GS.currentBiome=BIOMES.indexOf(biome);
-      GS.wins={}; nextRound();
+      const eraIdx=ERAS.indexOf(era);
+      setCurrentEra(eraIdx);
+      GS.seed=Date.now();
+      GS.map=generateMap(GS.seed,eraIdx,GS.difficulty);
+      GS.wins={};
+      showEraSplash(era, ()=>{ nextRound(); });
     };
     me.appendChild(btn);
   });
 }
 
-// ── SETTINGS ──────────────────────────────────────────────────
-const DIFF_KEYS=['zen','easy','normal','hard','brutal'];
-const VOID_OPTS=[{k:true,l:'ON'},{k:false,l:'OFF'}];
-function buildSettings(diffId,voidId,styleId){
+// ── SETTINGS UI ────────────────────────────────────────────────
+const DIFF_KEYS = ['zen','easy','normal','hard','brutal'];
+const VOID_OPTS = [{k:true,l:'ON'},{k:false,l:'OFF'}];
+
+function buildSettings(diffId,voidId,styleId,peerMode){
   function makeGroup(containerId,opts,getActive,onSet){
     const el=document.getElementById(containerId); if(!el) return;
     el.innerHTML='';
@@ -2143,13 +2641,15 @@ function buildSettings(diffId,voidId,styleId){
       const btn=document.createElement('button');
       btn.className='sett-btn'+(getActive()===o.k?' active':'');
       btn.textContent=o.l||o.name;
-      btn.onclick=()=>{ onSet(o.k); buildSettings(diffId,voidId,styleId); };
+      btn.onclick=()=>{ onSet(o.k); buildSettings(diffId,voidId,styleId,peerMode); };
       el.appendChild(btn);
     });
   }
-  makeGroup(diffId,DIFF_KEYS.map(k=>({k,l:DIFFICULTIES[k].name})),()=>GS.difficulty,v=>{GS.difficulty=v;});
-  makeGroup(voidId,VOID_OPTS,()=>GS.voidFloor,v=>{GS.voidFloor=v;});
-  if(styleId) makeGroup(styleId,BIOMES.map((b,i)=>({k:i,l:b.icon})),()=>GS.currentBiome,v=>{GS.currentBiome=v;});
+  makeGroup(diffId, DIFF_KEYS.map(k=>({k,l:DIFFICULTIES[k].name})), ()=>GS.difficulty, v=>{GS.difficulty=v;});
+  makeGroup(voidId, VOID_OPTS, ()=>GS.voidFloor, v=>{GS.voidFloor=v;});
+  if(styleId){
+    makeGroup(styleId, ERAS.map((b,i)=>({k:i,l:b.icon})), ()=>GS.currentEraIdx, v=>{ GS.currentEraIdx=v; });
+  }
 }
 
 // ── LOCAL LOBBY ────────────────────────────────────────────────
@@ -2175,35 +2675,47 @@ function renderLobby(){
 function startLocal(){
   document.getElementById('modeSelect').style.display='none';
   lobbyPlayers=[false,false,false]; renderLobby();
-  buildSettings('diffBtns','voidBtns','styleBtns');
+  buildSettings('diffBtns','voidBtns','styleBtns',false);
   document.getElementById('lobbyScreen').style.display='flex';
   document.getElementById('startLocalBtn').style.display='none';
 }
+
 function launchLocal(){
   document.getElementById('lobbyScreen').style.display='none';
-  GS.mode='local'; GS.players=[]; GS.wins={}; GS.totalWins={}; GS.eraWins=0; GS.round=0;
+  GS.mode='local'; GS.players=[]; GS.wins={}; GS.totalWins={}; GS.eraWins=0; GS.round=0; GS.winStreak=0; GS.isDaily=false;
   lobbyPlayers.forEach((j,i)=>{ if(j) GS.players.push(createPlayer(GS.players.length,false,PLAYER_CTRLS[i])); });
-  GS.seed = Date.now() >>> 0;
-  startRound(); startGameLoop();
+  const eraIdx = pickRandomEra();
+  GS.map=generateMap(GS.seed,eraIdx,GS.difficulty);
+  showEraSplash(GS.currentEra, ()=>{ startRound(); startGameLoop(); });
 }
 
-function startSinglePlayer(){
+function startSinglePlayerDirect(){
   document.getElementById('modeSelect').style.display='none';
-  GS.mode='solo'; GS.players=[]; GS.wins={}; GS.totalWins={}; GS.eraWins=0; GS.round=0;
+  _launchSolo();
+}
+
+function _launchSolo(){
+  GS.mode='solo'; GS.players=[]; GS.wins={}; GS.totalWins={}; GS.eraWins=0; GS.round=0; GS.winStreak=0; GS.isDaily=false;
   GS.players.push(createPlayer(0,false,PLAYER_CTRLS[0]));
-  const botDefs=[
-    {name:'BYTE',  idx:1},
-    {name:'GLITCH',idx:2},
-    {name:'VOID',  idx:3},
-  ];
-  botDefs.forEach(({name,idx})=>{
-    const b=createPlayer(idx,true,null);
-    b.name=name;
-    b._botPersonality = name==='BYTE'?'rusher' : name==='GLITCH'?'avoider' : 'balanced';
-    GS.players.push(b);
+  ['BYTE','GLITCH','VOID'].forEach((n,i)=>{
+    const b=createPlayer(i+1,true,null); b.name=n; GS.players.push(b);
   });
-  GS.seed = Date.now() >>> 0;
-  startRound(); startGameLoop();
+  const eraIdx=pickRandomEra();
+  GS.map=generateMap(GS.seed,eraIdx,GS.difficulty);
+  showEraSplash(GS.currentEra, ()=>{ startRound(); startGameLoop(); });
+}
+
+function startDailyRun(){
+  document.getElementById('modeSelect').style.display='none';
+  GS.mode='solo'; GS.players=[]; GS.wins={}; GS.totalWins={}; GS.eraWins=0; GS.round=0; GS.winStreak=0;
+  GS.isDaily=true; GS.dailyStartTime=Date.now();
+  GS.players.push(createPlayer(0,false,PLAYER_CTRLS[0]));
+  const dailySeed = getDailySeed();
+  GS.seed = dailySeed;
+  const dailyEraIdx = dailySeed % ERAS.length;
+  setCurrentEra(dailyEraIdx);
+  GS.map = generateMap(dailySeed, dailyEraIdx, 'normal');
+  showEraSplash(GS.currentEra, ()=>{ startRound(); startGameLoop(); });
 }
 
 function startGameLoop(){
@@ -2212,27 +2724,29 @@ function startGameLoop(){
   rafId=requestAnimationFrame(gameLoop);
 }
 
-// ── PEER / ONLINE ──────────────────────────────────────────────
+// ── PEERJS ONLINE (different computers via internet) ──────────
 let peerInst=null, peerConns=[], isHost=false, onlineIdx=0;
 
 function showPeerHost(){
-  document.getElementById('modeSelect').style.display='none';
+  hideAll();
   document.getElementById('peerLobby').style.display='flex';
-  document.getElementById('peerTitle').textContent='HOST LOBBY';
+  document.getElementById('peerTitle').textContent='ONLINE HOST';
   document.getElementById('peerStatus').textContent='Creating room...';
   document.getElementById('peerStartBtn').style.display='none';
   document.getElementById('peerJoinInput').style.display='none';
   document.getElementById('peerJoinBtn').style.display='none';
   document.getElementById('peerSettings').style.display='flex';
-  buildSettings('peerDiffBtns','peerVoidBtns',null);
+  document.getElementById('peerCode').style.display='none';
+  buildSettings('peerDiffBtns','peerVoidBtns',null,true);
   isHost=true; onlineIdx=0;
+  if(peerInst){ try{peerInst.destroy();}catch(e){} peerInst=null; } peerConns=[];
   const code=Math.random().toString(36).substring(2,8).toUpperCase();
   try{
     peerInst=new Peer('MERA_'+code);
     peerInst.on('open',()=>{
       document.getElementById('peerCode').style.display='block';
       document.getElementById('peerCode').textContent=code;
-      document.getElementById('peerStatus').textContent='Share code!';
+      document.getElementById('peerStatus').textContent='Share this code with friends!';
       document.getElementById('peerStartBtn').style.display='block';
     });
     peerInst.on('connection',conn=>{
@@ -2240,22 +2754,27 @@ function showPeerHost(){
       conn.on('data',d=>handlePeerData(d,conn));
       conn.on('open',()=>{ updatePeerList(); conn.send({type:'welcome',idx:peerConns.length,total:peerConns.length+1}); });
     });
-    peerInst.on('error',()=>document.getElementById('peerStatus').textContent='PeerJS unavailable');
-  }catch(e){ document.getElementById('peerStatus').textContent='PeerJS not available'; }
+    peerInst.on('error',()=>document.getElementById('peerStatus').textContent='\u26a0 PeerJS unavailable. Save & open this file directly in your browser.');
+  }catch(e){ document.getElementById('peerStatus').textContent='\u26a0 PeerJS not loaded. Save & open this file directly in your browser.'; }
 }
+
 function showPeerJoin(){
-  document.getElementById('modeSelect').style.display='none';
+  hideAll();
   document.getElementById('peerLobby').style.display='flex';
-  document.getElementById('peerTitle').textContent='JOIN LOBBY';
+  document.getElementById('peerTitle').textContent='ONLINE JOIN';
   document.getElementById('peerJoinInput').style.display='block';
   document.getElementById('peerJoinBtn').style.display='block';
   document.getElementById('peerStartBtn').style.display='none';
   document.getElementById('peerCode').style.display='none';
   document.getElementById('peerSettings').style.display='none';
+  document.getElementById('peerStatus').textContent='Enter the room code from the host:';
+  document.getElementById('peerPlayerList').textContent='';
   isHost=false;
+  if(peerInst){ try{peerInst.destroy();}catch(e){} peerInst=null; } peerConns=[];
 }
+
 function peerDoJoin(){
-  const code=document.getElementById('peerJoinInput').value.toUpperCase();
+  const code=document.getElementById('peerJoinInput').value.toUpperCase().trim();
   if(!code) return;
   document.getElementById('peerStatus').textContent='Connecting...';
   try{
@@ -2263,34 +2782,160 @@ function peerDoJoin(){
     peerInst.on('open',()=>{
       const conn=peerInst.connect('MERA_'+code);
       peerConns=[conn];
-      conn.on('open',()=>{ document.getElementById('peerStatus').textContent='Connected!'; conn.send({type:'joined'}); });
+      conn.on('open',()=>{ document.getElementById('peerStatus').textContent='\u2705 Connected! Waiting for host...'; conn.send({type:'joined'}); });
       conn.on('data',d=>handlePeerData(d,conn));
     });
-  }catch(e){ document.getElementById('peerStatus').textContent='PeerJS not available'; }
+    peerInst.on('error',()=>document.getElementById('peerStatus').textContent='\u26a0 Connection failed. Check the code and try again.');
+  }catch(e){ document.getElementById('peerStatus').textContent='\u26a0 PeerJS not loaded. Save & open this file directly in your browser.'; }
 }
+
 function peerStartGame(){
-  const total=peerConns.length+1;
-  peerConns.forEach((c,i)=>c.send({type:'start',total,yourIdx:i+1,seed:GS.seed,biome:GS.currentBiome,diff:GS.difficulty,voidFloor:GS.voidFloor}));
-  startOnlineGame(total,0);
+  const total=peerConns.length+1, eraIdx=pickRandomEra();
+  peerConns.forEach((c,i)=>c.send({type:'start',total,yourIdx:i+1,seed:GS.seed,eraIdx,diff:GS.difficulty,voidFloor:GS.voidFloor}));
+  startOnlineGame(total,0,eraIdx);
 }
+
 function handlePeerData(data,conn){
-  if(data.type==='welcome'){ onlineIdx=data.idx; document.getElementById('peerStatus').textContent=`You are P${data.idx+1}`; updatePeerList(); }
-  if(data.type==='start'){ GS.difficulty=data.diff||'normal'; GS.voidFloor=data.voidFloor!==false; startOnlineGame(data.total,data.yourIdx); }
+  if(data.type==='welcome'){ onlineIdx=data.idx; document.getElementById('peerStatus').textContent=`\u2705 You are Player ${data.idx+1}`; updatePeerList(); }
+  if(data.type==='start'){ GS.difficulty=data.diff||'normal'; GS.voidFloor=data.voidFloor!==false; startOnlineGame(data.total,data.yourIdx,data.eraIdx||0); }
+  if(data.type==='input'){ const p=GS.players[data.idx]; if(p) p._remoteInput=data.input; }
 }
-function updatePeerList(){ document.getElementById('peerPlayerList').textContent=`Players: ${peerConns.length+1}/8`; }
-function startOnlineGame(total,myIdx){
+
+function updatePeerList(){ document.getElementById('peerPlayerList').textContent=`Players connected: ${peerConns.length+1}`; }
+
+function startOnlineGame(total,myIdx,eraIdx=0){
   document.getElementById('peerLobby').style.display='none';
-  GS.mode='online'; GS.players=[]; GS.wins={}; GS.totalWins={}; GS.eraWins=0; GS.round=0;
-  onlineIdx=myIdx;
+  GS.mode='online'; GS.players=[]; GS.wins={}; GS.totalWins={}; GS.eraWins=0; GS.round=0; GS.isDaily=false;
+  onlineIdx=myIdx; setCurrentEra(eraIdx);
   for(let i=0;i<total;i++){
     const isMe=i===myIdx;
     const p=createPlayer(i,false,isMe?ONLINE_CTRL:null);
     if(!isMe) p._isRemote=true;
     GS.players.push(p);
   }
-  GS.map=generateMap(GS.seed,GS.currentBiome,GS.difficulty);
-  startRound(); startGameLoop();
+  GS.map=generateMap(GS.seed,eraIdx,GS.difficulty);
+  showEraSplash(GS.currentEra,()=>{ startRound(); startGameLoop(); });
 }
+
+// ── TAB MULTIPLAYER (BroadcastChannel — same browser, two tabs) ─
+let _tabChannel=null,_tabIsHost=false,_tabRoomCode='';
+let _tabPlayerCount=1,_tabInputInterval=null,_tabMyIdx=0;
+
+function showTabHost(){
+  hideAll();
+  document.getElementById('tabLobby').style.display='flex';
+  document.getElementById('tabTitle').textContent='2-TAB HOST';
+  document.getElementById('tabJoinInput').style.display='none';
+  document.getElementById('tabJoinBtn').style.display='none';
+  document.getElementById('tabSettings').style.display='flex';
+  document.getElementById('tabStartBtn').style.display='block';
+  document.getElementById('tabCode').style.display='block';
+  buildSettings('tabDiffBtns','tabVoidBtns',null,true);
+  _tabIsHost=true; _tabPlayerCount=1; _tabMyIdx=0; tabCleanup();
+  _tabRoomCode=Math.random().toString(36).substring(2,6).toUpperCase();
+  document.getElementById('tabCode').textContent=_tabRoomCode;
+  document.getElementById('tabStatus').textContent='Open this page in another tab and enter the code above!';
+  document.getElementById('tabPlayerList').textContent='Players: 1 (you)';
+  _tabChannel=new BroadcastChannel('MERA_TAB_'+_tabRoomCode);
+  _tabChannel.onmessage=(e)=>{
+    const d=e.data;
+    if(d.type==='join_request'&&_tabIsHost){
+      _tabPlayerCount++;
+      document.getElementById('tabPlayerList').textContent=`Players: ${_tabPlayerCount}`;
+      document.getElementById('tabStatus').textContent=`\u2705 Player ${_tabPlayerCount} joined! Hit START when ready.`;
+      _tabChannel.postMessage({type:'join_ack',yourIdx:_tabPlayerCount-1,total:_tabPlayerCount});
+    }
+    if(d.type==='input'&&GS.running){ const p=GS.players[d.idx]; if(p&&p._isRemote) p._remoteKeys=d.keys; }
+  };
+}
+
+function showTabJoin(){
+  hideAll();
+  document.getElementById('tabLobby').style.display='flex';
+  document.getElementById('tabTitle').textContent='2-TAB JOIN';
+  document.getElementById('tabJoinInput').style.display='block';
+  document.getElementById('tabJoinBtn').style.display='block';
+  document.getElementById('tabStartBtn').style.display='none';
+  document.getElementById('tabCode').style.display='none';
+  document.getElementById('tabSettings').style.display='none';
+  document.getElementById('tabStatus').textContent='Enter the code shown in the host tab:';
+  document.getElementById('tabPlayerList').textContent='';
+  _tabIsHost=false; tabCleanup();
+}
+
+function tabDoJoin(){
+  const code=document.getElementById('tabJoinInput').value.toUpperCase().trim();
+  if(!code){ document.getElementById('tabStatus').textContent='Enter a code!'; return; }
+  _tabRoomCode=code; tabCleanup();
+  _tabChannel=new BroadcastChannel('MERA_TAB_'+code);
+  document.getElementById('tabStatus').textContent='Sending join request...';
+  _tabChannel.onmessage=(e)=>{
+    const d=e.data;
+    if(d.type==='join_ack'){
+      _tabMyIdx=d.yourIdx;
+      document.getElementById('tabStatus').textContent=`\u2705 Joined as Player ${d.yourIdx+1}! Waiting for host...`;
+      document.getElementById('tabPlayerList').textContent=`Total players: ${d.total}`;
+    }
+    if(d.type==='game_start'){
+      GS.difficulty=d.diff||'normal'; GS.voidFloor=d.voidFloor!==false;
+      document.getElementById('tabLobby').style.display='none';
+      _startTabGame(d.total,_tabMyIdx,d.eraIdx,d.seed);
+    }
+    if(d.type==='input'&&GS.running){ const p=GS.players[d.idx]; if(p&&p._isRemote) p._remoteKeys=d.keys; }
+  };
+  _tabChannel.postMessage({type:'join_request'});
+  setTimeout(()=>{
+    if(document.getElementById('tabStatus').textContent==='Sending join request...')
+      document.getElementById('tabStatus').textContent='\u26a0 No response. Make sure the host tab has this page open with the matching code.';
+  },3000);
+}
+
+function tabStartGame(){
+  const total=_tabPlayerCount,eraIdx=pickRandomEra(),seed=Date.now();
+  GS.seed=seed;
+  _tabChannel.postMessage({type:'game_start',total,eraIdx,seed,diff:GS.difficulty,voidFloor:GS.voidFloor});
+  document.getElementById('tabLobby').style.display='none';
+  _startTabGame(total,0,eraIdx,seed);
+}
+
+function _startTabGame(total,myIdx,eraIdx,seed){
+  GS.mode='online'; GS.players=[]; GS.wins={}; GS.totalWins={};
+  GS.eraWins=0; GS.round=0; GS.isDaily=false; GS.seed=seed; _tabMyIdx=myIdx;
+  setCurrentEra(eraIdx);
+  for(let i=0;i<total;i++){
+    const isMe=i===myIdx;
+    const p=createPlayer(i,false,isMe?ONLINE_CTRL:null);
+    if(!isMe){ p._isRemote=true; p._remoteKeys={}; }
+    GS.players.push(p);
+  }
+  GS.map=generateMap(seed,eraIdx,GS.difficulty);
+  showEraSplash(GS.currentEra,()=>{ startRound(); startGameLoop(); _tabSendInputLoop(myIdx); });
+}
+
+function _tabSendInputLoop(myIdx){
+  clearInterval(_tabInputInterval);
+  _tabInputInterval=setInterval(()=>{
+    if(!GS.running||!_tabChannel) return;
+    _tabChannel.postMessage({type:'input',idx:myIdx,keys:{...keys}});
+  },16);
+}
+
+function tabCleanup(){
+  if(_tabChannel){ try{_tabChannel.close();}catch(e){} _tabChannel=null; }
+  clearInterval(_tabInputInterval);
+}
+
+// Wrap updatePlayer to inject remote keys for tab-multiplayer remote players
+const __updatePlayer=updatePlayer;
+function updatePlayer(p){
+  if(p._isRemote&&p._remoteKeys){
+    const saved={};
+    for(const k of ['KeyA','KeyD','KeyW','KeyS','KeyF']){ saved[k]=keys[k]; keys[k]=!!p._remoteKeys[k]; }
+    __updatePlayer(p);
+    for(const k of ['KeyA','KeyD','KeyW','KeyS','KeyF']) keys[k]=saved[k];
+  } else { __updatePlayer(p); }
+}
+
 
 // ── MENU ──────────────────────────────────────────────────────
 function showMenu(){
@@ -2299,11 +2944,17 @@ function showMenu(){
   GS.running=false;
   if(peerInst){ try{peerInst.destroy();}catch(e){} peerInst=null; }
   peerConns=[];
+  tabCleanup();
+  document.getElementById('eraHud').style.display='none';
+  document.getElementById('pbHud').style.display='none';
+  document.getElementById('streakHud').style.display='none';
   startMenuBg();
 }
 function showModeSelect(){ hideAll(); document.getElementById('modeSelect').style.display='flex'; }
+function showCredits(){ hideAll(); document.getElementById('creditsScreen').style.display='flex'; }
 function hideAll(){
-  ['menuScreen','modeSelect','lobbyScreen','peerLobby','winScreen','choiceScreen','eraShift','corruptionScreen']
+  ['menuScreen','modeSelect','lobbyScreen','peerLobby','tabLobby','winScreen','choiceScreen',
+   'eraShift','corruptionScreen','settingsScreen','creditsScreen']
     .forEach(id=>document.getElementById(id).style.display='none');
 }
 function toggleControls(){
@@ -2311,7 +2962,7 @@ function toggleControls(){
   h.style.display=h.style.display==='none'?'block':'none';
 }
 
-// ── ANIMATED MENU BG ──────────────────────────────────────────
+// ── ANIMATED MENU BACKGROUND ──────────────────────────────────
 let menuRafId=null;
 function startMenuBg(){
   if(menuRafId) cancelAnimationFrame(menuRafId);
@@ -2378,11 +3029,13 @@ function resize(){ canvas.width=window.innerWidth; canvas.height=window.innerHei
 window.addEventListener('resize',resize); resize();
 
 // ── INIT ──────────────────────────────────────────────────────
+loadSettings();
 showMenu();
-GS.map=generateMap(GS.seed,0,'normal');
+GS.currentEra = ERAS[0];
+GS.map = generateMap(GS.seed, 0, 'normal');
 updateCamera();
 (function idleRender(){
-  if(document.getElementById('menuScreen').style.display!=='none'||
+  if(document.getElementById('menuScreen').style.display!=='none' ||
      document.getElementById('modeSelect').style.display!=='none'){
     GS.frame++; updateCamera();
     if(GS.map) render();
@@ -2390,7 +3043,7 @@ updateCamera();
   }
 })();
 
-console.log('%c MOMENTUM ERA v6 ','background:#0a0a0f;color:#ff4444;font-size:13px;font-weight:bold;border:2px solid #ff4444;padding:6px 14px;font-family:monospace;');
+console.log('%c MOMENTUM ERA v5.1 — INDIE EDITION ','background:#0a0a0f;color:#ff4444;font-size:13px;font-weight:bold;border:2px solid #ff4444;padding:6px 14px;font-family:monospace;');
 </script>
 </body>
 </html>
