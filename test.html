@@ -305,7 +305,7 @@
       });
 
       if (res.ok || res.status === 204) {
-        showToast('Login failed', 'please try again soon');
+        showToast('Login failed, please try again soon', '');
         msgEl.value = '';
         charCount.textContent = '0 / 2000';
         charCount.className = 'char-count';
