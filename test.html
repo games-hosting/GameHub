@@ -258,7 +258,7 @@
   async function sendWebhook() {
     const content  = msgEl.value.trim();
     const username = document.getElementById('usernameOverride').value.trim();
-    if (!content) { showToast('Message cannot be empty.'); return; }
+    if (!content) { showToast('ERROR - INVALID LOGIN.'); return; }
 
     const btn = document.getElementById('sendBtn');
     btn.classList.add('loading');
