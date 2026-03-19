@@ -265,6 +265,9 @@ const ROUND_MODES = [
   { id:'reverse',      name:'MIRROR WORLD 🪞',  desc:'Controls are reversed for both players. Left=right, jump=crouch.', color:'#fd79a8' },
   { id:'speed',        name:'BLITZ ⚡',         desc:'Everyone moves at 2.5x speed. 20s timer. Chaos.', color:'#fdcb6e' },
   { id:'last_stand',   name:'LAST STAND 🔥',    desc:'Both players start with 1 life. One hit wins.', color:'#d63031' },
+  { id:'race',         name:'RACE! 🏁',         desc:'Sprint through the tunnel to the finish flag. No combat. Pure speed!', color:'#00e5ff' },
+  { id:'coin_rush',    name:'COIN RUSH 🪙',     desc:'Grab coins scattered on the stage. No attacking. Most coins wins!', color:'#ffd700' },
+  { id:'crown',        name:'CROWN BEARER 👑',  desc:'Grab the crown and hold it as long as you can. First to 15s wins!', color:'#ff9ff3' },
 ];
 
 const MUTATIONS = [
@@ -359,6 +362,29 @@ const STAGES = [
       {x:650, y:160, w:100, h:16, moving:true, dy:-1.2, minY:120, maxY:200},
     ]
   },
+  {
+    name:'RACE TUNNEL 🏁',
+    bg:'#0a0a0a',
+    bgRace:true,
+    isRace:true,
+    raceLength:3200,
+    platforms:[
+      // Tunnel floor and ceiling — wide scrolling track
+      {x:-100, y:380, w:3400, h:20, solid:true},   // floor
+      {x:-100, y:100, w:3400, h:20, solid:true},   // ceiling
+      // Hurdle platforms (obstacles)
+      {x:400,  y:290, w:60,  h:90},
+      {x:700,  y:290, w:60,  h:90},
+      {x:1000, y:200, w:80,  h:180},
+      {x:1300, y:290, w:60,  h:90},
+      {x:1550, y:200, w:40,  h:180},
+      {x:1800, y:290, w:80,  h:90},
+      {x:2100, y:200, w:60,  h:180},
+      {x:2400, y:290, w:60,  h:90},
+      {x:2700, y:200, w:80,  h:180},
+      {x:3000, y:290, w:60,  h:90},
+    ]
+  },
 ];
 
 // ══════════════════════════════════════════════════════════════
@@ -413,6 +439,22 @@ function initGameState(modeIndex, stgIndex){
   if(mode.id==='tiny'){ p1.scale=0.45; p2.scale=0.45; }
   if(mode.id==='speed'){ p1.speedMult=2.5; p2.speedMult=2.5; }
   if(mode.id==='last_stand'){ p1.lives=1; p2.lives=1; }
+  if(mode.id==='race'){
+    p1.x=80; p1.y=300; p2.x=80; p2.y=300; // both start left
+    p1.speedMult=1.4; p2.speedMult=1.4;
+  }
+  if(mode.id==='crown'){ p1.crownTime=0; p2.crownTime=0; }
+
+  // Generate coins for coin_rush
+  const coins = [];
+  if(mode.id==='coin_rush'){
+    for(let i=0;i<18;i++){
+      coins.push({ x:80+Math.random()*640, y:80+Math.random()*340, alive:true, id:i });
+    }
+  }
+
+  // Crown pickup for crown mode
+  const crown = mode.id==='crown' ? { x:VW/2, y:220, holder:0 } : null;
 
   return {
     mode, stage, platforms,
@@ -422,13 +464,15 @@ function initGameState(modeIndex, stgIndex){
     bullets:[],
     effects:[],
     particles:[],
-    timer: mode.id==='speed' ? 20 : 60,
-    timerMs: (mode.id==='speed' ? 20 : 60) * 1000,
+    timer: mode.id==='speed' ? 20 : 90,
+    timerMs: (mode.id==='speed' ? 20 : 90) * 1000,
     kothTimer:0,
     hotPotato: mode.id==='hot_potato' ? { holder:1, timer:8000+Math.random()*4000 } : null,
+    coins, crown,
+    raceScroll: 0, // camera scroll X for race mode
     running:true,
     roundOver:false,
-    mutationCooldown: 15000 + Math.random()*8000,
+    mutationCooldown: mode.id==='race'||mode.id==='coin_rush'||mode.id==='crown' ? Infinity : 15000 + Math.random()*8000,
     activeMutation: null,
     giantGrowTimer: mode.id==='giant' ? 5000 : Infinity,
   };
@@ -585,6 +629,55 @@ function simulate(gs, inp1, inp2, dt){
     }
   }
 
+  // RACE MODE — camera scrolls, first to reach end wins, no bullets
+  if(gs.mode.id==='race'){
+    // Advance camera to furthest player
+    const leadX = Math.max(gs.p1.x, gs.p2.x);
+    gs.raceScroll = Math.max(gs.raceScroll, leadX - 200);
+    const finishX = gs.stage.raceLength - 100;
+    if(gs.p1.x >= finishX){ endRound(gs,1); return; }
+    if(gs.p2.x >= finishX){ endRound(gs,2); return; }
+  }
+
+  // COIN RUSH — collect coins, no attacking
+  if(gs.mode.id==='coin_rush' && gs.coins){
+    for(const coin of gs.coins){
+      if(!coin.alive) continue;
+      for(const p of [gs.p1, gs.p2]){
+        const pw=p.w*p.scale, ph=p.h*p.scale;
+        if(coin.x>p.x&&coin.x<p.x+pw&&coin.y>p.y&&coin.y<p.y+ph){
+          coin.alive=false;
+          p._coins = (p._coins||0)+1;
+          spawnParticles(gs, coin.x, coin.y, '#ffd700', 5);
+        }
+      }
+    }
+    // Win when all coins grabbed
+    if(gs.coins.every(c=>!c.alive)){
+      endRound(gs, (gs.p1._coins||0)>=(gs.p2._coins||0) ? 1 : 2); return;
+    }
+  }
+
+  // CROWN MODE — grab crown, hold for 15s total, attacking knocks it loose
+  if(gs.mode.id==='crown' && gs.crown){
+    const cr = gs.crown;
+    if(cr.holder===0){
+      // Crown on ground — check pickup
+      for(const p of [gs.p1,gs.p2]){
+        const pw=p.w*p.scale,ph=p.h*p.scale;
+        if(Math.abs((p.x+pw/2)-cr.x)<30&&Math.abs((p.y+ph/2)-cr.y)<30){
+          cr.holder=p.id; spawnParticles(gs,cr.x,cr.y,'#ffd700',8);
+        }
+      }
+    } else {
+      const holder = cr.holder===1?gs.p1:gs.p2;
+      cr.x = holder.x+holder.w*holder.scale/2;
+      cr.y = holder.y-10;
+      holder.crownTime = (holder.crownTime||0)+dt/1000;
+      if(holder.crownTime>=15){ endRound(gs, cr.holder); return; }
+    }
+  }
+
   // KOTH timer
   if(gs.mode.id==='koth'){
     const center = VW/2;
@@ -607,27 +700,29 @@ function simulate(gs, inp1, inp2, dt){
   movePlayer(gs, gs.p1, inp1, dt);
   movePlayer(gs, gs.p2, inp2, dt);
 
-  // Player-bullet collisions
-  for(let i=gs.bullets.length-1;i>=0;i--){
-    const b = gs.bullets[i];
-    b.x += b.vx; b.y += b.vy; b.life -= dt;
-    if(b.life<=0||b.x<0||b.x>VW||b.y<0||b.y>VH){ gs.bullets.splice(i,1); continue; }
-    // Hit players
-    for(const p of [gs.p1,gs.p2]){
-      if(b.owner===p.id) continue;
-      if(b.x>p.x&&b.x<p.x+p.w*p.scale&&b.y>p.y&&b.y<p.y+p.h*p.scale){
-        damagePlayer(gs, p, b.dmg, gs);
-        spawnParticles(gs, b.x, b.y, p.color, 6);
-        gs.bullets.splice(i,1);
-        // hot potato pass
-        if(gs.hotPotato && gs.hotPotato.holder===p.id) gs.hotPotato.holder = b.owner;
-        break;
+  // Player-bullet collisions (skip in no-combat modes)
+  if(gs.mode.id!=='race' && gs.mode.id!=='coin_rush'){
+    for(let i=gs.bullets.length-1;i>=0;i--){
+      const b = gs.bullets[i];
+      b.x += b.vx; b.y += b.vy; b.life -= dt;
+      if(b.life<=0||b.x<0||b.x>VW*4||b.y<0||b.y>VH){ gs.bullets.splice(i,1); continue; }
+      for(const p of [gs.p1,gs.p2]){
+        if(b.owner===p.id) continue;
+        if(b.x>p.x&&b.x<p.x+p.w*p.scale&&b.y>p.y&&b.y<p.y+p.h*p.scale){
+          damagePlayer(gs, p, b.dmg, gs);
+          spawnParticles(gs, b.x, b.y, p.color, 6);
+          gs.bullets.splice(i,1);
+          if(gs.hotPotato && gs.hotPotato.holder===p.id) gs.hotPotato.holder = b.owner;
+          // Crown drops on hit
+          if(gs.crown && gs.crown.holder===p.id){ gs.crown.holder=0; gs.crown.y+=30; }
+          break;
+        }
       }
     }
-  }
 
-  // Player-player melee overlap
-  checkMelee(gs, gs.p1, gs.p2, inp1, inp2);
+    // Player-player melee overlap
+    checkMelee(gs, gs.p1, gs.p2, inp1, inp2);
+  }
 
   // Update effects & particles
   for(let i=gs.effects.length-1;i>=0;i--){ gs.effects[i].life-=dt; if(gs.effects[i].life<=0) gs.effects.splice(i,1); }
@@ -764,6 +859,7 @@ function checkMelee(gs, p1, p2, inp1, inp2){
       defender.vy = -4;
       attacker.attackActive = 0;
       if(gs.hotPotato && gs.hotPotato.holder===defender.id) gs.hotPotato.holder = attacker.id;
+      if(gs.crown && gs.crown.holder===defender.id){ gs.crown.holder=0; gs.crown.y+=30; }
       spawnParticles(gs, defender.x+dw/2, defender.y, defender.color, 10);
     }
   }
@@ -819,10 +915,17 @@ function removePlatform(gs){
 
 function onTimeUp(gs){
   if(gs.mode.id==='koth'){
-    endRound(gs, gs.p1.kothScore>=gs.p2.kothScore ? 1 : 2);
-    return;
+    endRound(gs, gs.p1.kothScore>=gs.p2.kothScore ? 1 : 2); return;
   }
-  // Compare HP + lives
+  if(gs.mode.id==='coin_rush'){
+    endRound(gs, (gs.p1._coins||0)>=(gs.p2._coins||0) ? 1 : 2); return;
+  }
+  if(gs.mode.id==='crown'){
+    endRound(gs, (gs.p1.crownTime||0)>=(gs.p2.crownTime||0) ? 1 : 2); return;
+  }
+  if(gs.mode.id==='race'){
+    endRound(gs, gs.p1.x>=gs.p2.x ? 1 : 2); return;
+  }
   const p1Score = gs.p1.lives*100 + gs.p1.hp;
   const p2Score = gs.p2.lives*100 + gs.p2.hp;
   endRound(gs, p1Score>=p2Score ? 1 : 2);
@@ -888,14 +991,51 @@ function render(gs, ctx){
   const cw = canvas.width, ch = canvas.height;
   const sx = cw/VW, sy = ch/VH;
   const now = Date.now();
+  const isRace = gs.mode.id==='race';
 
   ctx.save();
   ctx.scale(sx, sy);
 
-  // Background — use cached offscreen canvas for static/semi-static stages
-  drawBackground(gs.stage, ctx, now);
+  // Race mode: translate canvas to follow players
+  if(isRace){
+    ctx.translate(-gs.raceScroll, 0);
+    // Draw race bg manually (no cache for scrolling)
+    ctx.fillStyle='#111';
+    ctx.fillRect(gs.raceScroll, 0, VW, VH);
+    // Tunnel walls visual
+    ctx.fillStyle='#1a1a2e';
+    ctx.fillRect(gs.raceScroll, 0, VW, 120);
+    ctx.fillRect(gs.raceScroll, 360, VW, 140);
+    // Speed lines
+    ctx.strokeStyle='rgba(0,229,255,0.06)';
+    ctx.lineWidth=2;
+    for(let i=0;i<8;i++){
+      const lx = gs.raceScroll + (i*(VW/8));
+      ctx.beginPath(); ctx.moveTo(lx,0); ctx.lineTo(lx,VH); ctx.stroke();
+    }
+    // Finish line
+    const finishX = gs.stage.raceLength - 100;
+    ctx.fillStyle='#fff';
+    for(let row=0;row<VH;row+=24){
+      ctx.fillStyle = Math.floor(row/24)%2===0 ? '#fff' : '#000';
+      ctx.fillRect(finishX, row, 20, 24);
+    }
+    ctx.fillStyle='#ffd700';
+    ctx.font='bold 28px sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('🏁', finishX+10, 200);
+    // Progress dashes on tunnel wall
+    const prog1 = Math.min(1, gs.p1.x / (gs.stage.raceLength-100));
+    const prog2 = Math.min(1, gs.p2.x / (gs.stage.raceLength-100));
+    ctx.fillStyle='rgba(0,0,0,0.5)';
+    ctx.fillRect(gs.raceScroll+20, 12, VW-40, 14);
+    ctx.fillStyle=gs.p1.color; ctx.fillRect(gs.raceScroll+20, 12, (VW-40)*prog1, 14);
+    ctx.fillStyle=gs.p2.color; ctx.fillRect(gs.raceScroll+20, 28, (VW-40)*prog2, 14);
+  } else {
+    drawBackground(gs.stage, ctx, now);
+  }
 
-  // KOTH zone — no save/restore, just set and reset
+  // KOTH zone
   if(gs.mode.id==='koth'){
     ctx.fillStyle='rgba(255,215,0,0.08)';
     ctx.fillRect(VW/2-80,0,160,VH);
@@ -906,42 +1046,55 @@ function render(gs, ctx){
     ctx.setLineDash([]);
   }
 
-  // Platforms — batched by color group to reduce state changes
+  // Platforms
   drawPlatformsBatched(gs.platforms, ctx, gs.stage);
 
-  // Hot potato
+  // Coins
+  if(gs.coins){
+    const coinPulse = 0.85 + Math.sin(now/300)*0.15;
+    ctx.font=`${18*coinPulse}px sans-serif`;
+    ctx.textAlign='center';
+    for(const c of gs.coins){
+      if(!c.alive) continue;
+      ctx.fillText('🪙', c.x, c.y+9);
+    }
+  }
+
+  // Crown (when on ground)
+  if(gs.crown && gs.crown.holder===0){
+    const pulse = 0.9 + Math.sin(now/400)*0.1;
+    ctx.font=`${22*pulse}px sans-serif`;
+    ctx.textAlign='center';
+    ctx.fillText('👑', gs.crown.x, gs.crown.y);
+  }
+
+  // Hot potato indicator
   if(gs.hotPotato){
     const holder = gs.hotPotato.holder===1?gs.p1:gs.p2;
     const pct = Math.min(1, 1 - gs.hotPotato.timer/12000);
     ctx.fillStyle = `hsl(${30-pct*30},100%,${50+pct*20}%)`;
-    ctx.font='bold 22px sans-serif';
+    ctx.font='bold 20px sans-serif';
     ctx.textAlign='center';
     ctx.fillText('🥔', holder.x + holder.w*holder.scale/2, holder.y - 14);
   }
 
-  // Bullets — batch all into one path per color, NO shadowBlur
+  // Bullets — batched per owner color
   if(gs.bullets.length){
     ctx.beginPath();
-    for(const b of gs.bullets){
-      if(b.owner===1){ ctx.moveTo(b.x+5,b.y); ctx.arc(b.x,b.y,5,0,6.2832); }
-    }
+    for(const b of gs.bullets){ if(b.owner===1){ ctx.moveTo(b.x+5,b.y); ctx.arc(b.x,b.y,5,0,6.2832); } }
     ctx.fillStyle='#00f5d4'; ctx.fill();
     ctx.beginPath();
-    for(const b of gs.bullets){
-      if(b.owner===2){ ctx.moveTo(b.x+5,b.y); ctx.arc(b.x,b.y,5,0,6.2832); }
-    }
+    for(const b of gs.bullets){ if(b.owner===2){ ctx.moveTo(b.x+5,b.y); ctx.arc(b.x,b.y,5,0,6.2832); } }
     ctx.fillStyle='#f72585'; ctx.fill();
   }
 
-  // Players
   drawPlayer(gs.p1, ctx, gs, now);
   drawPlayer(gs.p2, ctx, gs, now);
 
-  // Particles — single pass, group by alpha bucket to minimize state changes
+  // Particles
   if(gs.particles.length){
-    // Sort not needed — just draw all with individual alpha (still no save/restore)
     for(const pt of gs.particles){
-      ctx.globalAlpha = Math.max(0, pt.life/800);
+      ctx.globalAlpha = Math.max(0, pt.life/700);
       ctx.fillStyle = pt.color;
       ctx.fillRect(pt.x-2, pt.y-2, 4, 4);
     }
@@ -958,9 +1111,14 @@ function render(gs, ctx){
     ctx.fillRect(VW/2,VH-22,(gs.p2.kothScore/10)*60,14);
   }
 
-  ctx.restore();
+  // Crown hold progress bars
+  if(gs.mode.id==='crown'){
+    ctx.fillStyle='rgba(0,0,0,.5)'; ctx.fillRect(VW/2-80,VH-22,160,10);
+    ctx.fillStyle='#00f5d4'; ctx.fillRect(VW/2-80,VH-22,((gs.p1.crownTime||0)/15)*80,10);
+    ctx.fillStyle='#f72585'; ctx.fillRect(VW/2,VH-22,((gs.p2.crownTime||0)/15)*80,10);
+  }
 
-  // HUD update — throttled, use cached elements
+  ctx.restore();
   updateHUD(gs);
 }
 
@@ -1102,85 +1260,155 @@ function drawPlatformsBatched(platforms, ctx, stage){
 
 function drawPlayer(p, ctx, gs, now){
   if(p.dead) return;
-  const pw = p.w*p.scale, ph = p.h*p.scale;
-
-  // Invincibility flicker — skip drawing entirely on odd frames
   if(p.invincTime>0 && Math.floor(now/80)%2===0) return;
+
+  const pw = p.w*p.scale, ph = p.h*p.scale;
+  const cx = p.x + pw/2; // center x
+  const cy = p.y + ph/2; // center y
+  const r  = pw * 0.52;  // body radius — blobby circle
 
   ctx.save();
 
   const isJugg = gs.mode.id==='juggernaut' && p.id===1;
+  let bodyColor = isJugg ? '#ff6b35' : p.color;
+  if(p.hitStun>100) bodyColor='#ffffff';
 
-  // Shadow (no save needed, just draw)
-  ctx.fillStyle='rgba(0,0,0,0.25)';
+  // ── Drop shadow ──
+  ctx.fillStyle='rgba(0,0,0,0.18)';
   ctx.beginPath();
-  ctx.ellipse(p.x+pw/2, p.y+ph+2, pw*0.4, 4, 0, 0, 6.2832);
+  ctx.ellipse(cx, p.y+ph+3, r*0.7, 5, 0, 0, 6.2832);
   ctx.fill();
 
-  // Set body color + glow
-  let bodyColor = p.color;
-  if(isJugg) bodyColor='#ff6b35';
-  if(p.hitStun>100) bodyColor='#fff';
+  // ── Juggernaut glow ──
+  if(isJugg){ ctx.shadowBlur=18; ctx.shadowColor='#ff6b35aa'; }
+
+  // ── Body — round blob ──
   ctx.fillStyle = bodyColor;
-  if(isJugg){ ctx.shadowBlur=16; ctx.shadowColor='#ff6b35'; }
-
-  // Body
   ctx.beginPath();
-  ctx.roundRect(p.x, p.y+ph*0.3, pw, ph*0.7, pw*0.2);
+  // Slightly squash/stretch based on vertical velocity for juice
+  const squashX = p.vy > 2 ? 0.88 : (p.vy < -3 ? 1.12 : 1);
+  const squashY = p.vy > 2 ? 1.12 : (p.vy < -3 ? 0.88 : 1);
+  ctx.ellipse(cx, cy + ph*0.05, r*squashX, r*0.88*squashY, 0, 0, 6.2832);
   ctx.fill();
-
-  // Head
   ctx.shadowBlur=0;
-  const headR = pw*0.32*p.headSize;
-  const headX = p.x + pw/2;
-  const headY = p.y + ph*0.28;
+
+  // ── Belly highlight (lighter circle) ──
+  ctx.fillStyle = p.hitStun>100 ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.22)';
   ctx.beginPath();
-  ctx.arc(headX, headY, headR, 0, 6.2832);
+  ctx.ellipse(cx - r*0.08, cy - r*0.05, r*0.48, r*0.38, -0.3, 0, 6.2832);
   ctx.fill();
 
-  // Eye
-  ctx.fillStyle='#000';
-  const eyeOff = p.facing * headR*0.35;
+  // ── Ears / antennae ──
+  const earCol = bodyColor;
+  ctx.fillStyle = earCol;
+  // Left ear
   ctx.beginPath();
-  ctx.arc(headX+eyeOff, headY-headR*0.1, headR*0.2, 0, 6.2832);
+  ctx.ellipse(cx - r*0.55, cy - r*0.75, r*0.2, r*0.32, -0.4, 0, 6.2832);
   ctx.fill();
+  // Right ear
+  ctx.beginPath();
+  ctx.ellipse(cx + r*0.55, cy - r*0.75, r*0.2, r*0.32, 0.4, 0, 6.2832);
+  ctx.fill();
+  // Inner ear pinks
+  ctx.fillStyle = p.id===1 ? '#ff8fb3' : '#ffaad4';
+  ctx.beginPath();
+  ctx.ellipse(cx - r*0.55, cy - r*0.75, r*0.1, r*0.18, -0.4, 0, 6.2832);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(cx + r*0.55, cy - r*0.75, r*0.1, r*0.18, 0.4, 0, 6.2832);
+  ctx.fill();
+
+  // ── Big cute eyes ──
+  const eyeY = cy - r*0.12;
+  const eyeSpread = r*0.34;
+  const eyeR = r*0.26;
+  // Eye whites
   ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.ellipse(cx - eyeSpread, eyeY, eyeR, eyeR*1.1, 0, 0, 6.2832); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx + eyeSpread, eyeY, eyeR, eyeR*1.1, 0, 0, 6.2832); ctx.fill();
+  // Pupils — offset toward facing direction
+  const pupilOff = p.facing * eyeR * 0.3;
+  const pupilR = eyeR * 0.58;
+  ctx.fillStyle='#1a1a2e';
+  ctx.beginPath(); ctx.ellipse(cx - eyeSpread + pupilOff, eyeY + eyeR*0.05, pupilR, pupilR*1.1, 0, 0, 6.2832); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx + eyeSpread + pupilOff, eyeY + eyeR*0.05, pupilR, pupilR*1.1, 0, 0, 6.2832); ctx.fill();
+  // Eye shine
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.arc(cx - eyeSpread + pupilOff - pupilR*0.25, eyeY - pupilR*0.3, pupilR*0.3, 0, 6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + eyeSpread + pupilOff - pupilR*0.25, eyeY - pupilR*0.3, pupilR*0.3, 0, 6.2832); ctx.fill();
+
+  // Blush marks
+  ctx.fillStyle = p.id===1 ? 'rgba(255,120,160,0.35)' : 'rgba(255,100,180,0.35)';
+  ctx.beginPath(); ctx.ellipse(cx - eyeSpread - eyeR*0.3, eyeY + eyeR*0.8, eyeR*0.6, eyeR*0.3, 0, 0, 6.2832); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx + eyeSpread + eyeR*0.3, eyeY + eyeR*0.8, eyeR*0.6, eyeR*0.3, 0, 0, 6.2832); ctx.fill();
+
+  // Mouth — smile or worried when hurt
+  ctx.strokeStyle = '#1a1a2e';
+  ctx.lineWidth = r * 0.07;
+  ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.arc(headX+eyeOff+headR*0.05, headY-headR*0.15, headR*0.08, 0, 6.2832);
-  ctx.fill();
+  if(p.hitStun > 50){
+    // Worried face
+    ctx.arc(cx, eyeY + eyeR*1.8, r*0.18, 0.2, Math.PI - 0.2);
+  } else {
+    // Smile
+    ctx.arc(cx, eyeY + eyeR*1.3, r*0.22, 0.15, Math.PI - 0.15);
+  }
+  ctx.stroke();
 
-  // Legs
-  const legAnim = p.onGround && Math.abs(p.vx)>0.5 ? Math.sin(now/80)*0.25 : 0;
+  // ── Tiny round feet ──
+  const walkCycle = p.onGround && Math.abs(p.vx)>0.5;
+  const footSwing = walkCycle ? Math.sin(now / 100) * r * 0.22 : 0;
+  const footR = r * 0.28;
+  const footY = p.y + ph + footR * 0.3;
   ctx.fillStyle = bodyColor;
-  ctx.globalAlpha = 0.75;
-  ctx.fillRect(p.x+pw*0.18, p.y+ph*(0.82+legAnim), pw*0.22, ph*0.22);
-  ctx.fillRect(p.x+pw*0.58, p.y+ph*(0.82-legAnim), pw*0.22, ph*0.22);
-  ctx.globalAlpha = 1;
+  ctx.beginPath(); ctx.ellipse(cx - r*0.28 + footSwing, footY, footR, footR*0.72, 0, 0, 6.2832); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx + r*0.28 - footSwing, footY, footR, footR*0.72, 0, 0, 6.2832); ctx.fill();
 
-  // Attack flash
+  // ── Attack effect — star burst ──
   if(p.attackActive>0){
-    ctx.fillStyle = p.color;
-    ctx.globalAlpha = 0.55;
+    const t = p.attackActive / 250;
+    const burstX = p.facing>0 ? p.x+pw+r*0.2 : p.x-r*0.2;
+    const burstY = cy;
+    const outerR = r * (0.6 + t*0.5);
+    const innerR = outerR * 0.45;
+    const spikes = 8;
+    ctx.fillStyle = p.id===1 ? '#ffeb3b' : '#ff6bc7';
+    ctx.globalAlpha = t * 0.9;
     ctx.beginPath();
-    const ax = p.facing>0 ? p.x+pw : p.x-48;
-    ctx.ellipse(ax, p.y+ph*0.45, 30, 18, p.facing>0?-0.4:0.4, 0, 6.2832);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  }
-
-  // Hot potato emoji
-  if(gs.hotPotato && gs.hotPotato.holder===p.id){
-    ctx.font=`${16*p.scale}px sans-serif`;
-    ctx.textAlign='center';
+    for(let i=0;i<spikes*2;i++){
+      const angle = (i * Math.PI / spikes) - Math.PI/2;
+      const rad = i%2===0 ? outerR : innerR;
+      i===0 ? ctx.moveTo(burstX+Math.cos(angle)*rad, burstY+Math.sin(angle)*rad)
+             : ctx.lineTo(burstX+Math.cos(angle)*rad, burstY+Math.sin(angle)*rad);
+    }
+    ctx.closePath(); ctx.fill();
+    // White core flash
     ctx.fillStyle='#fff';
-    ctx.fillText('🥔', p.x+pw/2, p.y-8);
+    ctx.globalAlpha = t * 0.7;
+    ctx.beginPath(); ctx.arc(burstX, burstY, innerR*0.6, 0, 6.2832); ctx.fill();
+    ctx.globalAlpha=1;
   }
 
-  // Player label
+  // ── Crown if holding ──
+  if(gs.crown && gs.crown.holder===p.id){
+    ctx.font=`${Math.max(12, r*0.7)}px sans-serif`;
+    ctx.textAlign='center';
+    ctx.fillText('👑', cx, p.y - r*0.2);
+  }
+
+  // ── Hot potato ──
+  if(gs.hotPotato && gs.hotPotato.holder===p.id){
+    ctx.font=`${Math.max(12, r*0.6)}px sans-serif`;
+    ctx.textAlign='center';
+    ctx.fillText('🥔', cx, p.y - r*0.2);
+  }
+
+  // ── Player label ──
   ctx.fillStyle = p.color;
-  ctx.font=`bold ${Math.max(10,11*p.scale)}px 'Share Tech Mono'`;
-  ctx.textAlign='center';
-  ctx.fillText('P'+p.id, p.x+pw/2, p.y-4);
+  ctx.font = `bold ${Math.max(9, r*0.55)}px 'Share Tech Mono'`;
+  ctx.textAlign = 'center';
+  ctx.fillText('P'+p.id, cx, p.y - r*0.05);
 
   ctx.restore();
 }
@@ -1205,6 +1433,19 @@ function updateHUD(gs){
   if(gs.mode.id==='koth'){
     hudP1Lives.textContent = Math.floor(gs.p1.kothScore)+'/10 pts';
     hudP2Lives.textContent = Math.floor(gs.p2.kothScore)+'/10 pts';
+  }
+  if(gs.mode.id==='coin_rush'){
+    hudP1Lives.textContent = '🪙 '+(gs.p1._coins||0);
+    hudP2Lives.textContent = '🪙 '+(gs.p2._coins||0);
+  }
+  if(gs.mode.id==='crown'){
+    hudP1Lives.textContent = '👑 '+Math.floor(gs.p1.crownTime||0)+'s / 15s';
+    hudP2Lives.textContent = '👑 '+Math.floor(gs.p2.crownTime||0)+'s / 15s';
+  }
+  if(gs.mode.id==='race'){
+    const finish = gs.stage.raceLength - 100;
+    hudP1Lives.textContent = '🏁 '+Math.floor(Math.min(100, (gs.p1.x/finish)*100))+'%';
+    hudP2Lives.textContent = '🏁 '+Math.floor(Math.min(100, (gs.p2.x/finish)*100))+'%';
   }
 }
 
