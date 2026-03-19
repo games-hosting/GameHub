@@ -149,11 +149,10 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   <div id="lobby-main" style="display:flex;flex-direction:column;gap:.8rem;width:min(440px,92vw)">
     <button class="btn btn-monster" onclick="showHostSetup()">☠ CREATE LOBBY</button>
     <button class="btn btn-survivor" onclick="showJoin()">🔦 JOIN LOBBY</button>
-    <button class="btn btn-ghost" onclick="showHTP()">📖 HOW TO PLAY</button>
   </div>
 
-  <!-- How to Play modal -->
-  <div id="lobby-htp" class="card hidden" style="max-height:75vh;overflow-y:auto;width:min(520px,94vw)">
+  <!-- How to Play — always visible -->
+  <div id="lobby-htp" class="card" style="width:min(520px,94vw)">
     <h2>📖 How to Play</h2>
 
     <div style="font-size:.88rem;line-height:1.7;color:var(--text)">
@@ -193,7 +192,6 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
       <p style="color:var(--muted);font-size:.8rem;margin-top:.8rem;text-align:center;font-style:italic">The heartbeat on your screen means the monster is close. Hide in a locker to suppress it!</p>
     </div>
 
-    <button class="btn btn-ghost" style="margin-top:1rem" onclick="hideHTP()">← BACK</button>
   </div>
 
   <!-- Host setup: pick map pref, then create -->
@@ -579,6 +577,208 @@ const MAPS = [
     ],
   },
 ];
+
+// ═══════════════════════════════════════════════════
+//  SFX (Web Audio API — procedural synthesis, no files needed)
+// ═══════════════════════════════════════════════════
+let _ac=null;
+function ac(){
+  if(!_ac){ _ac=new (window.AudioContext||window.webkitAudioContext)(); }
+  if(_ac.state==='suspended') _ac.resume();
+  return _ac;
+}
+
+function sfxPlay(fn){
+  try{ fn(ac()); } catch(e){}
+}
+
+// Short pitched hit / thud
+function sfxHit(){
+  sfxPlay(ctx=>{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type='sawtooth'; o.frequency.setValueAtTime(180,ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(40,ctx.currentTime+0.18);
+    g.gain.setValueAtTime(0.5,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.2);
+    o.start(ctx.currentTime); o.stop(ctx.currentTime+0.2);
+  });
+}
+
+// Hook clang — metallic scrape
+function sfxHook(){
+  sfxPlay(ctx=>{
+    const buf=ctx.createBuffer(1,ctx.sampleRate*0.35,ctx.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*0.08));
+    const src=ctx.createBufferSource(), g=ctx.createGain();
+    const flt=ctx.createBiquadFilter(); flt.type='bandpass'; flt.frequency.value=900; flt.Q.value=8;
+    src.buffer=buf; src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.6,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);
+    src.start();
+  });
+}
+
+// Gen repair complete — power-up buzz
+function sfxGenDone(){
+  sfxPlay(ctx=>{
+    [220,330,440,660].forEach((freq,i)=>{
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type='square'; o.frequency.value=freq;
+      const t=ctx.currentTime+i*0.07;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(0.18,t+0.03);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.25);
+      o.start(t); o.stop(t+0.25);
+    });
+  });
+}
+
+// Locker enter — quiet creak
+function sfxLockerEnter(){
+  sfxPlay(ctx=>{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type='sine'; o.frequency.setValueAtTime(300,ctx.currentTime);
+    o.frequency.linearRampToValueAtTime(120,ctx.currentTime+0.15);
+    g.gain.setValueAtTime(0.15,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.2);
+    o.start(); o.stop(ctx.currentTime+0.2);
+  });
+}
+
+// Locker grab — whoosh + impact
+function sfxLockerGrab(){
+  sfxPlay(ctx=>{
+    const buf=ctx.createBuffer(1,ctx.sampleRate*0.12,ctx.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*0.04));
+    const src=ctx.createBufferSource(), g=ctx.createGain();
+    const flt=ctx.createBiquadFilter(); flt.type='lowpass'; flt.frequency.value=400;
+    src.buffer=buf; src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.7,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.15);
+    src.start();
+    // Follow-up thud
+    const o=ctx.createOscillator(), g2=ctx.createGain();
+    o.connect(g2); g2.connect(ctx.destination);
+    o.type='sine'; o.frequency.setValueAtTime(90,ctx.currentTime+0.08);
+    o.frequency.exponentialRampToValueAtTime(30,ctx.currentTime+0.25);
+    g2.gain.setValueAtTime(0.4,ctx.currentTime+0.08);
+    g2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.28);
+    o.start(ctx.currentTime+0.08); o.stop(ctx.currentTime+0.28);
+  });
+}
+
+// Unhook — relief whoosh
+function sfxUnhook(){
+  sfxPlay(ctx=>{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type='sine'; o.frequency.setValueAtTime(200,ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(500,ctx.currentTime+0.2);
+    g.gain.setValueAtTime(0.2,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.25);
+    o.start(); o.stop(ctx.currentTime+0.25);
+  });
+}
+
+// Gate open — deep rumble + power hum
+function sfxGateOpen(){
+  sfxPlay(ctx=>{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type='sawtooth'; o.frequency.setValueAtTime(55,ctx.currentTime);
+    o.frequency.linearRampToValueAtTime(80,ctx.currentTime+0.5);
+    g.gain.setValueAtTime(0.3,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.6);
+    o.start(); o.stop(ctx.currentTime+0.6);
+    // Harmonic
+    const o2=ctx.createOscillator(), g2=ctx.createGain();
+    o2.connect(g2); g2.connect(ctx.destination);
+    o2.type='sine'; o2.frequency.value=220;
+    g2.gain.setValueAtTime(0,ctx.currentTime+0.1);
+    g2.gain.linearRampToValueAtTime(0.15,ctx.currentTime+0.3);
+    g2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.7);
+    o2.start(ctx.currentTime+0.1); o2.stop(ctx.currentTime+0.7);
+  });
+}
+
+// Escape — triumphant sting
+function sfxEscape(){
+  sfxPlay(ctx=>{
+    [440,550,660,880].forEach((f,i)=>{
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type='triangle'; o.frequency.value=f;
+      const t=ctx.currentTime+i*0.06;
+      g.gain.setValueAtTime(0.12,t);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.4);
+      o.start(t); o.stop(t+0.4);
+    });
+  });
+}
+
+// Death — descending tone
+function sfxDeath(){
+  sfxPlay(ctx=>{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type='sawtooth';
+    o.frequency.setValueAtTime(220,ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(30,ctx.currentTime+0.8);
+    g.gain.setValueAtTime(0.25,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.85);
+    o.start(); o.stop(ctx.currentTime+0.85);
+  });
+}
+
+// Ability used — swoosh
+function sfxAbility(){
+  sfxPlay(ctx=>{
+    const buf=ctx.createBuffer(1,ctx.sampleRate*0.2,ctx.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*0.06));
+    const src=ctx.createBufferSource(), g=ctx.createGain();
+    const flt=ctx.createBiquadFilter(); flt.type='bandpass'; flt.frequency.value=600; flt.Q.value=3;
+    src.buffer=buf; src.connect(flt); flt.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.4,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.22);
+    src.start();
+  });
+}
+
+// Jeffrey jumpscare — dissonant stab
+function sfxJumpscare(){
+  sfxPlay(ctx=>{
+    [110,155,233].forEach((f,i)=>{
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type='sawtooth'; o.frequency.value=f;
+      g.gain.setValueAtTime(0.3,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
+      o.start(); o.stop(ctx.currentTime+0.5);
+    });
+  });
+}
+
+// Repair tick — quiet click every ~2s while repairing
+let _lastRepairTick=0;
+function sfxRepairTick(){
+  const now=Date.now();
+  if(now-_lastRepairTick<1800) return;
+  _lastRepairTick=now;
+  sfxPlay(ctx=>{
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type='sine'; o.frequency.value=800;
+    g.gain.setValueAtTime(0.06,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.04);
+    o.start(); o.stop(ctx.currentTime+0.04);
+  });
+}
 
 // ═══════════════════════════════════════════════════
 //  NETWORKING
@@ -991,6 +1191,9 @@ function simulate(gs, dt){
     }
 
     if(s.inLocker){
+      // Timers must tick even inside locker
+      if(s._frozen>0){ s._frozen-=dt; if(s._frozen<0) s._frozen=0; }
+      if(s._lockerCooldown>0){ s._lockerCooldown-=dt; if(s._lockerCooldown<0) s._lockerCooldown=0; }
       if(sinp.action) exitLocker(gs,s);
       return;
     }
@@ -1050,6 +1253,7 @@ function simulate(gs, dt){
       g.done=true; g.progress=GEN_REPAIR_TIME;
       gs.gensDone++;
       spawnParticle(gs,g.x,g.y,'#e67e22',12);
+      sfxGenDone();
       if(gs.gensDone>=GENS_NEEDED){
         gs.phase='endgame';
         gs.gates.forEach(gt=>gt.powered=true);
@@ -1082,10 +1286,16 @@ function simulate(gs, dt){
 
   const totalSurvivors=gs.survivors.length;
   const neededEscapes=totalSurvivors===1?1:Math.ceil(totalSurvivors/2);
+  // Survivors still "in play" = not dead and not escaped
+  const alive=gs.survivors.filter(s=>!s.dead&&!s.escaped);
+  // Monster wins if all alive survivors are dead, OR if no survivors can act
+  // (all remaining are either dead, escaped, or stuck on hook with nobody to rescue)
+  const canAct=alive.filter(s=>s.hookedOn<0); // not dead, not escaped, not on hook
+  const monsterWinCondition=alive.length===0||(canAct.length===0&&alive.every(s=>s.hookedOn>=0));
 
   if(gs.survivorsEscaped>=neededEscapes){
     endGame(gs,false);
-  } else if(gs.survivorsDead===totalSurvivors){
+  } else if(monsterWinCondition){
     endGame(gs,true);
   }
 }
@@ -1139,6 +1349,7 @@ function tryAction(gs,s,dt){
     if(Math.abs(s.x-g.x)<55&&Math.abs(s.y-g.y)<55){
       if(!g.repairers.includes(s.id)) g.repairers.push(s.id);
       showActionBar('REPAIRING',g.progress/GEN_REPAIR_TIME);
+      sfxRepairTick();
       return;
     }
   }
@@ -1152,6 +1363,7 @@ function tryAction(gs,s,dt){
         if(g.progress>=GATE_OPEN_TIME){
           g.open=true; gs.gatesOpen++;
           spawnParticle(gs,g.x,g.y,'#1abc9c',10);
+          sfxGateOpen();
         }
         return;
       }
@@ -1186,6 +1398,7 @@ function enterLocker(gs,s,idx){
   gs.lockers[idx].survivorId=s.id;
   s.inLocker=true; s.lockerIdx=idx;
   s.x=gs.lockers[idx].x; s.y=gs.lockers[idx].y;
+  sfxLockerEnter();
 }
 function exitLocker(gs,s){
   if(s.lockerIdx<0||!gs.lockers[s.lockerIdx]) return;
@@ -1222,6 +1435,25 @@ function doMonsterAttack(gs){
       return;
     }
   }
+  // Locker grab — pull out a survivor hiding in a nearby locker
+  for(const l of gs.lockers){
+    if(!l.occupied) continue;
+    if(Math.hypot(m.x-l.x, m.y-l.y) < ATTACK_RANGE+20){
+      const s=gs.survivors.find(sv=>sv.id===l.survivorId);
+      if(s && !s.dead && !s.escaped){
+        exitLocker(gs,s);
+        s._lockerCooldown=5000; // long cooldown after being grabbed out
+        injureSurvivor(gs,s);
+        m.attackCooldown=ATTACK_COOLDOWN;
+        m._lunging=false;
+        if(gs.monsterPerk===1) m.speed=Math.min(MONSTER_SPEED*1.4, m.speed+0.1);
+        spawnParticle(gs,s.x,s.y,'#9b59b6',10);
+        sfxLockerGrab();
+        return;
+      }
+    }
+  }
+
   m._lunging=false;
 }
 
@@ -1230,10 +1462,12 @@ function injureSurvivor(gs,s){
     s.injured=true;
     hookSurvivor(gs,s);
     spawnParticle(gs,s.x,s.y,'#c0392b',12);
+    sfxHit();
     return;
   }
   s.injured=true;
   spawnParticle(gs,s.x,s.y,'#c0392b',8);
+  sfxHit();
 }
 
 function hookSurvivor(gs,s){
@@ -1255,6 +1489,7 @@ function hookSurvivor(gs,s){
   s.injured=false;
   gs.monster.hookCount++;
   spawnParticle(gs,s.x,s.y,'#8b0000',12);
+  sfxHook();
 }
 
 function unhookSurvivor(gs,s,selfEscape,rescuer){
@@ -1277,6 +1512,7 @@ function unhookSurvivor(gs,s,selfEscape,rescuer){
   if(s.perkIdx===3) s.dsReady=true;
   if(s.perkIdx===0) s.sprintReady=true;
   spawnParticle(gs,s.x,s.y,'#27ae60',8);
+  sfxUnhook();
 }
 
 function killSurvivor(gs,s){
@@ -1288,6 +1524,7 @@ function killSurvivor(gs,s){
   gs.gens.forEach(g=>{ g.repairers=g.repairers.filter(rid=>rid!==s.id); });
   gs.survivorsDead++;
   spawnParticle(gs,s.x,s.y,'#8b0000',20);
+  sfxDeath();
 }
 
 function escapeSurvivor(gs,s){
@@ -1295,11 +1532,13 @@ function escapeSurvivor(gs,s){
   gs.gens.forEach(g=>{ g.repairers=g.repairers.filter(rid=>rid!==s.id); });
   gs.survivorsEscaped++;
   spawnParticle(gs,s.x,s.y,'#1abc9c',15);
+  sfxEscape();
 }
 
 function triggerMonsterAbility(gs){
   const m=gs.monster;
   const mtype=MONSTERS[m.monsterType];
+  sfxAbility();
   if(mtype.id==='wraith'){
     if(m.invisible) return;
     m.invisible=true; m.perkTimer=6000; m.abilityCooldown=9999999;
@@ -1344,6 +1583,7 @@ function triggerMonsterAbility(gs){
     m.abilityCooldown=25000;
     gs._jeffreyJumpscare=500;
     spawnParticle(gs,m.x,m.y,'#f39c12',15);
+    sfxJumpscare();
   }
 }
 
@@ -1704,6 +1944,27 @@ function render(gs){
     ctx.textAlign='center';
     ctx.fillText('🎸  BOO!  🎸', W/2, H/2);
     ctx.restore();
+  }
+
+  // Locker search prompt — shown to monster when standing next to occupied locker
+  if(isMonster){
+    gs.lockers.forEach(l=>{
+      if(!l.occupied) return;
+      const lsx=l.x-cam.x, lsy=l.y-cam.y;
+      if(Math.hypot(gs.monster.x-l.x,gs.monster.y-l.y)<ATTACK_RANGE+20){
+        ctx.save();
+        ctx.fillStyle='#e74c3c';
+        ctx.font='bold 12px VT323';
+        ctx.textAlign='center';
+        ctx.fillText('[E] SEARCH LOCKER',lsx,lsy-32);
+        // Pulsing border on the locker
+        ctx.strokeStyle='#e74c3c';
+        ctx.lineWidth=2;
+        ctx.globalAlpha=0.5+Math.sin(Date.now()/150)*0.5;
+        ctx.strokeRect(lsx-18,lsy-26,36,52);
+        ctx.restore();
+      }
+    });
   }
 
   gs.particles.forEach(p=>{
