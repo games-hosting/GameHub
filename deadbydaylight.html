@@ -1100,10 +1100,17 @@ let remoteInputs={};
 function sendInput(){
   const inp=getMyInput();
   if(isMonster){
-    sendToHost({type:'input', isMonster:true, ...inp});
+    // Host IS the simulation — write own input directly, don't send to self
+    remoteInputs['monster']=inp;
   } else {
     const survivorIdx = myIndex - 1;
-    sendToHost({type:'input', isMonster:false, survivorIdx, ...inp});
+    if(conn && conn.open){
+      // Non-host survivor: send input to host
+      conn.send({type:'input', isMonster:false, survivorIdx, ...inp});
+    } else {
+      // Host playing as survivor: write directly
+      remoteInputs[survivorIdx]=inp;
+    }
   }
 }
 
