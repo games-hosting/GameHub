@@ -962,6 +962,13 @@ function hostStartGame(){
 
   myIndex=0;
   isMonster=(monsterSlot===0);
+  // If host is a survivor, calculate correct survivor index
+  if(!isMonster){
+    // survivors array = connectedPlayers with monsterSlot removed, in order
+    // host is slot 0, so survivor index = number of slots before 0 that aren't monsterSlot
+    // Since monsterSlot>0 here, host (slot 0) maps to survivor index 0 → myIndex=1
+    myIndex=1;
+  }
   initGame(mapIdx, monsterTypeIdx, monsterPerk, survPerks, true, monsterSlot, 0);
 }
 
@@ -1099,17 +1106,21 @@ let remoteInputs={};
 
 function sendInput(){
   const inp=getMyInput();
-  if(isMonster){
-    // Host IS the simulation — write own input directly, don't send to self
-    remoteInputs['monster']=inp;
-  } else {
-    const survivorIdx = myIndex - 1;
-    if(conn && conn.open){
-      // Non-host survivor: send input to host
-      conn.send({type:'input', isMonster:false, survivorIdx, ...inp});
+  if(conn && conn.open){
+    // Non-host: always send over network
+    if(isMonster){
+      conn.send({type:'input', isMonster:true, ...inp});
     } else {
-      // Host playing as survivor: write directly
-      remoteInputs[survivorIdx]=inp;
+      conn.send({type:'input', isMonster:false, survivorIdx:myIndex-1, ...inp});
+    }
+  }
+  // Host: write directly into remoteInputs so simulate can read it
+  // (monster input is read via getMyInput() in simulate directly, but writing here is harmless)
+  if(!conn || !conn.open){
+    if(isMonster){
+      remoteInputs['monster']=inp;
+    } else {
+      remoteInputs[myIndex-1]=inp;
     }
   }
 }
@@ -1177,7 +1188,9 @@ function simulate(gs, dt){
 
   gs.survivors.forEach((s,i)=>{
     if(s.dead||s.escaped) return;
-    const sinp=i===myIndex-1&&!isMonster ? getMyInput() : (remoteInputs[i]||EMPTY_INP);
+    // Always use direct input for the local survivor (works for both host and non-host)
+    const isLocalSurvivor = !isMonster && (i === myIndex-1);
+    const sinp = isLocalSurvivor ? getMyInput() : (remoteInputs[i]||EMPTY_INP);
 
     if(s.hookedOn>=0){
       const wiggling=sinp.left||sinp.right||sinp.up||sinp.down||sinp.action;
