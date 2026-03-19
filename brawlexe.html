@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRAWL.EXE</title>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Boogaloo&family=Share+Tech+Mono&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0d0d0d;
+  --surface:#161616;
+  --border:#2a2a2a;
+  --p1:#00f5d4;
+  --p2:#f72585;
+  --gold:#ffd60a;
+  --danger:#ff4444;
+  --text:#efefef;
+  --muted:#666;
+  --font-display:'Boogaloo',cursive;
+  --font-mono:'Share Tech Mono',monospace;
+}
+
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-mono)}
+
+/* ── SCREENS ── */
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;transition:opacity .3s}
+.screen.hidden{opacity:0;pointer-events:none}
+
+/* ── LOBBY ── */
+#screen-lobby{background:var(--bg)}
+.logo{font-family:var(--font-display);font-size:clamp(3rem,10vw,6rem);letter-spacing:4px;color:var(--gold);text-shadow:0 0 40px #ffd60a55;line-height:1}
+.logo span{color:var(--p1)}
+.tagline{font-size:.85rem;color:var(--muted);letter-spacing:3px;text-transform:uppercase}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem 2rem;width:min(420px,90vw)}
+.card h2{font-family:var(--font-display);font-size:1.4rem;margin-bottom:1rem;color:var(--gold)}
+.btn{display:block;width:100%;padding:.75rem 1.5rem;border:none;border-radius:8px;font-family:var(--font-mono);font-size:.95rem;cursor:pointer;transition:transform .1s,filter .1s;letter-spacing:1px}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--p1);color:#000;font-weight:bold}
+.btn-primary:hover{filter:brightness(1.15)}
+.btn-secondary{background:var(--p2);color:#fff;font-weight:bold}
+.btn-secondary:hover{filter:brightness(1.15)}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+
+input[type=text]{width:100%;padding:.65rem .9rem;background:#222;border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-mono);font-size:1rem;margin:.4rem 0 .8rem;outline:none;letter-spacing:2px}
+input[type=text]:focus{border-color:var(--p1)}
+
+.room-code{font-family:var(--font-display);font-size:2.5rem;letter-spacing:8px;color:var(--p1);text-align:center;background:#111;border-radius:8px;padding:.5rem 1.5rem;border:1px dashed var(--p1)}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:var(--muted)}
+.status-dot.green{background:#0f0;box-shadow:0 0 6px #0f0}
+.status-dot.red{background:var(--danger)}
+.status-dot.yellow{background:var(--gold);animation:blink .6s infinite alternate}
+@keyframes blink{to{opacity:.3}}
+#lobby-status{font-size:.85rem;color:var(--muted);text-align:center}
+
+/* ── HUD ── */
+#hud{position:absolute;top:0;left:0;right:0;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;background:rgba(0,0,0,.7);z-index:10;pointer-events:none}
+.hud-player{display:flex;flex-direction:column;gap:3px;min-width:160px}
+.hud-player.right{align-items:flex-end}
+.hud-name{font-family:var(--font-display);font-size:1.1rem}
+.hud-lives{font-size:.85rem;color:var(--muted)}
+.hud-center{text-align:center;flex:1}
+.hud-mode{font-family:var(--font-display);font-size:1rem;color:var(--gold)}
+.hud-timer{font-family:var(--font-display);font-size:1.6rem;color:var(--text)}
+.bar-wrap{height:8px;width:160px;background:#333;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .1s}
+.bar-p1{background:var(--p1)}
+.bar-p2{background:var(--p2)}
+
+/* ── MUTATION TOAST ── */
+#mutation-toast{position:absolute;top:80px;left:50%;transform:translateX(-50%) translateY(-20px);background:var(--gold);color:#000;font-family:var(--font-display);font-size:1.3rem;padding:.5rem 2rem;border-radius:30px;z-index:20;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap}
+#mutation-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── ROUND RESULT ── */
+#round-result{position:absolute;inset:0;background:rgba(0,0,0,.75);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:30;opacity:0;pointer-events:none;transition:opacity .3s}
+#round-result.show{opacity:1;pointer-events:all}
+#round-result h1{font-family:var(--font-display);font-size:clamp(2.5rem,8vw,5rem);color:var(--gold);text-shadow:0 0 30px #ffd60a77}
+#round-result p{font-size:1rem;color:var(--muted);margin:.5rem 0 1.5rem}
+#round-result .score-display{font-family:var(--font-display);font-size:2rem;margin-bottom:1.5rem}
+
+/* ── CANVAS ── */
+#gameCanvas{display:block;width:100%;height:100%}
+#screen-game{background:#0d0d0d}
+
+/* ── CONTROLS HINT ── */
+#controls-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:.7rem;color:var(--muted);letter-spacing:1px;pointer-events:none;z-index:5}
+
+/* decorative scanlines */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);pointer-events:none;z-index:999}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ LOBBY SCREEN ══════════════ -->
+<div id="screen-lobby" class="screen">
+  <div class="logo">BRAWL<span>.</span>EXE</div>
+  <div class="tagline">online multiplayer · chaos mode</div>
+
+  <div id="lobby-main" style="display:flex;flex-direction:column;gap:1rem;width:min(420px,90vw)">
+    <button class="btn btn-primary" onclick="startHost()">🎮 HOST A GAME</button>
+    <button class="btn btn-secondary" onclick="showJoin()">🔗 JOIN WITH CODE</button>
+  </div>
+
+  <div id="lobby-host" class="card hidden">
+    <h2>⚡ Hosting</h2>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:.75rem">Share this code with your friend:</p>
+    <div class="room-code" id="room-code-display">...</div>
+    <div id="lobby-status" style="margin-top:1rem"><span class="status-dot yellow"></span>Waiting for opponent...</div>
+  </div>
+
+  <div id="lobby-join" class="card hidden">
+    <h2>🔗 Join Game</h2>
+    <label style="font-size:.85rem;color:var(--muted)">Enter room code:</label>
+    <input type="text" id="join-code-input" maxlength="6" placeholder="ABC123" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+    <div style="display:flex;gap:.75rem">
+      <button class="btn btn-secondary" style="flex:1" onclick="joinGame()">Connect</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="hideJoin()">Cancel</button>
+    </div>
+    <div id="join-status" style="margin-top:.75rem;font-size:.85rem;color:var(--muted);text-align:center"></div>
+  </div>
+
+  <div id="lobby-ready" class="card hidden">
+    <h2 style="text-align:center">✅ Both players connected!</h2>
+    <p style="font-size:.85rem;color:var(--muted);text-align:center;margin-bottom:1rem">Host starts the game when ready</p>
+    <div id="start-btn-wrap"></div>
+  </div>
+</div>
+
+<!-- ══════════════ GAME SCREEN ══════════════ -->
+<div id="screen-game" class="screen hidden">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-player" id="hud-p1">
+      <div class="hud-name" style="color:var(--p1)" id="hud-p1-name">P1</div>
+      <div class="bar-wrap"><div class="bar-fill bar-p1" id="hud-p1-hp" style="width:100%"></div></div>
+      <div class="hud-lives" id="hud-p1-lives">♥♥♥</div>
+    </div>
+    <div class="hud-center">
+      <div class="hud-mode" id="hud-mode">NORMAL</div>
+      <div class="hud-timer" id="hud-timer">60</div>
+      <div style="font-size:.7rem;color:var(--muted)" id="hud-score">0 — 0</div>
+    </div>
+    <div class="hud-player right" id="hud-p2">
+      <div class="hud-name" style="color:var(--p2)" id="hud-p2-name">P2</div>
+      <div class="bar-wrap"><div class="bar-fill bar-p2" id="hud-p2-hp" style="width:100%"></div></div>
+      <div class="hud-lives" id="hud-p2-lives">♥♥♥</div>
+    </div>
+  </div>
+
+  <div id="mutation-toast">⚡ MUTATION!</div>
+  <div id="controls-hint">P1: WASD + F attack · P2: ARROWS + L attack</div>
+
+  <!-- Round result overlay -->
+  <div id="round-result">
+    <h1 id="round-winner-text">P1 WINS!</h1>
+    <p id="round-mode-text">Round 1 · Normal</p>
+    <div class="score-display" id="round-score-text" style="color:var(--text)">0 — 0</div>
+    <button class="btn btn-primary" style="width:240px" id="next-round-btn" onclick="nextRound()">NEXT ROUND ▶</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  BRAWL.EXE  —  Online 2-player platformer brawler
+//  Architecture: PeerJS WebRTC P2P, host-authoritative
+// ═══════════════════════════════════════════════════════════
+
+// ── Networking ──────────────────────────────────────────────
+let peer = null, conn = null, isHost = false;
+let myId = '', opponentId = '';
+
+function genCode(){ return Math.random().toString(36).substr(2,6).toUpperCase(); }
+
+function startHost(){
+  const code = genCode();
+  myId = code;
+  isHost = true;
+  peer = new Peer(code, {debug:0});
+  peer.on('open', id=>{
+    document.getElementById('room-code-display').textContent = id;
+    show('lobby-host');
+    hide('lobby-main');
+  });
+  peer.on('connection', c=>{
+    conn = c;
+    setupConn();
+    opponentId = c.peer;
+    show('lobby-ready');
+    hide('lobby-host');
+    document.getElementById('start-btn-wrap').innerHTML =
+      '<button class="btn btn-primary" onclick="hostStartGame()">▶ START GAME</button>';
+  });
+  peer.on('error', e=> alert('Connection error: '+e.type));
+}
+
+function showJoin(){ hide('lobby-main'); show('lobby-join'); }
+function hideJoin(){ hide('lobby-join'); show('lobby-main'); }
+
+function joinGame(){
+  const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+  if(code.length < 4){ document.getElementById('join-status').textContent = 'Enter a valid code'; return; }
+  isHost = false;
+  peer = new Peer(undefined, {debug:0});
+  peer.on('open', myPeerId=>{
+    myId = myPeerId;
+    document.getElementById('join-status').textContent = '🔄 Connecting...';
+    conn = peer.connect(code);
+    conn.on('open',()=>{
+      opponentId = code;
+      setupConn();
+      hide('lobby-join');
+      show('lobby-ready');
+      document.getElementById('start-btn-wrap').innerHTML =
+        '<p style="text-align:center;color:var(--muted);font-size:.9rem">Waiting for host to start...</p>';
+      sendMsg({type:'joined'});
+    });
+    conn.on('error', e=>{ document.getElementById('join-status').textContent = '❌ Could not connect'; });
+  });
+  peer.on('error', e=>{ document.getElementById('join-status').textContent = '❌ '+e.type; });
+}
+
+function setupConn(){
+  conn.on('data', onMessage);
+  conn.on('close',()=>{ alert('Opponent disconnected.'); location.reload(); });
+}
+
+function sendMsg(obj){ if(conn && conn.open) conn.send(obj); }
+
+// ── Message handler ──────────────────────────────────────────
+function onMessage(msg){
+  switch(msg.type){
+    case 'joined':   break;
+    case 'startGame': if(!isHost){ receiveGameStart(msg); } break;
+    case 'input':     applyRemoteInput(msg); break;
+    case 'state':     if(!isHost){ applyHostState(msg.state); } break;
+    case 'nextRound': if(!isHost){ receiveNextRound(msg); } break;
+    case 'roundEnd':  if(!isHost){ if(GS) GS.running=false; showRoundResult(msg.winner, false); } break;
+  }
+}
+
+// ── Lobby helpers ────────────────────────────────────────────
+function show(id){ document.getElementById(id).classList.remove('hidden'); }
+function hide(id){ document.getElementById(id).classList.add('hidden'); }
+
+// ══════════════════════════════════════════════════════════════
+//  GAME DATA
+// ══════════════════════════════════════════════════════════════
+
+const ROUND_MODES = [
+  { id:'normal',       name:'NORMAL',          desc:'KO your opponent. Most lives left wins.',  color:'#efefef' },
+  { id:'hot_potato',   name:'HOT POTATO 🥔',   desc:'Holding the bomb when it explodes = -1 life. Pass by hitting opponent!', color:'#ff9f43' },
+  { id:'juggernaut',   name:'JUGGERNAUT 💪',   desc:'P1 is the Juggernaut (2x HP, 2x size). P2 must KO them before timer!', color:'#e74c3c' },
+  { id:'giant',        name:'GIANT MODE 🦕',   desc:'Both players grow every 5s. Stage shrinks. Last one standing wins.', color:'#2ecc71' },
+  { id:'low_grav',     name:'ZERO-G 🌌',       desc:'Gravity is 15% normal. Float combat.', color:'#74b9ff' },
+  { id:'koth',         name:'KING OF THE HILL 👑', desc:'Stand on the center platform to score. First to 10 pts wins.', color:'#ffd700' },
+  { id:'glass',        name:'GLASS CANNON 💎',  desc:'Every hit is a 1-hit KO. Instant death. Dodge everything.', color:'#a29bfe' },
+  { id:'tiny',         name:'TINY BRAWL 🐜',   desc:'Players are tiny. Platforms are massive. Precision fight.', color:'#55efc4' },
+  { id:'reverse',      name:'MIRROR WORLD 🪞',  desc:'Controls are reversed for both players. Left=right, jump=crouch.', color:'#fd79a8' },
+  { id:'speed',        name:'BLITZ ⚡',         desc:'Everyone moves at 2.5x speed. 20s timer. Chaos.', color:'#fdcb6e' },
+  { id:'last_stand',   name:'LAST STAND 🔥',    desc:'Both players start with 1 life. One hit wins.', color:'#d63031' },
+];
+
+const MUTATIONS = [
+  { id:'big_head',    name:'BIG HEAD MODE 🗿',  apply: s=>{ s.p1.headSize=2.5; s.p2.headSize=2.5; } },
+  { id:'tiny_mode',   name:'SHRINK RAY 🔬',     apply: s=>{ s.p1.scale=0.4; s.p2.scale=0.4; } },
+  { id:'giant_mode',  name:'GROW RAY 🔭',       apply: s=>{ s.p1.scale=1.8; s.p2.scale=1.8; } },
+  { id:'fast',        name:'SPEED DEMON ⚡',     apply: s=>{ s.p1.speedMult=2.2; s.p2.speedMult=2.2; } },
+  { id:'slow',        name:'MOLASSES MODE 🐢',  apply: s=>{ s.p1.speedMult=0.4; s.p2.speedMult=0.4; } },
+  { id:'bouncey',     name:'SUPER BOUNCE 🏀',   apply: s=>{ s.p1.bounceMult=2.5; s.p2.bounceMult=2.5; } },
+  { id:'antigrav',    name:'ANTI-GRAVITY 🛸',   apply: s=>{ s.gravity= -0.12; s.p1._antiGrav=true; s.p2._antiGrav=true; } },
+  { id:'lowgrav',     name:'MOON PHYSICS 🌙',   apply: s=>{ s.gravity=0.12; } },
+  { id:'swap',        name:'CONTROL SWAP 🔀',   apply: s=>{ s.swapControls=!s.swapControls; } },
+  { id:'invincible1', name:'P1 INVINCIBLE 🛡️',  apply: s=>{ s.p1.invincTime=8000; } },
+  { id:'invincible2', name:'P2 INVINCIBLE 🛡️',  apply: s=>{ s.p2.invincTime=8000; } },
+  { id:'platform_rm', name:'PLATFORM VANISH 👻',apply: s=>{ removePlatform(s); } },
+];
+
+// ── Stage definitions ─────────────────────────────────────────
+// Platforms: {x,y,w,h, moving, dx, minX, maxX, crumble, oneWay}
+// All values in virtual coords (canvas 800x500)
+const STAGES = [
+  {
+    name:'ASTEROID BELT',
+    bg:'#0a0a1a',
+    bgStars:true,
+    platforms:[
+      {x:0,   y:460, w:800, h:40, solid:true},         // ground
+      {x:100, y:340, w:180, h:16},
+      {x:520, y:340, w:180, h:16},
+      {x:300, y:250, w:200, h:16},
+      {x:150, y:160, w:120, h:16, moving:true, dx:1.2, minX:80, maxX:300},
+      {x:530, y:160, w:120, h:16, moving:true, dx:-1.2, minX:500, maxX:680},
+    ]
+  },
+  {
+    name:'LAVA LAIR',
+    bg:'#1a0500',
+    bgLava:true,
+    platforms:[
+      {x:0,   y:460, w:800, h:40, solid:true, hazard:true},  // lava floor
+      {x:50,  y:380, w:140, h:16},
+      {x:610, y:380, w:140, h:16},
+      {x:200, y:290, w:130, h:16, crumble:true},
+      {x:470, y:290, w:130, h:16, crumble:true},
+      {x:330, y:200, w:140, h:16},
+      {x:140, y:120, w:100, h:16, moving:true, dx:1.5, minX:100, maxX:250},
+      {x:560, y:120, w:100, h:16, moving:true, dx:-1.5, minX:550, maxX:660},
+    ]
+  },
+  {
+    name:'SPACE STATION',
+    bg:'#080d18',
+    bgGrid:true,
+    platforms:[
+      {x:0,   y:460, w:260, h:40, solid:true},
+      {x:540, y:460, w:260, h:40, solid:true},
+      {x:280, y:460, w:240, h:8, oneWay:true},
+      {x:100, y:340, w:160, h:16},
+      {x:540, y:340, w:160, h:16},
+      {x:320, y:260, w:160, h:16, moving:true, dx:0, dy:1.2, minY:220, maxY:310},
+      {x:50,  y:180, w:120, h:16},
+      {x:630, y:180, w:120, h:16},
+      {x:300, y:130, w:200, h:16},
+    ]
+  },
+  {
+    name:'CLOUD KINGDOM',
+    bg:'#e8f4f8',
+    bgClouds:true,
+    platforms:[
+      {x:50,  y:440, w:160, h:20, cloud:true},
+      {x:590, y:440, w:160, h:20, cloud:true},
+      {x:300, y:440, w:200, h:20, cloud:true},
+      {x:150, y:330, w:130, h:20, cloud:true, moving:true, dx:0.8, minX:80, maxX:280},
+      {x:520, y:330, w:130, h:20, cloud:true, moving:true, dx:-0.8, minX:480, maxX:640},
+      {x:310, y:230, w:180, h:20, cloud:true},
+      {x:100, y:140, w:110, h:20, cloud:true},
+      {x:590, y:140, w:110, h:20, cloud:true},
+      {x:320, y:60,  w:160, h:20, cloud:true},
+    ]
+  },
+  {
+    name:'THE VOID',
+    bg:'#000',
+    bgVoid:true,
+    platforms:[
+      {x:240, y:440, w:320, h:16},
+      {x:80,  y:330, w:140, h:16, crumble:true},
+      {x:580, y:330, w:140, h:16, crumble:true},
+      {x:280, y:240, w:240, h:16, moving:true, dx:1.5, minX:100, maxX:500},
+      {x:50,  y:160, w:100, h:16, moving:true, dy:1.2, minY:120, maxY:200},
+      {x:650, y:160, w:100, h:16, moving:true, dy:-1.2, minY:120, maxY:200},
+    ]
+  },
+];
+
+// ══════════════════════════════════════════════════════════════
+//  GAME STATE
+// ══════════════════════════════════════════════════════════════
+const VW = 800, VH = 500;
+let canvas, ctx, animId;
+let gameScore = {p1:0, p2:0};
+let currentRound = 0;
+let roundModeIndex = 0;
+let stageIndex = 0;
+let GS = null; // game state object
+let keys = {};
+const EMPTY_INPUT = {left:false,right:false,up:false,down:false,attack:false,special:false};
+let remoteKeys = {...EMPTY_INPUT};
+let lastStateSync = 0;
+
+// ── Player defaults ──────────────────────────────────────────
+function makePlayer(x, y, id){
+  return {
+    id, x, y, vx:0, vy:0,
+    w:36, h:44,
+    hp:100, maxHp:100,
+    lives:3,
+    onGround:false,
+    facing:id===1?1:-1,
+    scale:1, headSize:1,
+    speedMult:1, bounceMult:1,
+    attackCooldown:0, attackActive:0,
+    hitStun:0, invincTime:0,
+    jumpCount:0,
+    dead:false,
+    color: id===1 ? '#00f5d4' : '#f72585',
+    // mode-specific
+    kothScore:0,
+  };
+}
+
+function initGameState(modeIndex, stgIndex){
+  const mode = ROUND_MODES[modeIndex];
+  const stage = STAGES[stgIndex];
+  const platforms = stage.platforms.map(p=>({...p, origX:p.x, origY:p.y||0, hp: p.crumble?3:999, alive:true}));
+
+  const p1 = makePlayer(160, 300, 1);
+  const p2 = makePlayer(620, 300, 2);
+
+  // Mode-specific adjustments
+  if(mode.id==='juggernaut'){ p1.scale=1.5; p1.hp=p1.maxHp=300; p1.speedMult=0.8; }
+  if(mode.id==='giant'){ p1.scale=1; p2.scale=1; }
+  if(mode.id==='low_grav'||mode.id==='zero_g'){}
+  if(mode.id==='glass'){ p1.hp=p1.maxHp=1; p2.hp=p2.maxHp=1; }
+  if(mode.id==='tiny'){ p1.scale=0.45; p2.scale=0.45; }
+  if(mode.id==='speed'){ p1.speedMult=2.5; p2.speedMult=2.5; }
+  if(mode.id==='last_stand'){ p1.lives=1; p2.lives=1; }
+
+  return {
+    mode, stage, platforms,
+    p1, p2,
+    gravity: mode.id==='low_grav' ? 0.18 : (mode.id==='speed' ? 0.5 : 0.38),
+    swapControls: mode.id==='reverse',
+    bullets:[],
+    effects:[],
+    particles:[],
+    timer: mode.id==='speed' ? 20 : 60,
+    timerMs: (mode.id==='speed' ? 20 : 60) * 1000,
+    kothTimer:0,
+    hotPotato: mode.id==='hot_potato' ? { holder:1, timer:8000+Math.random()*4000 } : null,
+    running:true,
+    roundOver:false,
+    mutationCooldown: 15000 + Math.random()*8000,
+    activeMutation: null,
+    giantGrowTimer: mode.id==='giant' ? 5000 : Infinity,
+  };
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CONTROLS
+// ══════════════════════════════════════════════════════════════
+const P1_KEYS = { left:'KeyA', right:'KeyD', up:'KeyW', down:'KeyS', attack:'KeyF', special:'KeyG' };
+const P2_KEYS = { left:'ArrowLeft', right:'ArrowRight', up:'ArrowUp', down:'ArrowDown', attack:'KeyL', special:'KeyK' };
+
+document.addEventListener('keydown', e=>{ keys[e.code]=true; });
+document.addEventListener('keyup',   e=>{ keys[e.code]=false; });
+
+function getInput(pkeys, swapped){
+  let inp = {
+    left:   keys[pkeys.left],
+    right:  keys[pkeys.right],
+    up:     keys[pkeys.up],
+    down:   keys[pkeys.down],
+    attack: keys[pkeys.attack],
+    special:keys[pkeys.special],
+  };
+  if(swapped){ let t=inp.left; inp.left=inp.right; inp.right=t; }
+  return inp;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  GAME LOOP (Host runs simulation, guest renders host state)
+// ══════════════════════════════════════════════════════════════
+let lastTime = 0;
+
+function gameLoop(ts){
+  animId = requestAnimationFrame(gameLoop);
+  const dt = Math.min(ts - lastTime, 50);
+  lastTime = ts;
+  if(!GS || !GS.running) return;
+
+  if(isHost){
+    // Gather local input (host = P1)
+    const inp1 = getInput(P1_KEYS, GS.swapControls);
+    // For P2 (guest), host applies swap to their remote keys too
+    const inp2 = GS.swapControls
+      ? { ...remoteKeys, left: remoteKeys.right, right: remoteKeys.left }
+      : remoteKeys;
+
+    sendMsg({type:'input', ...getInput(P1_KEYS, false)}); // send raw, host applies swap logic
+    simulate(GS, inp1, inp2, dt);
+
+    // Sync state to guest every ~50ms
+    if(ts - lastStateSync > 50){
+      lastStateSync = ts;
+      sendMsg({type:'state', state: serializeState(GS)});
+    }
+  } else {
+    // Guest: send own input, render last received state
+    const myInp = getInput(P2_KEYS, false);
+    sendMsg({type:'input', ...myInp});
+    // Guest does local prediction only for responsiveness (just render received state)
+  }
+
+  render(GS, ctx);
+}
+
+function applyRemoteInput(msg){
+  if(isHost){
+    remoteKeys = { ...EMPTY_INPUT, left:!!msg.left, right:!!msg.right, up:!!msg.up, down:!!msg.down, attack:!!msg.attack, special:!!msg.special };
+  }
+}
+
+function applyHostState(state){
+  if(!GS) return;
+  deserializeState(GS, state);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SIMULATION (host only)
+// ══════════════════════════════════════════════════════════════
+function simulate(gs, inp1, inp2, dt){
+  if(gs.roundOver) return;
+
+  gs.timerMs -= dt;
+  if(gs.timerMs <= 0){ gs.timerMs=0; onTimeUp(gs); return; }
+
+  // Mutation tick
+  gs.mutationCooldown -= dt;
+  if(gs.mutationCooldown <= 0){
+    triggerMutation(gs);
+    gs.mutationCooldown = 18000 + Math.random()*12000;
+  }
+
+  // Hot potato
+  if(gs.hotPotato){
+    gs.hotPotato.timer -= dt;
+    if(gs.hotPotato.timer <= 0){
+      const victim = gs.hotPotato.holder===1 ? gs.p1 : gs.p2;
+      damagePlayer(gs, victim, 999, gs);
+      // Pass to other player only if they're alive, otherwise let it expire
+      const other = victim.id===1 ? gs.p2 : gs.p1;
+      if(!other.dead){
+        gs.hotPotato = { holder: other.id, timer: 6000+Math.random()*5000 };
+      } else {
+        gs.hotPotato = null;
+      }
+    }
+  }
+
+  // Giant mode grow
+  if(gs.mode.id==='giant'){
+    gs.giantGrowTimer -= dt;
+    if(gs.giantGrowTimer <= 0){
+      gs.p1.scale = Math.min(gs.p1.scale + 0.25, 3.0);
+      gs.p2.scale = Math.min(gs.p2.scale + 0.25, 3.0);
+      gs.giantGrowTimer = 5000;
+    }
+  }
+
+  // KOTH timer
+  if(gs.mode.id==='koth'){
+    const center = VW/2;
+    if(gs.p1.x > center-80 && gs.p1.x < center+80 && !gs.p1.dead){ gs.p1.kothScore += dt/1000; }
+    if(gs.p2.x > center-80 && gs.p2.x < center+80 && !gs.p2.dead){ gs.p2.kothScore += dt/1000; }
+    if(gs.p1.kothScore >= 10){ endRound(gs, 1); return; }
+    if(gs.p2.kothScore >= 10){ endRound(gs, 2); return; }
+  }
+
+  // Move platforms
+  for(const pl of gs.platforms){
+    if(!pl.alive) continue;
+    if(pl.moving){
+      if(pl.dx){ pl.x += pl.dx; if(pl.x<=pl.minX||pl.x+pl.w>=pl.maxX) pl.dx*=-1; }
+      if(pl.dy){ pl.y += pl.dy; if(pl.minY!=null&&pl.maxY!=null&&(pl.y<=pl.minY||pl.y+pl.h>=pl.maxY)) pl.dy*=-1; }
+    }
+  }
+
+  // Move players
+  movePlayer(gs, gs.p1, inp1, dt);
+  movePlayer(gs, gs.p2, inp2, dt);
+
+  // Player-bullet collisions
+  for(let i=gs.bullets.length-1;i>=0;i--){
+    const b = gs.bullets[i];
+    b.x += b.vx; b.y += b.vy; b.life -= dt;
+    if(b.life<=0||b.x<0||b.x>VW||b.y<0||b.y>VH){ gs.bullets.splice(i,1); continue; }
+    // Hit players
+    for(const p of [gs.p1,gs.p2]){
+      if(b.owner===p.id) continue;
+      if(b.x>p.x&&b.x<p.x+p.w*p.scale&&b.y>p.y&&b.y<p.y+p.h*p.scale){
+        damagePlayer(gs, p, b.dmg, gs);
+        spawnParticles(gs, b.x, b.y, p.color, 6);
+        gs.bullets.splice(i,1);
+        // hot potato pass
+        if(gs.hotPotato && gs.hotPotato.holder===p.id) gs.hotPotato.holder = b.owner;
+        break;
+      }
+    }
+  }
+
+  // Player-player melee overlap
+  checkMelee(gs, gs.p1, gs.p2, inp1, inp2);
+
+  // Update effects & particles
+  for(let i=gs.effects.length-1;i>=0;i--){ gs.effects[i].life-=dt; if(gs.effects[i].life<=0) gs.effects.splice(i,1); }
+  for(let i=gs.particles.length-1;i>=0;i--){
+    const pt=gs.particles[i]; pt.x+=pt.vx; pt.y+=pt.vy; pt.vy+=0.15; pt.life-=dt;
+    if(pt.life<=0) gs.particles.splice(i,1);
+  }
+
+  // Timers
+  if(gs.p1.attackCooldown>0) gs.p1.attackCooldown-=dt;
+  if(gs.p2.attackCooldown>0) gs.p2.attackCooldown-=dt;
+  if(gs.p1.attackActive>0)   gs.p1.attackActive-=dt;
+  if(gs.p2.attackActive>0)   gs.p2.attackActive-=dt;
+  if(gs.p1.hitStun>0)        gs.p1.hitStun-=dt;
+  if(gs.p2.hitStun>0)        gs.p2.hitStun-=dt;
+  if(gs.p1.invincTime>0)     gs.p1.invincTime-=dt;
+  if(gs.p2.invincTime>0)     gs.p2.invincTime-=dt;
+
+  // Check win conditions — guard with roundOver to prevent double trigger
+  if(!gs.roundOver && gs.mode.id!=='koth'){
+    const p1Dead = gs.p1.lives<=0, p2Dead = gs.p2.lives<=0;
+    if(p1Dead && p2Dead){ endRound(gs, Math.random()<0.5?1:2); return; }
+    if(p1Dead){ endRound(gs,2); return; }
+    if(p2Dead){ endRound(gs,1); return; }
+  }
+}
+
+function movePlayer(gs, p, inp, dt){
+  if(!inp) inp = EMPTY_INPUT;
+  if(p.dead || p.hitStun>200) return;
+  const spd = 3.8 * p.speedMult;
+  const plat_grav = gs.gravity;
+
+  if(inp.left)  { p.vx = Math.max(p.vx - 0.6, -spd); p.facing=-1; }
+  if(inp.right) { p.vx = Math.min(p.vx + 0.6,  spd); p.facing= 1; }
+  if(!inp.left && !inp.right) p.vx *= 0.78;
+
+  // Jump: up to 2 jumps
+  if(inp.up && !p._lastUp){
+    if(p.onGround || p.jumpCount<2){
+      p.vy = -9.5 * (gs.mode.id==='low_grav' ? 0.65 : 1);
+      p.jumpCount++;
+      p.onGround=false;
+    }
+  }
+  p._lastUp = inp.up;
+
+  // Attack
+  if(inp.attack && p.attackCooldown<=0){
+    p.attackActive = 250;
+    p.attackCooldown = 400;
+    // Fire bullet
+    gs.bullets.push({
+      x: p.x + (p.facing>0 ? p.w*p.scale : 0),
+      y: p.y + p.h*p.scale*0.4,
+      vx: p.facing * 9,
+      vy: -1,
+      owner: p.id,
+      dmg: gs.mode.id==='glass' ? 999 : 25,
+      life: 1200,
+    });
+  }
+
+  p.vy += plat_grav;
+  if(Math.abs(p.vy)>22) p.vy=Math.sign(p.vy)*22;
+
+  p.x += p.vx;
+  p.y += p.vy;
+
+  // Platform collisions
+  p.onGround = false;
+  const pw = p.w * p.scale, ph = p.h * p.scale;
+
+  for(const pl of gs.platforms){
+    if(!pl.alive) continue;
+    // One-way: only collide from above
+    const oneWay = pl.oneWay || pl.cloud;
+    if(p.vy >= 0 &&
+       p.x + pw > pl.x && p.x < pl.x + pl.w &&
+       p.y + ph > pl.y && p.y + ph < pl.y + pl.h + 12 + p.vy){
+      if(oneWay && inp && inp.down) continue; // drop through
+      if(oneWay && p.y + ph - p.vy > pl.y + 4) continue;
+      p.y = pl.y - ph;
+      p.vy = p.bounceMult > 1.5 ? -p.vy * 0.7 * p.bounceMult : 0;
+      p.onGround = true;
+      p.jumpCount = 0;
+      // Crumble
+      if(pl.crumble && !pl._crumbling){ pl._crumbling=true; pl._crumbleTimer=600; }
+      // Hazard (lava)
+      if(pl.hazard && p.invincTime<=0){ damagePlayer(gs, p, 0.08*dt, gs); }
+    } else if(!oneWay){
+      // Side collisions for solid platforms
+      if(p.vy<3 && p.x + pw > pl.x && p.x < pl.x + pl.w &&
+         p.y + ph > pl.y+4 && p.y < pl.y + pl.h){
+        if(p.x + pw/2 < pl.x + pl.w/2){ p.x = pl.x - pw; p.vx=Math.min(p.vx,0); }
+        else { p.x = pl.x + pl.w; p.vx=Math.max(p.vx,0); }
+      }
+    }
+  }
+
+  // Crumble timers
+  for(const pl of gs.platforms){
+    if(pl._crumbling){
+      pl._crumbleTimer -= dt;
+      if(pl._crumbleTimer<=0){ pl.alive=false; }
+    }
+  }
+
+  // Screen wrap (left/right only, fall off bottom = death)
+  if(p.x + pw < 0) p.x = VW;
+  if(p.x > VW) p.x = -pw;
+
+  // Fall off bottom
+  if(p.y > VH + 60 && !p.dead){ damagePlayer(gs, p, 999, gs); }
+  // Ceiling - more aggressive bounce back down for anti-grav
+  if(p.y < 0) { p.y = 0; p.vy = Math.max(p.vy, gs.gravity < 0 ? 2.5 : 0.5); p.onGround = true; p.jumpCount = 0; }
+}
+
+function checkMelee(gs, p1, p2, inp1, inp2){
+  // If attack active, check overlap with hit zone in front
+  for(const [attacker, defender, inp] of [[p1,p2,inp1],[p2,p1,inp2]]){
+    if(attacker.attackActive <= 0) continue;
+    const aw = attacker.w*attacker.scale, ah = attacker.h*attacker.scale;
+    const dw = defender.w*defender.scale, dh = defender.h*defender.scale;
+    const hitX = attacker.facing > 0 ? attacker.x+aw : attacker.x - 40;
+    const hitW = 50;
+    if(hitX < defender.x+dw && hitX+hitW > defender.x &&
+       attacker.y < defender.y+dh && attacker.y+ah > defender.y &&
+       defender.invincTime <= 0){
+      const dmg = gs.mode.id==='glass' ? 999 : 30;
+      damagePlayer(gs, defender, dmg, gs);
+      defender.hitStun = 400;
+      defender.vx = attacker.facing * 6;
+      defender.vy = -4;
+      attacker.attackActive = 0;
+      if(gs.hotPotato && gs.hotPotato.holder===defender.id) gs.hotPotato.holder = attacker.id;
+      spawnParticles(gs, defender.x+dw/2, defender.y, defender.color, 10);
+    }
+  }
+}
+
+function damagePlayer(gs, p, dmg, s){
+  if(p.invincTime > 0) return;
+  // Glass cannon: any damage = instant KO
+  if(gs.mode.id === 'glass' && dmg > 0){
+    p.hp = 0;
+  } else {
+    p.hp -= dmg;
+  }
+  if(p.hp <= 0){
+    p.lives--;
+    p.hp = p.maxHp;
+    p.x = p.id===1 ? 160 : 620;
+    p.y = 300;
+    p.vx = 0; p.vy = 0;
+    p._lastUp = false;
+    p.invincTime = 2500;
+    if(p.lives <= 0) p.dead = true;
+    spawnParticles(gs, p.x, p.y, p.color, 20);
+  }
+}
+
+function spawnParticles(gs, x, y, color, n){
+  for(let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2;
+    const spd = 1+Math.random()*4;
+    gs.particles.push({ x, y, vx:Math.cos(a)*spd, vy:Math.sin(a)*spd-2, life:600+Math.random()*400, color });
+  }
+}
+
+function triggerMutation(gs){
+  const m = MUTATIONS[Math.floor(Math.random()*MUTATIONS.length)];
+  m.apply(gs);
+  gs.activeMutation = m.name;
+  // broadcast to guest via state sync (toast shown in render)
+  // Show toast locally
+  showToast(m.name);
+}
+
+function removePlatform(gs){
+  const removable = gs.platforms.filter(p=>p.alive && !p.solid);
+  if(removable.length > 1){
+    removable[Math.floor(Math.random()*removable.length)].alive = false;
+  }
+}
+
+function onTimeUp(gs){
+  if(gs.mode.id==='koth'){
+    endRound(gs, gs.p1.kothScore>=gs.p2.kothScore ? 1 : 2);
+    return;
+  }
+  // Compare HP + lives
+  const p1Score = gs.p1.lives*100 + gs.p1.hp;
+  const p2Score = gs.p2.lives*100 + gs.p2.hp;
+  endRound(gs, p1Score>=p2Score ? 1 : 2);
+}
+
+function endRound(gs, winnerPid){
+  if(gs.roundOver) return;
+  gs.roundOver = true;
+  gs.running = false;
+  if(winnerPid===1) gameScore.p1++;
+  else gameScore.p2++;
+  showRoundResult(winnerPid, true);
+  if(isHost) sendMsg({type:'roundEnd', winner:winnerPid});
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SERIALIZATION (minimal state sync)
+// ══════════════════════════════════════════════════════════════
+function serializePlayer(p){
+  return [p.x,p.y,p.vx,p.vy,p.hp,p.lives,p.facing,p.scale,p.headSize,p.speedMult,p.bounceMult,p.attackActive,p.hitStun,p.invincTime,p.dead?1:0,p.onGround?1:0,p.jumpCount,p.kothScore|0];
+}
+function deserializePlayer(p, a){
+  [p.x,p.y,p.vx,p.vy,p.hp,p.lives,p.facing,p.scale,p.headSize,p.speedMult,p.bounceMult,p.attackActive,p.hitStun,p.invincTime] = a;
+  p.dead = a[14]===1; p.onGround=a[15]===1; p.jumpCount=a[16]; p.kothScore=a[17];
+}
+function serializeState(gs){
+  return {
+    p1: serializePlayer(gs.p1),
+    p2: serializePlayer(gs.p2),
+    bullets: gs.bullets.map(b=>[b.x,b.y,b.vx,b.vy,b.owner,b.dmg,b.life]),
+    particles: gs.particles.slice(-40).map(pt=>[pt.x,pt.y,pt.vx,pt.vy,pt.life,pt.color]),
+    platforms: gs.platforms.map(p=>[p.x,p.y,p.alive?1:0,p._crumbling?1:0]),
+    timer: gs.timerMs,
+    hp: gs.hotPotato ? [gs.hotPotato.holder, gs.hotPotato.timer] : null,
+    gravity: gs.gravity,
+    swapControls: gs.swapControls,
+    activeMutation: gs.activeMutation,
+    score: [gameScore.p1, gameScore.p2],
+    koth: [gs.p1.kothScore, gs.p2.kothScore],
+  };
+}
+function deserializeState(gs, s){
+  deserializePlayer(gs.p1, s.p1);
+  deserializePlayer(gs.p2, s.p2);
+  gs.bullets = s.bullets.map(b=>({x:b[0],y:b[1],vx:b[2],vy:b[3],owner:b[4],dmg:b[5],life:b[6]}));
+  gs.particles = s.particles.map(pt=>({x:pt[0],y:pt[1],vx:pt[2],vy:pt[3],life:pt[4],color:pt[5]}));
+  s.platforms.forEach((pd,i)=>{ if(gs.platforms[i]){ gs.platforms[i].x=pd[0]; gs.platforms[i].y=pd[1]; gs.platforms[i].alive=pd[2]===1; gs.platforms[i]._crumbling=pd[3]===1; }});
+  gs.timerMs = s.timer;
+  gs.hotPotato = s.hp ? {holder:s.hp[0],timer:s.hp[1]} : null;
+  gs.gravity = s.gravity;
+  gs.swapControls = s.swapControls;
+  gameScore.p1 = s.score[0]; gameScore.p2 = s.score[1];
+  if(gs.activeMutation !== s.activeMutation && s.activeMutation){ showToast(s.activeMutation); }
+  gs.activeMutation = s.activeMutation;
+  gs.p1.kothScore = s.koth[0]; gs.p2.kothScore = s.koth[1];
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RENDERER
+// ══════════════════════════════════════════════════════════════
+function render(gs, ctx){
+  if(!gs) return;
+  const cw = canvas.width, ch = canvas.height;
+  const sx = cw/VW, sy = ch/VH;
+  ctx.save();
+  ctx.scale(sx, sy);
+
+  // Background
+  drawBackground(gs.stage, ctx);
+
+  // KOTH center zone indicator
+  if(gs.mode.id==='koth'){
+    ctx.save();
+    ctx.fillStyle='rgba(255,215,0,0.08)';
+    ctx.fillRect(VW/2-80,0,160,VH);
+    ctx.strokeStyle='rgba(255,215,0,0.3)';
+    ctx.lineWidth=2;
+    ctx.setLineDash([8,6]);
+    ctx.strokeRect(VW/2-80,0,160,VH);
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // Platforms
+  for(const p of gs.platforms){
+    if(!p.alive) continue;
+    drawPlatform(p, ctx, gs.stage);
+  }
+
+  // Hot potato indicator
+  if(gs.hotPotato){
+    const holder = gs.hotPotato.holder===1?gs.p1:gs.p2;
+    const pct = Math.min(1, 1 - gs.hotPotato.timer/12000);
+    ctx.save();
+    ctx.fillStyle = `hsl(${30-pct*30},100%,${50+pct*20}%)`;
+    ctx.font='bold 22px sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('🥔', holder.x + holder.w*holder.scale/2, holder.y - 14);
+    ctx.restore();
+  }
+
+  // Bullets
+  for(const b of gs.bullets){
+    ctx.save();
+    ctx.fillStyle = b.owner===1 ? '#00f5d4' : '#f72585';
+    ctx.shadowBlur=8; ctx.shadowColor=ctx.fillStyle;
+    ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  // Players
+  drawPlayer(gs.p1, ctx, gs);
+  drawPlayer(gs.p2, ctx, gs);
+
+  // Particles
+  for(const pt of gs.particles){
+    const a = Math.max(0, pt.life/800);
+    ctx.save();
+    ctx.globalAlpha=a;
+    ctx.fillStyle=pt.color;
+    ctx.fillRect(pt.x-3,pt.y-3,5,5);
+    ctx.restore();
+  }
+
+  // KOTH score bars
+  if(gs.mode.id==='koth'){
+    ctx.save();
+    ctx.fillStyle='rgba(0,0,0,.5)';
+    ctx.fillRect(VW/2-60,VH-22,120,14);
+    ctx.fillStyle='#00f5d4';
+    ctx.fillRect(VW/2-60,VH-22,(gs.p1.kothScore/10)*60,14);
+    ctx.fillStyle='#f72585';
+    ctx.fillRect(VW/2,VH-22,(gs.p2.kothScore/10)*60,14);
+    ctx.restore();
+  }
+
+  ctx.restore();
+
+  // HUD update
+  updateHUD(gs);
+}
+
+function drawBackground(stage, ctx){
+  ctx.fillStyle = stage.bg;
+  ctx.fillRect(0,0,VW,VH);
+
+  if(stage.bgStars){
+    ctx.fillStyle='rgba(255,255,255,0.6)';
+    // simple deterministic stars using stage index as seed
+    for(let i=0;i<80;i++){
+      const x=(i*137+41)%VW, y=(i*91+17)%VH;
+      ctx.fillRect(x,y,(i%3===0)?2:1,(i%3===0)?2:1);
+    }
+  }
+  if(stage.bgLava){
+    const t = Date.now()/1200;
+    ctx.fillStyle=`hsl(${10+Math.sin(t)*5},90%,${18+Math.sin(t*1.3)*4}%)`;
+    ctx.fillRect(0,VH-20,VW,20);
+    for(let i=0;i<6;i++){
+      const bx = (i*133+Math.sin(t+i)*20)%VW;
+      ctx.fillStyle=`hsl(30,100%,60%)`;
+      ctx.beginPath(); ctx.arc(bx, VH-10+Math.sin(t*2+i)*5, 8+Math.sin(t+i)*4, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  if(stage.bgGrid){
+    ctx.strokeStyle='rgba(0,200,255,0.06)';
+    ctx.lineWidth=1;
+    for(let x=0;x<VW;x+=40){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,VH); ctx.stroke(); }
+    for(let y=0;y<VH;y+=40){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(VW,y); ctx.stroke(); }
+  }
+  if(stage.bgClouds){
+    // sky gradient
+    const grad = ctx.createLinearGradient(0,0,0,VH);
+    grad.addColorStop(0,'#87ceeb'); grad.addColorStop(1,'#e8f4f8');
+    ctx.fillStyle=grad; ctx.fillRect(0,0,VW,VH);
+  }
+  if(stage.bgVoid){
+    // nebula-ish
+    const t = Date.now()/3000;
+    for(let i=0;i<3;i++){
+      const gx=(i*250+100)%VW, gy=(i*150+80)%VH;
+      const g=ctx.createRadialGradient(gx,gy,10,gx,gy,120);
+      const cols=['rgba(80,0,120,0.12)','rgba(0,60,120,0.1)','rgba(120,0,60,0.1)'];
+      g.addColorStop(0,cols[i]); g.addColorStop(1,'transparent');
+      ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
+    }
+  }
+}
+
+function drawPlatform(p, ctx, stage){
+  ctx.save();
+  let color, topColor;
+  if(stage.bgClouds || p.cloud){
+    color='rgba(255,255,255,0.85)'; topColor='#fff';
+    ctx.shadowBlur=12; ctx.shadowColor='rgba(180,220,255,0.5)';
+    ctx.beginPath();
+    ctx.roundRect(p.x, p.y, p.w, p.h, 8);
+    ctx.fillStyle=color; ctx.fill();
+  } else if(p.hazard){
+    color='#b22222'; topColor='#ff4500';
+    ctx.fillStyle=color; ctx.fillRect(p.x,p.y,p.w,p.h);
+    ctx.fillStyle=topColor; ctx.fillRect(p.x,p.y,p.w,4);
+  } else if(p._crumbling){
+    const pct = Math.max(0, p._crumbleTimer/600);
+    ctx.globalAlpha=pct;
+    color='#6b4c11'; topColor='#a0721a';
+    ctx.fillStyle=color; ctx.fillRect(p.x,p.y,p.w,p.h);
+    ctx.fillStyle=topColor; ctx.fillRect(p.x,p.y,p.w,3);
+  } else {
+    color='#1e293b'; topColor= stage.bgGrid?'#00e5ff': stage.bgLava?'#555':'#334155';
+    ctx.fillStyle=color; ctx.fillRect(p.x,p.y,p.w,p.h);
+    ctx.fillStyle=topColor; ctx.fillRect(p.x,p.y,p.w,3);
+  }
+  ctx.restore();
+}
+
+function drawPlayer(p, ctx, gs){
+  if(p.dead) return;
+  const pw = p.w*p.scale, ph = p.h*p.scale;
+
+  ctx.save();
+  // Invincibility flicker
+  if(p.invincTime>0 && Math.floor(Date.now()/80)%2===0){ ctx.restore(); return; }
+
+  const isJugg = gs.mode.id==='juggernaut' && p.id===1;
+  const hasPotatoe = gs.hotPotato && gs.hotPotato.holder===p.id;
+
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.ellipse(p.x+pw/2, p.y+ph+2, pw*0.4, 5, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Body
+  ctx.fillStyle = p.color;
+  if(isJugg) ctx.fillStyle='#ff6b35';
+  if(p.hitStun>100){ ctx.fillStyle='#fff'; }
+
+  // Glow for juggernaut or invincible
+  if(isJugg){ ctx.shadowBlur=20; ctx.shadowColor='#ff6b35'; }
+  if(p.invincTime>0){ ctx.shadowBlur=15; ctx.shadowColor=p.color; }
+
+  // Draw body (capsule-ish)
+  const bx=p.x, by=p.y+ph*0.3, bw=pw, bh=ph*0.7;
+  ctx.beginPath();
+  ctx.roundRect(bx, by, bw, bh, pw*0.2);
+  ctx.fill();
+
+  // Head (big head mode uses headSize)
+  const headR = pw*0.32*p.headSize;
+  const headX = p.x + pw/2;
+  const headY = p.y + ph*0.28;
+  ctx.beginPath();
+  ctx.arc(headX, headY, headR, 0, Math.PI*2);
+  ctx.fill();
+
+  // Eyes
+  ctx.fillStyle = '#000';
+  const eyeOff = p.facing * headR*0.35;
+  ctx.beginPath(); ctx.arc(headX+eyeOff, headY-headR*0.1, headR*0.2, 0, Math.PI*2); ctx.fill();
+  // Eye shine
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.arc(headX+eyeOff+headR*0.05, headY-headR*0.15, headR*0.08, 0, Math.PI*2); ctx.fill();
+
+  // Legs (animated while walking)
+  const legAnim = p.onGround && Math.abs(p.vx)>0.5 ? Math.sin(Date.now()/80)*0.25 : 0;
+  ctx.fillStyle = p.color; ctx.globalAlpha=0.7;
+  ctx.fillRect(p.x+pw*0.18, p.y+ph*(0.82+legAnim), pw*0.22, ph*0.22);
+  ctx.fillRect(p.x+pw*0.58, p.y+ph*(0.82-legAnim), pw*0.22, ph*0.22);
+  ctx.globalAlpha=1;
+
+  // Attack flash
+  if(p.attackActive>0){
+    const aDir = p.facing;
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = 0.6;
+    ctx.beginPath();
+    const ax = aDir>0 ? p.x+pw : p.x-48;
+    ctx.ellipse(ax, p.y+ph*0.45, 30, 18, aDir>0?-0.4:0.4, 0, Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha=1;
+  }
+
+  // Hot potato
+  if(hasPotatoe){
+    ctx.font=`${16*p.scale}px sans-serif`;
+    ctx.textAlign='center';
+    ctx.fillText('🥔', p.x+pw/2, p.y-8);
+  }
+
+  // Player label
+  ctx.fillStyle = p.color;
+  ctx.font=`bold ${Math.max(10,11*p.scale)}px 'Share Tech Mono'`;
+  ctx.textAlign='center';
+  ctx.shadowBlur=0;
+  ctx.fillText('P'+p.id, p.x+pw/2, p.y-4);
+
+  ctx.restore();
+}
+
+function updateHUD(gs){
+  document.getElementById('hud-p1-hp').style.width = (gs.p1.hp/gs.p1.maxHp*100)+'%';
+  document.getElementById('hud-p2-hp').style.width = (gs.p2.hp/gs.p2.maxHp*100)+'%';
+  document.getElementById('hud-p1-lives').textContent = '♥'.repeat(Math.max(0,gs.p1.lives));
+  document.getElementById('hud-p2-lives').textContent = '♥'.repeat(Math.max(0,gs.p2.lives));
+  const secs = Math.ceil(gs.timerMs/1000);
+  document.getElementById('hud-timer').textContent = secs;
+  document.getElementById('hud-timer').style.color = secs<=10 ? '#ff4444' : 'var(--text)';
+  document.getElementById('hud-mode').textContent = gs.mode.name;
+  document.getElementById('hud-score').textContent = gameScore.p1 + ' — ' + gameScore.p2;
+
+  if(gs.mode.id==='koth'){
+    document.getElementById('hud-p1-lives').textContent = Math.floor(gs.p1.kothScore)+'/10 pts';
+    document.getElementById('hud-p2-lives').textContent = Math.floor(gs.p2.kothScore)+'/10 pts';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ROUND FLOW
+// ══════════════════════════════════════════════════════════════
+let toastTimeout = null;
+function showToast(msg){
+  const el = document.getElementById('mutation-toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  if(toastTimeout) clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+function showRoundResult(winnerPid, isSelf){
+  const winnerName = winnerPid===1?'P1':'P2';
+  document.getElementById('round-winner-text').textContent = winnerName + ' WINS!';
+  document.getElementById('round-winner-text').style.color = winnerPid===1?'#00f5d4':'#f72585';
+  document.getElementById('round-mode-text').textContent = `Round ${currentRound+1} · ${GS.mode.name}`;
+  document.getElementById('round-score-text').textContent = gameScore.p1 + ' — ' + gameScore.p2;
+  // Only host can advance
+  document.getElementById('next-round-btn').style.display = isHost ? 'block' : 'none';
+  const oldWait = document.getElementById('guest-wait-msg');
+  if(oldWait) oldWait.remove();
+  if(!isHost){
+    const wp = document.createElement('p');
+    wp.id = 'guest-wait-msg';
+    wp.style.cssText = 'color:var(--muted);font-size:.85rem;text-align:center';
+    wp.textContent = 'Waiting for host...';
+    document.getElementById('next-round-btn').after(wp);
+  }
+  document.getElementById('round-result').classList.add('show');
+}
+
+function nextRound(){
+  document.getElementById('round-result').classList.remove('show');
+  currentRound++;
+  // Rotate mode randomly (avoid repeating last)
+  const lastMode = roundModeIndex;
+  do { roundModeIndex = Math.floor(Math.random()*ROUND_MODES.length); }
+  while(roundModeIndex===lastMode && ROUND_MODES.length>1);
+  stageIndex = (stageIndex+1) % STAGES.length;
+
+  GS = initGameState(roundModeIndex, stageIndex);
+  GS.running=true;
+
+  sendMsg({type:'nextRound', modeIndex:roundModeIndex, stageIndex});
+  showToast('ROUND ' + (currentRound+1) + ' · ' + ROUND_MODES[roundModeIndex].name);
+}
+
+function receiveNextRound(msg){
+  document.getElementById('round-result').classList.remove('show');
+  currentRound++;
+  roundModeIndex = msg.modeIndex;
+  stageIndex = msg.stageIndex;
+  GS = initGameState(roundModeIndex, stageIndex);
+  GS.running=true;
+  showToast('ROUND ' + (currentRound+1) + ' · ' + ROUND_MODES[roundModeIndex].name);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  GAME START
+// ══════════════════════════════════════════════════════════════
+function hostStartGame(){
+  roundModeIndex = Math.floor(Math.random()*ROUND_MODES.length);
+  stageIndex = Math.floor(Math.random()*STAGES.length);
+  sendMsg({type:'startGame', modeIndex:roundModeIndex, stageIndex});
+  beginGame(roundModeIndex, stageIndex);
+}
+
+function receiveGameStart(msg){
+  beginGame(msg.modeIndex, msg.stageIndex);
+}
+
+function beginGame(modeIndex, stgIndex){
+  // Switch screens
+  document.getElementById('screen-lobby').classList.add('hidden');
+  document.getElementById('screen-game').classList.remove('hidden');
+
+  canvas = document.getElementById('gameCanvas');
+  ctx = canvas.getContext('2d');
+
+  function resize(){
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  GS = initGameState(modeIndex, stgIndex);
+  GS.running=true;
+
+  lastTime = performance.now();
+  animId = requestAnimationFrame(gameLoop);
+
+  showToast('ROUND 1 · ' + ROUND_MODES[modeIndex].name);
+  document.getElementById('hud-p1-name').textContent = isHost ? 'P1 (YOU)' : 'P1';
+  document.getElementById('hud-p2-name').textContent = !isHost ? 'P2 (YOU)' : 'P2';
+  if(!isHost){
+    document.getElementById('controls-hint').textContent = 'ARROWS + L attack (P2 controls)';
+  }
+}
+
+// Polyfill roundRect for older browsers
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+    this.beginPath();
+    this.moveTo(x+r,y);
+    this.lineTo(x+w-r,y);
+    this.quadraticCurveTo(x+w,y,x+w,y+r);
+    this.lineTo(x+w,y+h-r);
+    this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    this.lineTo(x+r,y+h);
+    this.quadraticCurveTo(x,y+h,x,y+h-r);
+    this.lineTo(x,y+r);
+    this.quadraticCurveTo(x,y,x+r,y);
+    this.closePath();
+  };
+}
+
+// Polyfill ellipse if needed
+if(!CanvasRenderingContext2D.prototype.ellipse){
+  CanvasRenderingContext2D.prototype.ellipse=function(x,y,rx,ry,rot,sa,ea){
+    this.save();
+    this.translate(x,y);
+    this.rotate(rot);
+    this.scale(rx,ry);
+    this.arc(0,0,1,sa,ea);
+    this.restore();
+  };
+}
+</script>
+</body>
+</html>
