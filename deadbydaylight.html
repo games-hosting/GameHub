@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEAD BY DAWN</title>
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Creepster&family=VT323&family=Crimson+Text:ital@0;1&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#05030a;
+  --surface:#0d0814;
+  --border:#1a0f2e;
+  --red:#c0392b;
+  --red-glow:#e74c3c;
+  --blood:#8b0000;
+  --amber:#e67e22;
+  --teal:#1abc9c;
+  --text:#d4c5b0;
+  --muted:#6b5d4f;
+  --font-horror:'Creepster',cursive;
+  --font-mono:'VT323',monospace;
+  --font-body:'Crimson Text',serif;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-body)}
+
+/* ── SCREENS ── */
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2rem}
+.screen.hidden{display:none}
+
+/* ── LOBBY ── */
+#screen-lobby{
+  background:radial-gradient(ellipse at 50% 30%, #1a0814 0%, #05030a 70%);
+}
+.game-title{
+  font-family:var(--font-horror);
+  font-size:clamp(3.5rem,11vw,7rem);
+  color:var(--red-glow);
+  letter-spacing:6px;
+  text-shadow:0 0 30px #e74c3c88, 0 0 60px #c0392b44;
+  line-height:1;
+}
+.game-subtitle{font-family:var(--font-mono);font-size:1.1rem;color:var(--muted);letter-spacing:4px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.5rem 2rem;width:min(440px,92vw)}
+.card h2{font-family:var(--font-horror);font-size:1.6rem;color:var(--amber);margin-bottom:1rem}
+.btn{display:block;width:100%;padding:.7rem 1.2rem;border:none;border-radius:6px;font-family:var(--font-mono);font-size:1.1rem;cursor:pointer;letter-spacing:2px;transition:all .15s}
+.btn:active{transform:scale(.97)}
+.btn-monster{background:var(--blood);color:#ffd;border:1px solid var(--red)}
+.btn-monster:hover{background:var(--red);box-shadow:0 0 20px #c0392b66}
+.btn-survivor{background:#1a2a1a;color:#7ec88e;border:1px solid #2d4a2d}
+.btn-survivor:hover{background:#223322;box-shadow:0 0 20px #1abc9c44}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--amber);color:var(--amber)}
+input[type=text]{width:100%;padding:.6rem .9rem;background:#0a0814;border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font-mono);font-size:1.1rem;margin:.3rem 0 .7rem;outline:none;letter-spacing:2px}
+input[type=text]:focus{border-color:var(--amber)}
+.room-code{font-family:var(--font-horror);font-size:2.8rem;letter-spacing:10px;color:var(--red-glow);text-align:center;background:#0a0510;border-radius:6px;padding:.4rem 1.5rem;border:1px dashed var(--blood);text-shadow:0 0 15px #e74c3c66}
+.lobby-list{list-style:none;margin:.5rem 0}
+.lobby-list li{padding:.4rem .8rem;border-left:3px solid var(--border);margin:.3rem 0;font-family:var(--font-mono);font-size:1rem;color:var(--muted)}
+.lobby-list li.monster{border-color:var(--red);color:#f08080}
+.lobby-list li.survivor{border-color:var(--teal);color:#7ec88e}
+
+/* monster picker */
+.monster-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin:.5rem 0}
+.monster-card{border:1px solid var(--border);border-radius:6px;padding:.7rem .5rem;text-align:center;cursor:pointer;transition:all .15s;background:#0a0510}
+.monster-card:hover{border-color:var(--red);background:#150a15}
+.monster-card.selected{border-color:var(--red-glow);background:#1f0f1f;box-shadow:0 0 12px #e74c3c44}
+.monster-card .emoji{font-size:1.8rem}
+.monster-card .name{font-family:var(--font-mono);font-size:.9rem;color:var(--amber);margin:.3rem 0 .1rem}
+.monster-card .desc{font-size:.72rem;color:var(--muted);line-height:1.3}
+
+/* perk picker */
+.perk-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin:.4rem 0}
+.perk-card{border:1px solid var(--border);border-radius:6px;padding:.5rem .6rem;cursor:pointer;transition:all .15s;background:#0a0510}
+.perk-card:hover{border-color:var(--amber)}
+.perk-card.selected{border-color:var(--amber);background:#1a1505}
+.perk-card .pname{font-family:var(--font-mono);font-size:.85rem;color:var(--text)}
+.perk-card .pdesc{font-size:.7rem;color:var(--muted);margin-top:.15rem}
+
+/* ── GAME CANVAS ── */
+#gameCanvas{position:absolute;inset:0;width:100%;height:100%}
+#screen-game{background:#000}
+
+/* ── HUD ── */
+#hud{position:absolute;top:0;left:0;right:0;z-index:10;pointer-events:none;padding:.6rem 1rem;display:flex;justify-content:space-between;align-items:flex-start}
+.hud-left,.hud-right{display:flex;flex-direction:column;gap:.3rem;min-width:140px}
+.hud-right{align-items:flex-end}
+.hud-center{text-align:center;flex:1}
+.gen-counter{font-family:var(--font-mono);font-size:1.1rem;color:var(--amber)}
+.gen-pips{display:flex;gap:4px;justify-content:center;margin-top:3px}
+.gen-pip{width:14px;height:14px;border-radius:50%;border:1px solid var(--amber);background:transparent;transition:background .3s}
+.gen-pip.done{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+.survivor-list{list-style:none}
+.survivor-list li{font-family:var(--font-mono);font-size:.85rem;padding:.15rem 0;display:flex;align-items:center;gap:.4rem}
+.hook-pips span{display:inline-block;width:8px;height:8px;border-radius:50%;border:1px solid var(--red);margin:0 1px}
+.hook-pips span.hooked{background:var(--red)}
+.hook-pips span.dead{background:#333;border-color:#333}
+.status-label{font-family:var(--font-mono);font-size:.75rem;padding:.1rem .4rem;border-radius:3px}
+.status-hooked{background:#3a0a0a;color:#f08080;animation:pulse-red .8s infinite alternate}
+.status-dead{background:#1a1a1a;color:#555}
+@keyframes pulse-red{to{background:#5a1a1a}}
+
+/* ── TERROR RADIUS ── */
+#terror-hud{position:absolute;bottom:70px;left:50%;transform:translateX(-50%);pointer-events:none;z-index:10;opacity:0;transition:opacity .5s}
+#terror-hud.show{opacity:1}
+.heartbeat-bar{display:flex;gap:3px;align-items:center}
+.hb-pip{width:6px;border-radius:2px;background:var(--red);transition:height .1s}
+
+/* ── PROGRESS BAR ── */
+.action-bar-wrap{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);width:220px;pointer-events:none;z-index:10;opacity:0;transition:opacity .3s}
+.action-bar-wrap.show{opacity:1}
+.action-label{font-family:var(--font-mono);font-size:.9rem;color:var(--amber);text-align:center;margin-bottom:4px;letter-spacing:2px}
+.action-bar-bg{height:10px;background:#111;border-radius:5px;overflow:hidden;border:1px solid #333}
+.action-bar-fill{height:100%;background:var(--amber);border-radius:5px;transition:width .1s;width:0%}
+
+/* ── ROLE REVEAL ── */
+#role-reveal{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.8);font-family:var(--font-horror);font-size:clamp(1.8rem,5vw,3.2rem);letter-spacing:4px;text-align:center;pointer-events:none;z-index:40;opacity:0;transition:opacity .4s,transform .4s;text-shadow:0 0 30px currentColor}
+#role-reveal.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+/* ── CONTROLS ── */
+#controls-hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:.8rem;color:var(--muted);letter-spacing:1px;pointer-events:none;z-index:5}
+
+/* ── END SCREEN ── */
+#end-screen{position:absolute;inset:0;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;display:none}
+#end-screen.show{display:flex}
+#end-title{font-family:var(--font-horror);font-size:clamp(2.5rem,8vw,5rem);text-shadow:0 0 30px currentColor}
+#end-subtitle{font-family:var(--font-mono);font-size:1rem;color:var(--muted);margin:.5rem 0 1.5rem;letter-spacing:2px}
+
+/* scanlines */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 6px);pointer-events:none;z-index:999}
+/* vignette */
+#screen-game::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(0,0,0,.7) 100%);pointer-events:none;z-index:9}
+</style>
+</head>
+<body>
+
+<!-- ══ LOBBY ══ -->
+<div id="screen-lobby" class="screen">
+  <div class="game-title">DEAD BY DAWN</div>
+  <div class="game-subtitle">online · horror · asymmetric</div>
+
+  <div id="lobby-main" style="display:flex;flex-direction:column;gap:.8rem;width:min(440px,92vw)">
+    <button class="btn btn-monster" onclick="showHostSetup()">☠ CREATE LOBBY</button>
+    <button class="btn btn-survivor" onclick="showJoin()">🔦 JOIN LOBBY</button>
+    <button class="btn btn-ghost" onclick="showHTP()">📖 HOW TO PLAY</button>
+  </div>
+
+  <!-- How to Play modal -->
+  <div id="lobby-htp" class="card hidden" style="max-height:80vh;overflow-y:auto;width:min(520px,94vw)">
+    <h2>📖 How to Play</h2>
+
+    <div style="font-size:.88rem;line-height:1.7;color:var(--text)">
+      <p style="color:var(--amber);font-family:var(--font-mono);font-size:.95rem;margin-bottom:.4rem">SETUP</p>
+      <p>One player creates a lobby and shares the 6-letter code. Everyone else joins. When the host hits <strong>START GAME</strong>, one player is chosen <em>randomly</em> as the monster. Everyone picks a favourite monster (used if chosen) and a perk before the game starts.</p>
+
+      <p style="color:var(--red-glow);font-family:var(--font-mono);font-size:.95rem;margin:.9rem 0 .4rem">☠ THE MONSTER</p>
+      <p><strong>Goal:</strong> Kill all survivors before they escape.</p>
+      <p style="margin-top:.4rem"><strong>WASD / Arrows</strong> — move &nbsp;·&nbsp; <strong>E</strong> — attack (injures) or hook nearby injured survivor &nbsp;·&nbsp; <strong>Q</strong> — use your special ability</p>
+      <p style="margin-top:.4rem">Hit a survivor once to <em>injure</em> them (they slow down). Hit them again to <em>hook</em> them. A hooked survivor dies after 60s unless rescued.</p>
+      <div style="margin:.5rem 0;padding:.5rem .7rem;background:#150a15;border-radius:6px;border-left:3px solid var(--red)">
+        <p style="font-family:var(--font-mono);font-size:.82rem;color:var(--amber)">MONSTERS</p>
+        <p>👻 <strong>Wraith</strong> — Q turns invisible for 6s &nbsp;·&nbsp; 🪓 <strong>Brute</strong> — Q lunges forward for a huge range hit &nbsp;·&nbsp; 🕯️ <strong>Witch</strong> — Q teleports to a random generator &nbsp;·&nbsp; 🐰 <strong>White Rabbit</strong> — Q spawns a phantom decoy copy &nbsp;·&nbsp; 🎸 <strong>Jeffrey</strong> — Q freezes all nearby survivors for 3s</p>
+      </div>
+
+      <p style="color:var(--teal);font-family:var(--font-mono);font-size:.95rem;margin:.9rem 0 .4rem">🔦 SURVIVORS</p>
+      <p><strong>Goal:</strong> Repair 3 generators, then open an exit gate and escape.</p>
+      <p style="margin-top:.4rem"><strong>WASD / Arrows</strong> — move &nbsp;·&nbsp; <strong>Shift</strong> — run (faster but noisier) &nbsp;·&nbsp; <strong>E</strong> — context action (see below)</p>
+      <div style="margin:.5rem 0;padding:.5rem .7rem;background:#0a150a;border-radius:6px;border-left:3px solid var(--teal)">
+        <p style="font-family:var(--font-mono);font-size:.82rem;color:var(--teal)">E — CONTEXT ACTIONS (in priority order)</p>
+        <p>Near a <strong>hooked survivor</strong> → hold E to unhook them (3.5s)</p>
+        <p>Near a <strong>⚙ generator</strong> → hold E to repair it (fills over ~70s)</p>
+        <p>Near a <strong>EXIT gate</strong> (after 3 gens done) → hold E to open it (10s)</p>
+        <p>Near a <strong>locker</strong> → press E to hide inside (cancels heartbeat)</p>
+      </div>
+      <p>Repair <strong>3 of 5 generators</strong> to power the exit gates. Then open a gate and walk through to escape. Half the survivors need to escape to win.</p>
+      <p style="margin-top:.4rem">If you're hooked, wiggle (spam any key) for a small chance to escape. Or wait for a teammate!</p>
+
+      <p style="color:var(--amber);font-family:var(--font-mono);font-size:.95rem;margin:.9rem 0 .4rem">⚡ PERKS</p>
+      <div style="padding:.5rem .7rem;background:#0d0d08;border-radius:6px;border-left:3px solid var(--amber)">
+        <p style="font-family:var(--font-mono);font-size:.82rem;color:var(--amber)">MONSTER PERKS</p>
+        <p>🩸 <strong>Bloodhound</strong> — See red scratch marks left by running survivors &nbsp;·&nbsp; 💀 <strong>Devour Hope</strong> — Get faster with each hook &nbsp;·&nbsp; ⚡ <strong>NOED</strong> — After all gens are done, your hits are one-shot hooks &nbsp;·&nbsp; 🔧 <strong>Ruin</strong> — Unattended generators slowly regress</p>
+        <p style="font-family:var(--font-mono);font-size:.82rem;color:var(--teal);margin-top:.5rem">SURVIVOR PERKS</p>
+        <p>💨 <strong>Sprint Burst</strong> — First run burst gives 3s of extra speed &nbsp;·&nbsp; 🌿 <strong>Botany</strong> — Repair gens 25% faster &nbsp;·&nbsp; 🤫 <strong>Iron Will</strong> — (visual indicator only) &nbsp;·&nbsp; ⚔ <strong>Decisive Strike</strong> — Stun the monster once after being unhooked</p>
+      </div>
+
+      <p style="color:var(--muted);font-size:.8rem;margin-top:.8rem;text-align:center;font-style:italic">The heartbeat on your screen means the monster is close. Hide in a locker to suppress it!</p>
+    </div>
+
+    <button class="btn btn-ghost" style="margin-top:1rem" onclick="hideHTP()">← BACK</button>
+  </div>
+
+  <!-- Host setup: pick map pref, then create -->
+  <div id="lobby-host-setup" class="card hidden">
+    <h2>⚙ Lobby Settings</h2>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:.8rem">Monster is assigned <em>randomly</em> when the game starts. Pick your favourite monster below — you'll play it if you're chosen!</p>
+    <h2 style="font-size:1.2rem;margin-bottom:.5rem">Favourite Monster</h2>
+    <div class="monster-grid" id="host-monster-grid"></div>
+    <h2 style="margin-top:.9rem;font-size:1.2rem;margin-bottom:.5rem">Your Perk</h2>
+    <div class="perk-grid" id="host-perk-grid"></div>
+    <div style="display:flex;gap:.6rem;margin-top:1rem">
+      <button class="btn btn-monster" style="flex:1" onclick="hostCreate()">CREATE LOBBY</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="hideHostSetup()">BACK</button>
+    </div>
+  </div>
+
+  <!-- Waiting for players (host view) -->
+  <div id="lobby-waiting" class="card hidden">
+    <h2>Waiting for players...</h2>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:.8rem">Share this code:</p>
+    <div class="room-code" id="room-code-display">——</div>
+    <ul class="lobby-list" id="lobby-player-list" style="margin-top:.8rem"></ul>
+    <button class="btn btn-monster" style="margin-top:.8rem" id="start-game-btn" onclick="hostStartGame()" disabled>START GAME</button>
+    <p style="font-size:.75rem;color:var(--muted);text-align:center;margin-top:.4rem">Monster assigned randomly at start · Need at least 1 other player</p>
+  </div>
+
+  <!-- Join lobby -->
+  <div id="lobby-join" class="card hidden">
+    <h2>🔦 Join Lobby</h2>
+    <label style="font-size:.85rem;color:var(--muted)">Room code:</label>
+    <input type="text" id="join-code-input" maxlength="6" placeholder="ABC123" oninput="this.value=this.value.toUpperCase()">
+    <h2 style="margin-top:.5rem;font-size:1.2rem;margin-bottom:.4rem">Favourite Monster (if chosen)</h2>
+    <div class="monster-grid" id="join-monster-grid"></div>
+    <h2 style="margin-top:.7rem;font-size:1.2rem;margin-bottom:.4rem">Your Perk</h2>
+    <div class="perk-grid" id="join-perk-grid"></div>
+    <div style="display:flex;gap:.6rem;margin-top:.8rem">
+      <button class="btn btn-survivor" style="flex:1" onclick="joinGame()">CONNECT</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="hideJoin()">BACK</button>
+    </div>
+    <div id="join-status" style="text-align:center;font-family:var(--font-mono);font-size:.9rem;color:var(--muted);margin-top:.5rem"></div>
+  </div>
+
+  <!-- Waiting room (joined players) -->
+  <div id="lobby-survivor-wait" class="card hidden">
+    <h2 style="text-align:center;color:#7ec88e">✓ Connected!</h2>
+    <p style="text-align:center;font-family:var(--font-mono);font-size:.9rem;color:var(--muted)">Waiting for host to start...</p>
+    <p style="text-align:center;font-size:.8rem;color:var(--muted);margin-top:.4rem">Monster will be assigned randomly!</p>
+    <ul class="lobby-list" id="survivor-wait-list" style="margin-top:.8rem"></ul>
+  </div>
+</div>
+
+<!-- ══ GAME ══ -->
+<div id="screen-game" class="screen hidden" style="padding:0">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-left">
+      <div class="gen-counter">GENERATORS</div>
+      <div class="gen-pips" id="gen-pips"></div>
+    </div>
+    <div class="hud-center">
+      <div id="phase-label" style="font-family:var(--font-mono);font-size:.9rem;color:var(--red);letter-spacing:2px"></div>
+    </div>
+    <div class="hud-right">
+      <div style="font-family:var(--font-mono);font-size:.85rem;color:var(--muted)">SURVIVORS</div>
+      <ul class="survivor-list" id="survivor-hud-list"></ul>
+    </div>
+  </div>
+
+  <!-- Terror radius heartbeat -->
+  <div id="terror-hud">
+    <div class="heartbeat-bar" id="heartbeat-bar"></div>
+  </div>
+
+  <!-- Action progress bar -->
+  <div class="action-bar-wrap" id="action-bar-wrap">
+    <div class="action-label" id="action-label">REPAIRING</div>
+    <div class="action-bar-bg"><div class="action-bar-fill" id="action-bar-fill"></div></div>
+  </div>
+
+  <div id="controls-hint"></div>
+  <div id="role-reveal"></div>
+</div>
+
+<!-- ══ END SCREEN ══ -->
+<div id="end-screen">
+  <div id="end-title">SURVIVORS ESCAPE</div>
+  <div id="end-subtitle">THE NIGHT IS OVER</div>
+  <button class="btn btn-ghost" style="width:220px" onclick="location.reload()">PLAY AGAIN</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  DEAD BY DAWN — Asymmetric horror multiplayer
+//  PeerJS P2P · Host = Monster (authoritative)
+// ═══════════════════════════════════════════════════
+
+// ── Constants ───────────────────────────────────────
+const VW = 1800, VH = 1800; // world size
+const TILE = 48;
+const GEN_REPAIR_TIME   = 70000;  // ms to repair one gen solo
+const GATE_OPEN_TIME    = 10000;
+const HOOK_STRUGGLE_TIME= 60000;  // ms before hook kill
+const HOOK_ESCAPE_CHANCE= 0.04;   // per second wiggle
+const UNHOOK_TIME       = 3500;
+const MONSTER_SPEED     = 3.2;
+const SURVIVOR_SPEED    = 2.4;
+const ATTACK_RANGE      = 52;
+const ATTACK_COOLDOWN   = 2800;
+const GENS_NEEDED       = 3;
+const TERROR_RADIUS     = 320;
+
+// ── Monster types ────────────────────────────────────
+const MONSTERS = [
+  {
+    id:'wraith',
+    name:'THE WRAITH',
+    emoji:'👻',
+    desc:'Can turn invisible for 6s. Silent but deadly.',
+    ability:'VANISH',
+    abilityDesc:'Become invisible for 6s (30s cooldown)',
+    color:'#9b59b6',
+    speed: MONSTER_SPEED,
+  },
+  {
+    id:'brute',
+    name:'THE BRUTE',
+    emoji:'🪓',
+    desc:'Huge lunge range. Slower but hits like a truck.',
+    ability:'LUNGE',
+    abilityDesc:'Triple-range lunge attack (10s cooldown)',
+    color:'#e74c3c',
+    speed: MONSTER_SPEED * 0.88,
+    lungeRange: ATTACK_RANGE * 3,
+  },
+  {
+    id:'witch',
+    name:'THE WITCH',
+    emoji:'🕯️',
+    desc:'Teleports to any generator. Keep moving!',
+    ability:'BLINK',
+    abilityDesc:'Teleport to a random generator (20s cooldown)',
+    color:'#1abc9c',
+    speed: MONSTER_SPEED * 1.1,
+  },
+  {
+    id:'rabbit',
+    name:'WHITE RABBIT',
+    emoji:'🐰',
+    desc:'Deceptively cute. Leaves phantom decoys to confuse survivors.',
+    ability:'DECOY',
+    abilityDesc:'Spawn a fake copy of yourself for 8s (15s cooldown)',
+    color:'#ecf0f1',
+    speed: MONSTER_SPEED * 1.15,
+  },
+  {
+    id:'jeffrey',
+    name:'JEFFREY',
+    emoji:'🎸',
+    desc:'From the hit game FNAE. Plays a jumpscare jingle that freezes nearby survivors.',
+    ability:'JUMPSCARE',
+    abilityDesc:'Freeze all nearby survivors for 3s (25s cooldown)',
+    color:'#f39c12',
+    speed: MONSTER_SPEED * 0.95,
+  },
+];
+
+// ── Perks ────────────────────────────────────────────
+const MONSTER_PERKS = [
+  { id:'bloodhound', name:'BLOODHOUND', desc:'See scratch marks left by running survivors' },
+  { id:'devour',     name:'DEVOUR HOPE', desc:'Get faster with each hook' },
+  { id:'noed',       name:'NOED',        desc:'One-hit down after all gens done' },
+  { id:'ruin',       name:'RUIN',        desc:'Gens slowly regress unless actively repaired' },
+];
+const SURVIVOR_PERKS = [
+  { id:'sprint',   name:'SPRINT BURST',  desc:'Burst of speed for 3s when you start running' },
+  { id:'botany',   name:'BOTANY',        desc:'Repair generators 25% faster' },
+  { id:'iron_will',name:'IRON WILL',     desc:'Make no noise even when injured' },
+  { id:'ds',       name:'DECISIVE',      desc:'Stun the monster once after being unhooked' },
+];
+
+// ── Maps ─────────────────────────────────────────────
+// Each map: walls array [{x,y,w,h}], gen positions, hook positions, gate positions, locker positions
+const MAPS = [
+  {
+    name:'ASYLUM',
+    bg:'#0a0a0f',
+    floorColor:'#111118',
+    wallColor:'#1a1a2a',
+    accentColor:'#2a1520',
+    // Rooms defined as wall rectangles (world coords)
+    walls:[
+      // Outer boundary
+      {x:0,   y:0,    w:VW,  h:TILE},
+      {x:0,   y:VH-TILE, w:VW, h:TILE},
+      {x:0,   y:0,    w:TILE, h:VH},
+      {x:VW-TILE, y:0, w:TILE, h:VH},
+      // Internal corridors/rooms
+      {x:200, y:200,  w:400, h:TILE},
+      {x:200, y:200,  w:TILE, h:300},
+      {x:200, y:500,  w:400, h:TILE},
+      {x:600, y:200,  w:TILE, h:180},
+      {x:600, y:430,  w:TILE, h:120},
+
+      {x:900, y:150,  w:TILE, h:500},
+      {x:900, y:150,  w:500, h:TILE},
+      {x:1400,y:150,  w:TILE, h:250},
+      {x:1050,y:500,  w:400, h:TILE},
+
+      {x:200, y:900,  w:600, h:TILE},
+      {x:200, y:900,  w:TILE, h:400},
+      {x:200, y:1300, w:350, h:TILE},
+      {x:550, y:1050, w:TILE, h:300},
+      {x:800, y:1000, w:TILE, h:500},
+
+      {x:1100,y:900,  w:500, h:TILE},
+      {x:1100,y:900,  w:TILE, h:600},
+      {x:1600,y:900,  w:TILE, h:600},
+      {x:1100,y:1500, w:500, h:TILE},
+
+      {x:400, y:1450, w:TILE, h:300},
+      {x:400, y:1450, w:300, h:TILE},
+      {x:700, y:1450, w:TILE, h:200},
+
+      {x:900, y:1200, w:150, h:TILE},
+      {x:950, y:1300, w:100, h:TILE},
+    ],
+    gens:[
+      {x:300, y:300},  {x:1200, y:250},
+      {x:350, y:1100}, {x:1300, y:1100},
+      {x:900, y:900},
+    ],
+    hooks:[
+      {x:500, y:350},  {x:1100, y:350},
+      {x:450, y:1250}, {x:1400, y:1300},
+      {x:700, y:700},  {x:1100, y:700},
+    ],
+    gates:[
+      {x:TILE+10, y:700, w:TILE*1.5, h:TILE*2, dir:'left'},
+      {x:VW-TILE*3, y:1000, w:TILE*1.5, h:TILE*2, dir:'right'},
+    ],
+    lockers:[
+      {x:480, y:240},  {x:1300, y:500},
+      {x:350, y:1400}, {x:1500, y:1400},
+      {x:800, y:500},  {x:700, y:1200},
+    ],
+    monsterSpawn:{x:900, y:900},
+    survivorSpawns:[
+      {x:300,y:1400},{x:1400,y:200},{x:1500,y:1600},{x:250,y:650},
+      {x:650,y:1550},{x:1300,y:800},{x:500,y:800},{x:1050,y:1600},
+    ],
+  },
+  {
+    name:'DARK FOREST',
+    bg:'#040a04',
+    floorColor:'#060e06',
+    wallColor:'#0d1f0d',
+    accentColor:'#0a180a',
+    walls:[
+      {x:0,   y:0,   w:VW,  h:TILE},
+      {x:0,   y:VH-TILE,w:VW,h:TILE},
+      {x:0,   y:0,   w:TILE,h:VH},
+      {x:VW-TILE,y:0,w:TILE,h:VH},
+      // Trees / dense forest patches (wide pillars)
+      {x:200, y:180,  w:80,  h:80},
+      {x:500, y:300,  w:80,  h:80},
+      {x:350, y:550,  w:80,  h:80},
+      {x:700, y:200,  w:80,  h:80},
+      {x:900, y:350,  w:80,  h:80},
+      {x:1100,y:180,  w:80,  h:80},
+      {x:1350,y:300,  w:80,  h:80},
+      {x:1550,y:200,  w:80,  h:80},
+      {x:250, y:800,  w:80,  h:80},
+      {x:600, y:750,  w:80,  h:80},
+      {x:850, y:650,  w:80,  h:80},
+      {x:1200,y:700,  w:80,  h:80},
+      {x:1500,y:800,  w:80,  h:80},
+      {x:300, y:1100, w:80,  h:80},
+      {x:700, y:1000, w:80,  h:80},
+      {x:1000,y:1050, w:80,  h:80},
+      {x:1400,y:1000, w:80,  h:80},
+      {x:1650,y:1100, w:80,  h:80},
+      {x:200, y:1400, w:80,  h:80},
+      {x:550, y:1350, w:80,  h:80},
+      {x:900, y:1400, w:80,  h:80},
+      {x:1250,y:1300, w:80,  h:80},
+      {x:1600,y:1400, w:80,  h:80},
+      {x:450, y:1600, w:80,  h:80},
+      {x:1100,y:1600, w:80,  h:80},
+      {x:1500,y:1600, w:80,  h:80},
+      // Log cabin walls
+      {x:750, y:500,  w:200, h:TILE},
+      {x:750, y:500,  w:TILE,h:200},
+      {x:750, y:700,  w:200, h:TILE},
+      {x:950, y:500,  w:TILE,h:100},
+      {x:950, y:660,  w:TILE,h:90},
+    ],
+    gens:[
+      {x:400,y:450},{x:1400,y:400},
+      {x:400,y:1200},{x:1400,y:1200},
+      {x:900,y:900},
+    ],
+    hooks:[
+      {x:600,y:400},{x:1200,y:500},
+      {x:550,y:1200},{x:1300,y:1100},
+      {x:900,y:500},{x:900,y:1300},
+    ],
+    gates:[
+      {x:TILE+10, y:900, w:TILE*1.5, h:TILE*2, dir:'left'},
+      {x:VW-TILE*3, y:800, w:TILE*1.5, h:TILE*2, dir:'right'},
+    ],
+    lockers:[
+      {x:350,y:650},{x:1300,y:650},
+      {x:350,y:1450},{x:1350,y:1450},
+      {x:750,y:1550},{x:200,y:300},
+    ],
+    monsterSpawn:{x:900,y:900},
+    survivorSpawns:[
+      {x:300,y:1600},{x:1500,y:1600},{x:200,y:200},{x:1600,y:200},
+      {x:800,y:1600},{x:1100,y:200},{x:250,y:1000},{x:1550,y:1000},
+    ],
+  },
+  {
+    name:'THE BASEMENT',
+    bg:'#08050a',
+    floorColor:'#0d0a10',
+    wallColor:'#1a1222',
+    accentColor:'#1a0a14',
+    walls:[
+      {x:0,   y:0,   w:VW,  h:TILE},
+      {x:0,   y:VH-TILE,w:VW,h:TILE},
+      {x:0,   y:0,   w:TILE,h:VH},
+      {x:VW-TILE,y:0,w:TILE,h:VH},
+      // Maze-like basement corridors
+      {x:TILE, y:200,  w:600, h:TILE},
+      {x:TILE, y:200,  w:TILE, h:400},
+      {x:TILE, y:600,  w:400, h:TILE},
+      {x:400, y:400,   w:TILE, h:250},
+
+      {x:700, y:TILE,  w:TILE, h:400},
+      {x:700, y:400,   w:400, h:TILE},
+      {x:1100,y:TILE,  w:TILE, h:300},
+
+      {x:1300,y:200,   w:450, h:TILE},
+      {x:1300,y:200,   w:TILE, h:500},
+      {x:1300,y:700,   w:450, h:TILE},
+
+      {x:200, y:800,   w:TILE, h:600},
+      {x:200, y:1400,  w:500, h:TILE},
+      {x:700, y:800,   w:TILE, h:400},
+      {x:700, y:1200,  w:TILE, h:250},
+      {x:500, y:1000,  w:250, h:TILE},
+
+      {x:900, y:900,   w:600, h:TILE},
+      {x:900, y:900,   w:TILE, h:500},
+      {x:900, y:1400,  w:600, h:TILE},
+      {x:1500,y:900,   w:TILE, h:500},
+
+      {x:400, y:1600,  w:TILE, h:150},
+      {x:900, y:1550,  w:TILE, h:200},
+      {x:1200,y:1500,  w:350, h:TILE},
+
+      {x:600, y:500,   w:200, h:TILE},
+      {x:600, y:600,   w:TILE, h:200},
+    ],
+    gens:[
+      {x:300,y:400},{x:1500,y:300},
+      {x:300,y:1200},{x:1400,y:1200},
+      {x:950,y:700},
+    ],
+    hooks:[
+      {x:550,y:300},{x:1200,y:300},
+      {x:550,y:1200},{x:1200,y:1100},
+      {x:900,y:500},{x:800,y:1300},
+    ],
+    gates:[
+      {x:TILE+10, y:1100, w:TILE*1.5, h:TILE*2, dir:'left'},
+      {x:VW-TILE*3, y:600,  w:TILE*1.5, h:TILE*2, dir:'right'},
+    ],
+    lockers:[
+      {x:500,y:500},{x:1200,y:500},
+      {x:250,y:1300},{x:1500,y:1300},
+      {x:750,y:700},{x:1050,y:1300},
+    ],
+    monsterSpawn:{x:950,y:700},
+    survivorSpawns:[
+      {x:250,y:1550},{x:1600,y:1550},{x:200,y:350},{x:1600,y:350},
+      {x:850,y:1500},{x:1100,y:400},{x:350,y:900},{x:1550,y:800},
+    ],
+  },
+];
+
+// ═══════════════════════════════════════════════════
+//  NETWORKING
+// ═══════════════════════════════════════════════════
+let peer=null, conn=null, conns=[], isMonster=false;
+let myPeerId='', myIndex=-1; // myIndex: 0=monster, 1..N=survivor
+let selectedMonsterPref=0, selectedPerk=0;
+let connectedPlayers=[]; // [{peerId, monsterPref, perkIdx, name}] — host only
+
+function genCode(){ return Math.random().toString(36).substr(2,6).toUpperCase(); }
+
+function buildPickers(){
+  ['host-monster-grid','join-monster-grid'].forEach(gridId=>{
+    const mg=document.getElementById(gridId);
+    if(!mg) return;
+    MONSTERS.forEach((m,i)=>{
+      const d=document.createElement('div');
+      d.className='monster-card'+(i===0?' selected':'');
+      d.dataset.gridId=gridId;
+      d.innerHTML=`<div class="emoji">${m.emoji}</div><div class="name">${m.name}</div><div class="desc">${m.desc}</div>`;
+      d.onclick=()=>{
+        selectedMonsterPref=i;
+        document.querySelectorAll(`[data-grid-id="${gridId}"]`).forEach(x=>x.classList.remove('selected'));
+        d.classList.add('selected');
+      };
+      mg.appendChild(d);
+    });
+  });
+  ['host-perk-grid','join-perk-grid'].forEach(gridId=>{
+    const pg=document.getElementById(gridId);
+    if(!pg) return;
+    // Show survivor perks (monster perk is fixed based on their monster preference index)
+    SURVIVOR_PERKS.forEach((p,i)=>{
+      const d=document.createElement('div');
+      d.className='perk-card'+(i===0?' selected':'');
+      d.dataset.perkGridId=gridId;
+      d.innerHTML=`<div class="pname">${p.name}</div><div class="pdesc">${p.desc}</div>`;
+      d.onclick=()=>{
+        selectedPerk=i;
+        document.querySelectorAll(`[data-perk-grid-id="${gridId}"]`).forEach(x=>x.classList.remove('selected'));
+        d.classList.add('selected');
+      };
+      pg.appendChild(d);
+    });
+  });
+}
+buildPickers();
+
+function showHostSetup(){ hide('lobby-main'); show('lobby-host-setup'); }
+function hideHostSetup(){ hide('lobby-host-setup'); show('lobby-main'); }
+function showJoin(){ hide('lobby-main'); show('lobby-join'); }
+function hideJoin(){ hide('lobby-join'); show('lobby-main'); }
+function showHTP(){ hide('lobby-main'); show('lobby-htp'); }
+function hideHTP(){ hide('lobby-htp'); show('lobby-main'); }
+function show(id){ document.getElementById(id).classList.remove('hidden'); }
+function hide(id){ document.getElementById(id).classList.add('hidden'); }
+
+function hostCreate(){
+  const code=genCode();
+  myPeerId=code;
+  peer=new Peer(code,{debug:0});
+  peer.on('open',()=>{
+    connectedPlayers=[{peerId:code, monsterPref:selectedMonsterPref, perkIdx:selectedPerk, name:'Player 1 (HOST)'}];
+    document.getElementById('room-code-display').textContent=code;
+    hide('lobby-host-setup'); show('lobby-waiting');
+    updateLobbyList();
+  });
+  peer.on('connection',c=>{
+    conns.push(c);
+    c.on('open',()=>{
+      connectedPlayers.push({peerId:c.peer, monsterPref:0, perkIdx:0, name:'Player '+(connectedPlayers.length+1)});
+      updateLobbyList();
+      document.getElementById('start-game-btn').disabled=false;
+      c.send({type:'welcome', slotIdx:connectedPlayers.length-1});
+    });
+    c.on('data',d=>onMessage(d,c));
+    c.on('close',()=>{
+      conns=conns.filter(x=>x!==c);
+      connectedPlayers=connectedPlayers.filter(p=>p.peerId!==c.peer);
+      updateLobbyList();
+      if(conns.length===0) document.getElementById('start-game-btn').disabled=true;
+    });
+  });
+  peer.on('error',e=>{
+    alert('Connection error: '+e.type+'\nReturning to lobby.');
+    hide('lobby-waiting'); hide('lobby-host-setup');
+    show('lobby-main');
+    peer=null; conns=[]; connectedPlayers=[];
+  });
+}
+
+function updateLobbyList(){
+  const ul=document.getElementById('lobby-player-list');
+  ul.innerHTML='';
+  connectedPlayers.forEach((p,i)=>{
+    ul.innerHTML+=`<li class="survivor">👤 ${p.name}</li>`;
+  });
+}
+
+function joinGame(){
+  const code=document.getElementById('join-code-input').value.trim().toUpperCase();
+  if(code.length<4){ document.getElementById('join-status').textContent='Enter a valid code'; return; }
+  peer=new Peer(undefined,{debug:0});
+  peer.on('open',id=>{
+    myPeerId=id;
+    document.getElementById('join-status').textContent='🔄 Connecting...';
+    conn=peer.connect(code);
+    conn.on('open',()=>{
+      conn.on('data',d=>onMessage(d,conn));
+      conn.send({type:'playerPrefs', monsterPref:selectedMonsterPref, perkIdx:selectedPerk});
+      hide('lobby-join'); show('lobby-survivor-wait');
+    });
+    conn.on('error',()=>{ document.getElementById('join-status').textContent='❌ Could not connect'; });
+  });
+  peer.on('error',e=>{ document.getElementById('join-status').textContent='❌ '+e.type; });
+}
+
+function onMessage(msg, fromConn){
+  switch(msg.type){
+    case 'welcome':
+      myIndex=msg.slotIdx;
+      document.getElementById('survivor-wait-list').innerHTML=
+        `<li class="survivor">👤 You are Player ${myIndex+1} — monster assigned at start!</li>`;
+      break;
+    case 'playerPrefs':
+      { const p=connectedPlayers.find(x=>x.peerId===fromConn.peer);
+        if(p){ p.monsterPref=msg.monsterPref; p.perkIdx=msg.perkIdx; } }
+      break;
+    case 'startGame':
+      receiveGameStart(msg);
+      break;
+    case 'input':
+      if(isMonster) applyRemoteInput(msg, fromConn.peer);
+      break;
+    case 'state':
+      if(!isMonster) applyState(msg.state);
+      break;
+    case 'phaseChange':
+      if(GS){ GS.phase=msg.phase; if(msg.phase==='endgame') GS.gates.forEach(g=>g.powered=true); }
+      break;
+    case 'gameEnd':
+      showEndScreen(msg.monsterWins);
+      break;
+  }
+}
+
+function broadcast(obj){ conns.forEach(c=>{ if(c.open) c.send(obj); }); }
+function sendToHost(obj){ if(conn&&conn.open) conn.send(obj); }
+
+// ═══════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════
+let GS=null, canvas=null, ctx=null;
+let myInputInterval=null, simInterval=null, syncInterval=null;
+let keys={};
+const GAME_KEYS=new Set(['KeyA','KeyD','KeyW','KeyS','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyE','KeyQ','ShiftLeft','ShiftRight']);
+document.addEventListener('keydown',e=>{ keys[e.code]=true; if(GAME_KEYS.has(e.code)) e.preventDefault(); });
+document.addEventListener('keyup',e=>{ keys[e.code]=false; });
+
+function hostStartGame(){
+  if(connectedPlayers.length<2){
+    alert('Need at least 1 other player to start!');
+    return;
+  }
+  // Pick random monster from all players — try to honour preferences
+  const playerCount=connectedPlayers.length;
+  const monsterSlot=Math.floor(Math.random()*playerCount);
+  const monsterPlayer=connectedPlayers[monsterSlot];
+  const monsterTypeIdx=monsterPlayer.monsterPref;
+  // Monster perk is their monsterPref index mapped into MONSTER_PERKS
+  const monsterPerk=monsterPlayer.monsterPref % MONSTER_PERKS.length;
+  // Everyone else is a survivor with their chosen survivor perk
+  const survPerks=connectedPlayers
+    .filter((_,i)=>i!==monsterSlot)
+    .map(p=>p.perkIdx % SURVIVOR_PERKS.length);
+
+  const mapIdx=Math.floor(Math.random()*MAPS.length);
+
+  // Send personalised startGame to each connection so they know their own role
+  conns.forEach((c,ci)=>{
+    const connSlot=ci+1; // host is slot 0, conn[0] is slot 1, etc.
+    c.send({type:'startGame', mapIdx, monsterType:monsterTypeIdx, monsterPerk, survPerks,
+            monsterSlot, mySlot:connSlot});
+  });
+
+  // Host starts game knowing their own slot
+  myIndex=0;
+  isMonster=(monsterSlot===0);
+  initGame(mapIdx, monsterTypeIdx, monsterPerk, survPerks, true, monsterSlot, 0);
+}
+
+function receiveGameStart(msg){
+  isMonster=(msg.monsterSlot===msg.mySlot);
+  if(isMonster){
+    myIndex=0; // monster uses index 0
+  } else {
+    // Survivor index in gs.survivors array = slot minus 1 if slot < monsterSlot,
+    // otherwise slot minus 1 (monster takes no survivor slot)
+    // Simpler: survivors are all connectedPlayers except monsterSlot, in original order
+    const survSlots=[];
+    const totalPlayers=msg.survPerks.length+1; // survivors + 1 monster
+    for(let i=0;i<totalPlayers;i++){
+      if(i!==msg.monsterSlot) survSlots.push(i);
+    }
+    const survIdx=survSlots.indexOf(msg.mySlot);
+    myIndex=survIdx+1; // 1-based
+  }
+  initGame(msg.mapIdx, msg.monsterType, msg.monsterPerk, msg.survPerks, false, msg.monsterSlot, msg.mySlot);
+}
+
+function makeEntity(x, y, id, role, perkIdx){
+  return {
+    id, role, x, y,
+    speed: role==='monster' ? MONSTERS[0].speed : SURVIVOR_SPEED,
+    injured:false,
+    perkIdx,
+    facing:0,
+    inLocker:false, lockerIdx:-1,
+    hookedOn:-1, hookProgress:0,
+    dead:false,
+    escaped:false,
+    abilityCooldown:0,
+    perkTimer:0,
+    invisible:false,
+    dsReady:false,
+    sprintTimer:0, sprintReady:false,
+    _lockerCooldown:0, _frozen:0, _wiggleAcc:0, _invincTime:0,
+  };
+}
+
+function initGame(mapIdx, monsterTypeIdx, monsterPerk, survPerks, hosting, monsterSlot, mySlot){
+  const map=MAPS[mapIdx];
+  const mtype=MONSTERS[monsterTypeIdx];
+
+  // Monster entity
+  const monster=makeEntity(map.monsterSpawn.x, map.monsterSpawn.y, 'monster', 'monster', monsterPerk);
+  monster.monsterType=monsterTypeIdx;
+  monster.speed=mtype.speed;
+  monster.abilityCooldown=0;
+  monster.attackCooldown=0;
+  monster.hookCount=0; // for devour hope perk
+
+  // Survivor entities
+  const survivors=[];
+  const spawnCount=Math.min(survPerks.length, map.survivorSpawns.length);
+  for(let i=0;i<spawnCount;i++){
+    const sp=map.survivorSpawns[i];
+    const s=makeEntity(sp.x,sp.y,'survivor_'+i,'survivor',survPerks[i]);
+    s.survivorIdx=i;
+    // sprint burst — ready at start
+    if(survPerks[i]===0) s.sprintReady=true;
+    survivors.push(s);
+  }
+
+  // Generators
+  const gens=map.gens.map((g,i)=>({
+    x:g.x, y:g.y, id:i,
+    progress:0, // 0–GEN_REPAIR_TIME ms
+    done:false,
+    repairers:[], // survivor IDs repairing
+    regressing:false,
+  }));
+
+  // Hooks
+  const hooks=map.hooks.map((h,i)=>({x:h.x,y:h.y,id:i,occupied:false,survivorId:null}));
+
+  // Gates
+  const gates=map.gates.map((g,i)=>({...g, id:i, progress:0, open:false, powered:false}));
+
+  // Lockers
+  const lockers=map.lockers.map((l,i)=>({x:l.x,y:l.y,id:i,occupied:false,survivorId:null}));
+
+  GS={
+    map, mapIdx, monsterTypeIdx, monsterPerk, mtype,
+    monster, survivors, gens, hooks, gates, lockers,
+    gensDone:0,
+    gatesOpen:0,
+    survivorsEscaped:0,
+    survivorsDead:0,
+    phase:'chase', // 'chase' | 'endgame' | 'end'
+    particles:[],
+    scratchMarks:[],
+    decoys:[],
+    _jeffreyJumpscare:0,
+    ticks:0,
+  };
+
+  // Clear any previous game loops (handles "play again" without page reload)
+  clearInterval(simInterval); clearInterval(syncInterval); clearInterval(myInputInterval);
+  simInterval=null; syncInterval=null; myInputInterval=null;
+  // Clear stale input state from previous game
+  remoteInputs={};
+  Object.keys(keys).forEach(k=>{ keys[k]=false; });
+  // Remove old resize handler before GS is overwritten (must save reference before new GS)
+  if(window._activeResizeHandler){ window.removeEventListener('resize', window._activeResizeHandler); }
+  // Cancel stacked render loops
+  if(window._activeRafId) cancelAnimationFrame(window._activeRafId);
+
+  // Switch to game screen
+  document.getElementById('screen-lobby').classList.add('hidden');
+  document.getElementById('screen-game').classList.remove('hidden');
+
+  canvas=document.getElementById('gameCanvas');
+  ctx=canvas.getContext('2d',{alpha:false});
+  function resize(){ canvas.width=canvas.offsetWidth; canvas.height=canvas.offsetHeight; }
+  window._activeResizeHandler=resize;
+  resize();
+  window.addEventListener('resize',resize);
+
+  buildHUD();
+  updateGenPips();
+
+  if(hosting){
+    // Host runs simulation
+    simInterval=setInterval(()=>hostSimTick(),33);
+    syncInterval=setInterval(()=>{
+      if(GS) broadcast({type:'state',state:serializeState(GS)});
+    },50);
+  }
+
+  // Everyone sends input
+  myInputInterval=setInterval(()=>sendInput(),50);
+
+  // Start render loop
+  window._activeRafId=requestAnimationFrame(renderLoop);
+
+  // Role reveal overlay
+  const roleReveal=document.getElementById('role-reveal');
+  if(roleReveal){
+    roleReveal.textContent=isMonster
+      ? `☠ YOU ARE THE ${MONSTERS[monsterTypeIdx].name}!`
+      : '🔦 YOU ARE A SURVIVOR!';
+    roleReveal.style.color=isMonster?'#e74c3c':'#1abc9c';
+    roleReveal.classList.add('show');
+    setTimeout(()=>roleReveal.classList.remove('show'),3500);
+  }
+
+  // Set controls hint
+  const hint=isMonster
+    ? 'WASD/Arrows: Move  ·  E: Attack / Hook  ·  Q: Ability'
+    : 'WASD/Arrows: Move  ·  E: Repair / Unhook / Open Gate / Hide  ·  Shift: Run';
+  document.getElementById('controls-hint').textContent=hint;
+}
+
+// ── Remote input state ──────────────────────────────
+let remoteInputs={}; // peerId -> input object
+
+function sendInput(){
+  const inp=getMyInput();
+  if(isMonster){
+    sendToHost({type:'input', isMonster:true, ...inp});
+  } else {
+    const survivorIdx = myIndex - 1;
+    sendToHost({type:'input', isMonster:false, survivorIdx, ...inp});
+  }
+}
+
+function getMyInput(){
+  const left  = keys['KeyA']||keys['ArrowLeft'];
+  const right = keys['KeyD']||keys['ArrowRight'];
+  const up    = keys['KeyW']||keys['ArrowUp'];
+  const down  = keys['KeyS']||keys['ArrowDown'];
+  const action= keys['KeyE'];
+  const run   = keys['ShiftLeft']||keys['ShiftRight'];
+  const ability=keys['KeyQ'];
+  return {left,right,up,down,action,run,ability};
+}
+
+function applyRemoteInput(msg, peerId){
+  if(msg.isMonster){
+    remoteInputs['monster']={
+      left:msg.left,right:msg.right,up:msg.up,down:msg.down,
+      action:msg.action,run:msg.run,ability:msg.ability
+    };
+  } else {
+    remoteInputs[msg.survivorIdx]={
+      left:msg.left,right:msg.right,up:msg.up,down:msg.down,
+      action:msg.action,run:msg.run,ability:msg.ability
+    };
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  SIMULATION (host only)
+// ═══════════════════════════════════════════════════
+const EMPTY_INP={left:false,right:false,up:false,down:false,action:false,run:false,ability:false};
+let lastSim=performance.now();
+
+function hostSimTick(){
+  if(!GS||GS.phase==='end') return;
+  const now=performance.now();
+  const dt=Math.min(now-lastSim,66);
+  lastSim=now;
+  simulate(GS,dt);
+}
+
+function simulate(gs, dt){
+  const map=gs.map;
+  gs.ticks++;
+
+  // ── Monster movement ──────────────────────────────
+  const minp=isMonster ? getMyInput() : (remoteInputs['monster']||EMPTY_INP);
+  moveEntity(gs, gs.monster, minp, dt);
+
+  // Monster ability
+  if(minp.ability && gs.monster.abilityCooldown<=0){
+    triggerMonsterAbility(gs);
+  }
+  if(gs.monster.abilityCooldown>0) gs.monster.abilityCooldown-=dt;
+  if(gs.monster.attackCooldown>0)  gs.monster.attackCooldown-=dt;
+
+  // Wraith invisible timer
+  if(gs.monster.invisible){
+    gs.monster.perkTimer-=dt;
+    if(gs.monster.perkTimer<=0){ gs.monster.invisible=false; gs.monster.abilityCooldown=30000; }
+  }
+
+  // Monster attack / hook
+  if(minp.action && gs.monster.attackCooldown<=0){
+    doMonsterAttack(gs);
+  }
+
+  // ── Survivors ────────────────────────────────────
+  gs.survivors.forEach((s,i)=>{
+    if(s.dead||s.escaped) return;
+    const sinp=i===myIndex-1&&!isMonster ? getMyInput() : (remoteInputs[i]||EMPTY_INP);
+
+    if(s.hookedOn>=0){
+      const wiggling=sinp.left||sinp.right||sinp.up||sinp.down||sinp.action;
+      s.hookProgress+=dt;
+      // Self-escape: check once per second, not every tick (avoids dt-dependent probability)
+      s._wiggleAcc=(s._wiggleAcc||0)+dt;
+      if(wiggling && s._wiggleAcc>=1000){
+        s._wiggleAcc=0;
+        if(Math.random()<HOOK_ESCAPE_CHANCE){
+          unhookSurvivor(gs,s,true);
+        }
+      } else if(!wiggling){
+        s._wiggleAcc=0;
+      }
+      if(s.hookProgress>=HOOK_STRUGGLE_TIME){
+        killSurvivor(gs,s);
+      }
+      return;
+    }
+
+    if(s.inLocker){
+      if(sinp.action) exitLocker(gs,s);
+      return;
+    }
+
+    // Tick freeze and locker cooldown unconditionally
+    if(s._frozen>0){ s._frozen-=dt; if(s._frozen<0) s._frozen=0; }
+    if(s._lockerCooldown>0){ s._lockerCooldown-=dt; if(s._lockerCooldown<0) s._lockerCooldown=0; }
+    if(s._invincTime>0){ s._invincTime-=dt; if(s._invincTime<0) s._invincTime=0; }
+
+    // Run modifier
+    let spd=SURVIVOR_SPEED;
+    if(s._frozen>0) spd=0; // frozen!
+    // Sprint burst perk
+    if(s.perkIdx===0 && s.sprintReady && (sinp.left||sinp.right||sinp.up||sinp.down)){
+      s.sprintReady=false; s.sprintTimer=3000;
+    }
+    if(s.sprintTimer>0){ spd*=1.5; s.sprintTimer-=dt; if(s.sprintTimer<=0) s.sprintTimer=0; }
+    if(sinp.run) spd*=1.3;
+    if(s.injured) spd*=0.7;
+
+    moveEntityWithSpeed(gs, s, sinp, dt, spd);
+
+    // Scratch marks (bloodhound perk for monster)
+    if(sinp.run && gs.monsterPerk===0 && gs.ticks%20===0){
+      gs.scratchMarks.push({x:s.x,y:s.y,age:0});
+    }
+
+    // Action: repair gen, unhook survivor, open gate, enter locker
+    if(sinp.action){
+      tryAction(gs,s,dt);
+    } else {
+      // Cancel repair progress if not holding
+      gs.gens.forEach(g=>{
+        g.repairers=g.repairers.filter(rid=>rid!==s.id);
+      });
+    }
+
+    // Check if caught by monster
+    const mdx=gs.monster.x-s.x, mdy=gs.monster.y-s.y;
+    const dist=Math.sqrt(mdx*mdx+mdy*mdy);
+    if(!gs.monster.invisible && dist<36 && !s.injured && !s.inLocker && s.hookedOn<0 && s._invincTime<=0 && gs.monster.attackCooldown<=0){
+      injureSurvivor(gs,s);
+      gs.monster.attackCooldown=ATTACK_COOLDOWN;
+    }
+  });
+
+  // ── Generator progress ────────────────────────────
+  gs.gens.forEach(g=>{
+    if(g.done) return;
+    const repCount=g.repairers.filter(rid=>gs.survivors.find(s=>s.id===rid&&s.hookedOn<0&&!s.dead&&!s.escaped)).length;
+    if(repCount>0){
+      let rate=1;
+      // Botany perk speeds up repair — additive +25% per Botany repairer
+      g.repairers.forEach(rid=>{
+        const s=gs.survivors.find(s=>s.id===rid);
+        if(s && s.perkIdx===1) rate+=0.25;
+      });
+      g.progress+=dt*repCount*rate;
+      g.regressing=false;
+    } else if(gs.monsterPerk===3 && g.progress>0){
+      // RUIN: regress gen when no one repairing
+      g.progress-=dt*0.4;
+      g.regressing=true;
+    }
+    g.progress=Math.max(0,g.progress);
+    if(g.progress>=GEN_REPAIR_TIME){
+      g.done=true; g.progress=GEN_REPAIR_TIME;
+      gs.gensDone++;
+      spawnParticle(gs,g.x,g.y,'#e67e22',12);
+      if(gs.gensDone>=GENS_NEEDED){
+        gs.phase='endgame';
+        gs.gates.forEach(gt=>gt.powered=true);
+        broadcast({type:'phaseChange',phase:'endgame'});
+      }
+      updateGenPips();
+    }
+  });
+
+  // ── Decoys (White Rabbit) ─────────────────────────
+  if(gs.decoys&&gs.decoys.length){
+    gs.decoys=gs.decoys.filter(d=>{
+      d.life-=dt;
+      d.x+=d.vx; d.y+=d.vy;
+      if(d.x<50||d.x>VW-50) d.vx*=-1;
+      if(d.y<50||d.y>VH-50) d.vy*=-1;
+      return d.life>0;
+    });
+  }
+  // Jeffrey jumpscare flash
+  if(gs._jeffreyJumpscare>0) gs._jeffreyJumpscare-=dt;
+
+  // ── Age scratch marks ─────────────────────────────
+  gs.scratchMarks=gs.scratchMarks.filter(m=>{
+    m.age+=dt;
+    return m.age<8000;
+  });
+
+  // ── Particles ─────────────────────────────────────
+  gs.particles=gs.particles.filter(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.life-=dt;
+    return p.life>0;
+  });
+
+  // ── Win checks ────────────────────────────────────
+  const totalSurvivors=gs.survivors.length;
+  const neededEscapes=totalSurvivors===1?1:Math.ceil(totalSurvivors/2);
+
+  if(gs.survivorsEscaped>=neededEscapes){
+    endGame(gs,false); // survivors win
+  } else if(gs.survivorsDead===totalSurvivors){
+    endGame(gs,true); // monster wins
+  }
+}
+
+// ── Movement ─────────────────────────────────────────
+function moveEntity(gs,e,inp,dt){
+  moveEntityWithSpeed(gs,e,inp,dt,e.speed);
+}
+
+function moveEntityWithSpeed(gs,e,inp,dt,spd){
+  let dx=0,dy=0;
+  if(inp.left) dx-=1;
+  if(inp.right)dx+=1;
+  if(inp.up)   dy-=1;
+  if(inp.down) dy+=1;
+  if(dx!==0&&dy!==0){ dx*=0.707; dy*=0.707; }
+  if(dx!==0||dy!==0) e.facing=Math.atan2(dy,dx);
+
+  const nx=e.x+dx*spd;
+  const ny=e.y+dy*spd;
+  const rad=e.role==='monster'?22:18;
+
+  if(!collidesWall(gs.map.walls,nx,e.y,rad)) e.x=Math.max(rad,Math.min(VW-rad,nx));
+  if(!collidesWall(gs.map.walls,e.x,ny,rad)) e.y=Math.max(rad,Math.min(VH-rad,ny));
+}
+
+function collidesWall(walls,x,y,r){
+  for(const w of walls){
+    if(x+r>w.x&&x-r<w.x+w.w&&y+r>w.y&&y-r<w.y+w.h) return true;
+  }
+  return false;
+}
+
+// ── Actions ───────────────────────────────────────────
+function tryAction(gs,s,dt){
+
+  // Unhook survivor (highest priority)
+  for(const other of gs.survivors){
+    if(other===s||other.hookedOn<0||other.dead) continue;
+    const hk=gs.hooks[other.hookedOn];
+    if(Math.abs(s.x-hk.x)<55&&Math.abs(s.y-hk.y)<55){
+      s._unhookTimer=(s._unhookTimer||0)+dt;
+      showActionBar('UNHOOKING',s._unhookTimer/UNHOOK_TIME);
+      if(s._unhookTimer>=UNHOOK_TIME){
+        unhookSurvivor(gs,other,false,s);
+        s._unhookTimer=0;
+      }
+      return;
+    }
+  }
+  s._unhookTimer=0;
+
+  // Repair generator
+  for(const g of gs.gens){
+    if(g.done) continue;
+    if(Math.abs(s.x-g.x)<55&&Math.abs(s.y-g.y)<55){
+      if(!g.repairers.includes(s.id)) g.repairers.push(s.id);
+      showActionBar('REPAIRING',g.progress/GEN_REPAIR_TIME);
+      return;
+    }
+  }
+
+  // Open gate
+  if(gs.phase==='endgame'){
+    for(const g of gs.gates){
+      if(g.open) continue;
+      if(Math.abs(s.x-g.x)<70&&Math.abs(s.y-g.y)<70){
+        g.progress+=dt;
+        showActionBar('OPENING GATE',g.progress/GATE_OPEN_TIME);
+        if(g.progress>=GATE_OPEN_TIME){
+          g.open=true; gs.gatesOpen++;
+          spawnParticle(gs,g.x,g.y,'#1abc9c',10);
+        }
+        return;
+      }
+    }
+  }
+
+  // Walk through open gate
+  if(s._frozen>0) return; // frozen — cannot escape
+  for(const g of gs.gates){
+    if(!g.open) continue;
+    const dx=g.dir==='left'?-1:1;
+    if(Math.abs(s.y-g.y)<g.h&&((g.dir==='left'&&s.x<g.x+g.w+60)||(g.dir==='right'&&s.x>g.x-60))){
+      s.x+=dx*3;
+      if((g.dir==='left'&&s.x<0)||(g.dir==='right'&&s.x>VW)){
+        escapeSurvivor(gs,s);
+      }
+    }
+  }
+
+  // Enter locker (lowest priority, requires fresh key press via cooldown)
+  if(s._lockerCooldown>0) return;
+  for(let i=0;i<gs.lockers.length;i++){
+    const l=gs.lockers[i];
+    if(!l.occupied&&Math.abs(s.x-l.x)<40&&Math.abs(s.y-l.y)<40){
+      enterLocker(gs,s,i);
+      s._lockerCooldown=500; // prevent re-entry for 500ms
+      return;
+    }
+  }
+}
+
+function enterLocker(gs,s,idx){
+  gs.lockers[idx].occupied=true;
+  gs.lockers[idx].survivorId=s.id;
+  s.inLocker=true; s.lockerIdx=idx;
+  s.x=gs.lockers[idx].x; s.y=gs.lockers[idx].y;
+}
+function exitLocker(gs,s){
+  if(s.lockerIdx<0||!gs.lockers[s.lockerIdx]) return;
+  gs.lockers[s.lockerIdx].occupied=false;
+  gs.lockers[s.lockerIdx].survivorId=null;
+  s.inLocker=false; s.lockerIdx=-1;
+  s._lockerCooldown=600;
+}
+
+function doMonsterAttack(gs){
+  const m=gs.monster;
+  const mtype=MONSTERS[m.monsterType];
+  const range = mtype.id==='brute' && m._lunging ? mtype.lungeRange : ATTACK_RANGE;
+
+  for(const s of gs.survivors){
+    if(s.dead||s.escaped||s.inLocker||s.hookedOn>=0||s._invincTime>0) continue;
+    const dx=m.x-s.x, dy=m.y-s.y;
+    if(Math.sqrt(dx*dx+dy*dy)<range){
+      if(s.injured){
+        hookSurvivor(gs,s);
+      } else {
+        if(s.dsReady && s.perkIdx===3){
+          s.dsReady=false;
+          m.attackCooldown=ATTACK_COOLDOWN*2;
+          m._lunging=false; // reset lunge on DS stun
+          spawnParticle(gs,s.x,s.y,'#f39c12',8);
+          return;
+        }
+        injureSurvivor(gs,s);
+      }
+      m.attackCooldown=ATTACK_COOLDOWN;
+      m._lunging=false;
+      if(gs.monsterPerk===1) m.speed=Math.min(MONSTER_SPEED*1.4, m.speed+0.1);
+      return;
+    }
+  }
+  // No target hit — reset lunge flag so it doesn't persist
+  m._lunging=false;
+}
+
+function injureSurvivor(gs,s){
+  // NOED perk: one-hit down after all gens complete
+  if(gs.monsterPerk===2 && gs.gensDone>=GENS_NEEDED && !s.injured){
+    s.injured=true;
+    hookSurvivor(gs,s); // instant hook — skip the injury phase
+    spawnParticle(gs,s.x,s.y,'#c0392b',12);
+    return;
+  }
+  s.injured=true;
+  spawnParticle(gs,s.x,s.y,'#c0392b',8);
+}
+
+function hookSurvivor(gs,s){
+  // Find nearest free hook
+  let nearest=null, nd=Infinity;
+  gs.hooks.forEach(h=>{
+    if(h.occupied) return;
+    const d=Math.hypot(h.x-s.x,h.y-s.y);
+    if(d<nd){ nd=d; nearest=h; }
+  });
+  if(!nearest){
+    // No free hooks — survivor stays injured but gets a brief window to escape
+    // (prevents permanent stuck-injured state)
+    s._invincTime=3000; // 3s grace period before monster can re-hit
+    spawnParticle(gs,s.x,s.y,'#e67e22',6);
+    return;
+  }
+  nearest.occupied=true; nearest.survivorId=s.id;
+  s.hookedOn=nearest.id;
+  s.x=nearest.x; s.y=nearest.y;
+  s.hookProgress=0;
+  s.injured=false;
+  gs.monster.hookCount++;
+  spawnParticle(gs,s.x,s.y,'#8b0000',12);
+}
+
+function unhookSurvivor(gs,s,selfEscape,rescuer){
+  const h=gs.hooks[s.hookedOn];
+  if(h){ h.occupied=false; h.survivorId=null; }
+  s.hookedOn=-1; s.hookProgress=0;
+  s.injured=true;
+  if(!selfEscape && rescuer){
+    // Place rescued survivor safely — try both sides of rescuer
+    const r=18;
+    if(!collidesWall(gs.map.walls,rescuer.x+45,rescuer.y,r))       s.x=rescuer.x+45;
+    else if(!collidesWall(gs.map.walls,rescuer.x-45,rescuer.y,r))  s.x=rescuer.x-45;
+    else                                                             s.x=rescuer.x;
+    s.y=rescuer.y;
+  } else if(selfEscape && h){
+    // Offset self-escaped survivor slightly away from hook so monster can't instantly re-catch
+    const offsets=[[50,0],[-50,0],[0,50],[0,-50]];
+    for(const [ox,oy] of offsets){
+      if(!collidesWall(gs.map.walls,h.x+ox,h.y+oy,18)){ s.x=h.x+ox; s.y=h.y+oy; break; }
+    }
+  }
+  if(s.perkIdx===3) s.dsReady=true;
+  if(s.perkIdx===0) s.sprintReady=true;
+  spawnParticle(gs,s.x,s.y,'#27ae60',8);
+}
+
+function killSurvivor(gs,s){
+  if(s.hookedOn>=0){
+    const h=gs.hooks[s.hookedOn];
+    if(h){ h.occupied=false; h.survivorId=null; }
+  }
+  s.dead=true; s.hookedOn=-1;
+  // Remove from any gen repairers
+  gs.gens.forEach(g=>{ g.repairers=g.repairers.filter(rid=>rid!==s.id); });
+  gs.survivorsDead++;
+  spawnParticle(gs,s.x,s.y,'#8b0000',20);
+}
+
+function escapeSurvivor(gs,s){
+  s.escaped=true;
+  // Remove from any gen repairers
+  gs.gens.forEach(g=>{ g.repairers=g.repairers.filter(rid=>rid!==s.id); });
+  gs.survivorsEscaped++;
+  spawnParticle(gs,s.x,s.y,'#1abc9c',15);
+}
+
+function triggerMonsterAbility(gs){
+  const m=gs.monster;
+  const mtype=MONSTERS[m.monsterType];
+  if(mtype.id==='wraith'){
+    if(m.invisible) return; // already invisible — ignore Q during active invisibility
+    m.invisible=true; m.perkTimer=6000; m.abilityCooldown=9999999; // blocked until invis ends
+  } else if(mtype.id==='brute'){
+    m._lunging=true; m.attackCooldown=0; m.abilityCooldown=10000;
+    // Lunge forward — step incrementally to stop at first wall
+    const lungeSteps=10;
+    const stepDist=mtype.lungeRange*0.5/lungeSteps;
+    const dx=Math.cos(m.facing), dy=Math.sin(m.facing);
+    for(let step=0;step<lungeSteps;step++){
+      const nx=m.x+dx*stepDist, ny=m.y+dy*stepDist;
+      if(collidesWall(gs.map.walls,nx,ny,22)) break;
+      m.x=Math.max(30,Math.min(VW-30,nx));
+      m.y=Math.max(30,Math.min(VH-30,ny));
+    }
+  } else if(mtype.id==='witch'){
+    // Teleport to a random incomplete generator — find wall-safe landing near it
+    const targets=gs.gens.filter(g=>!g.done);
+    const t=targets[Math.floor(Math.random()*targets.length)]||gs.gens[0];
+    const offsets=[[60,0],[-60,0],[0,60],[0,-60],[60,60],[-60,-60],[0,0]];
+    for(const [ox,oy] of offsets){
+      const tx=t.x+ox, ty=t.y+oy;
+      if(!collidesWall(gs.map.walls,tx,ty,22)){
+        m.x=tx; m.y=ty; break;
+      }
+    }
+    m.abilityCooldown=20000;
+    spawnParticle(gs,m.x,m.y,'#1abc9c',12);
+  } else if(mtype.id==='rabbit'){
+    // Spawn a decoy that moves randomly for 8s
+    gs.decoys=gs.decoys||[];
+    gs.decoys.push({x:m.x, y:m.y, vx:(Math.random()-0.5)*3, vy:(Math.random()-0.5)*3, life:8000});
+    m.abilityCooldown=15000;
+    spawnParticle(gs,m.x,m.y,'#ecf0f1',10);
+  } else if(mtype.id==='jeffrey'){
+    // Jumpscare: freeze all survivors within terror radius for 3s
+    const freezeRange=TERROR_RADIUS*0.8;
+    gs.survivors.forEach(s=>{
+      if(s.dead||s.escaped||s.inLocker||s.hookedOn>=0) return;
+      const d=Math.hypot(m.x-s.x,m.y-s.y);
+      if(d<freezeRange){
+        s._frozen=3000;
+        spawnParticle(gs,s.x,s.y,'#f39c12',8);
+      }
+    });
+    m.abilityCooldown=25000;
+    gs._jeffreyJumpscare=500; // flash duration for render
+    spawnParticle(gs,m.x,m.y,'#f39c12',15);
+  }
+}
+
+function spawnParticle(gs,x,y,color,n){
+  if(gs.particles.length>100) return;
+  for(let i=0;i<Math.min(n,100-gs.particles.length);i++){
+    const a=Math.random()*6.2832;
+    const spd=1+Math.random()*3;
+    gs.particles.push({x,y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,life:600+Math.random()*400,color});
+  }
+}
+
+function endGame(gs, monsterWins){
+  if(gs.phase==='end') return;
+  gs.phase='end';
+  broadcast({type:'gameEnd', monsterWins});
+  showEndScreen(monsterWins);
+}
+
+function showEndScreen(monsterWins){
+  const el=document.getElementById('end-screen');
+  const title=document.getElementById('end-title');
+  const sub=document.getElementById('end-subtitle');
+  title.textContent=monsterWins?'ALL DEAD':'SURVIVORS ESCAPE';
+  title.style.color=monsterWins?'#c0392b':'#1abc9c';
+  sub.textContent=monsterWins?'THE MONSTER CLAIMS THEM ALL':'THE NIGHT IS OVER';
+  el.classList.add('show');
+}
+
+// ── Serialization ────────────────────────────────────
+function serializeState(gs){
+  return {
+    monster:[gs.monster.x,gs.monster.y,gs.monster.facing,gs.monster.invisible?1:0,gs.monster.attackCooldown,gs.monster.abilityCooldown,gs.monster.speed,gs.monster.perkTimer||0],
+    survivors:gs.survivors.map(s=>[s.x,s.y,s.facing,s.injured?1:0,s.hookedOn,s.dead?1:0,s.escaped?1:0,s.inLocker?1:0,s.hookProgress,s._frozen||0,s._invincTime||0]),
+    gens:gs.gens.map(g=>[g.progress,g.done?1:0,g.regressing?1:0]),
+    gates:gs.gates.map(g=>[g.progress,g.open?1:0,g.powered?1:0]),
+    lockers:gs.lockers.map(l=>[l.occupied?1:0]),
+    phase:gs.phase,
+    particles:gs.particles.slice(-30).map(p=>[p.x,p.y,p.vx,p.vy,p.life,p.color]),
+    scratchMarks:gs.scratchMarks.slice(-20).map(m=>[m.x,m.y,m.age]),
+    decoys:(gs.decoys||[]).slice(-4).map(d=>[d.x,d.y,d.life,d.vx,d.vy]),
+    jeffreyFlash:gs._jeffreyJumpscare||0,
+    gensDone:gs.gensDone,
+    survivorsEscaped:gs.survivorsEscaped,
+    survivorsDead:gs.survivorsDead,
+  };
+}
+
+function applyState(s){
+  if(!GS) return;
+  const m=GS.monster;
+  [m.x,m.y,m.facing,,,]=s.monster;
+  m.invisible=s.monster[3]===1;
+  m.attackCooldown=s.monster[4];
+  m.abilityCooldown=s.monster[5];
+  m.speed=s.monster[6];
+  m.perkTimer=s.monster[7]||0;
+
+  s.survivors.forEach((sv,i)=>{
+    if(!GS.survivors[i]) return;
+    const p=GS.survivors[i];
+    [p.x,p.y,p.facing,,,,,]=sv;
+    p.injured=sv[3]===1;
+    p.hookedOn=sv[4];
+    p.dead=sv[5]===1;
+    p.escaped=sv[6]===1;
+    p.inLocker=sv[7]===1;
+    p.hookProgress=sv[8];
+    p._frozen=sv[9]||0;
+    p._invincTime=sv[10]||0;
+  });
+
+  s.gens.forEach((g,i)=>{
+    if(!GS.gens[i]) return;
+    GS.gens[i].progress=g[0];
+    GS.gens[i].done=g[1]===1;
+    GS.gens[i].regressing=g[2]===1;
+  });
+  s.gates.forEach((g,i)=>{
+    if(!GS.gates[i]) return;
+    GS.gates[i].progress=g[0];
+    GS.gates[i].open=g[1]===1;
+    GS.gates[i].powered=g[2]===1;
+  });
+  s.lockers.forEach((l,i)=>{ if(GS.lockers[i]) GS.lockers[i].occupied=l[0]===1; });
+  GS.phase=s.phase;
+  GS.particles=s.particles.map(p=>({x:p[0],y:p[1],vx:p[2],vy:p[3],life:p[4],color:p[5]}));
+  GS.scratchMarks=s.scratchMarks.map(m=>({x:m[0],y:m[1],age:m[2]}));
+  GS.decoys=(s.decoys||[]).map(d=>({x:d[0],y:d[1],life:d[2],vx:d[3]||0,vy:d[4]||0}));
+  GS._jeffreyJumpscare=s.jeffreyFlash||0;
+  GS.gensDone=s.gensDone;
+  GS.survivorsEscaped=s.survivorsEscaped;
+  GS.survivorsDead=s.survivorsDead;
+
+  updateGenPips();
+  updateSurvivorHUD();
+}
+
+// ═══════════════════════════════════════════════════
+//  RENDERER
+// ═══════════════════════════════════════════════════
+function renderLoop(){
+  window._activeRafId=requestAnimationFrame(renderLoop);
+  if(!GS||!canvas) return;
+  render(GS);
+}
+
+// Camera: follows the local player
+function getCamera(){
+  let cx, cy;
+  if(isMonster){
+    cx=GS.monster.x; cy=GS.monster.y;
+  } else {
+    const me=GS.survivors[myIndex-1];
+    if(!me||me.dead||me.escaped){ cx=VW/2; cy=VH/2; }
+    else { cx=me.x; cy=me.y; }
+  }
+  const hw=canvas.width/2, hh=canvas.height/2;
+  return {
+    x: Math.max(0, Math.min(VW-canvas.width, cx-hw)),
+    y: Math.max(0, Math.min(VH-canvas.height, cy-hh)),
+  };
+}
+
+function render(gs){
+  const cam=getCamera();
+  const W=canvas.width, H=canvas.height;
+  const map=gs.map;
+  ctx.fillStyle=map.bg;
+  ctx.fillRect(0,0,W,H);
+
+  // ── Floor tiles ──
+  ctx.fillStyle=map.floorColor;
+  for(let tx=Math.floor(cam.x/TILE);tx<(cam.x+W)/TILE+1;tx++){
+    for(let ty=Math.floor(cam.y/TILE);ty<(cam.y+H)/TILE+1;ty++){
+      if(tx<0||ty<0||tx>=VW/TILE||ty>=VH/TILE) continue;
+      // Checkerboard subtle effect
+      const shade=(tx+ty)%2===0?1:0.92;
+      ctx.globalAlpha=shade;
+      ctx.fillRect(tx*TILE-cam.x, ty*TILE-cam.y, TILE-1, TILE-1);
+    }
+  }
+  ctx.globalAlpha=1;
+
+  // ── Accent splatters (blood/dirt) ──
+  // pre-calculated from map name seed
+  const seed=map.name.charCodeAt(0);
+  ctx.fillStyle=map.accentColor;
+  for(let i=0;i<25;i++){
+    const ax=((seed*i*137+41)%VW);
+    const ay=((seed*i*91+17)%VH);
+    if(!collidesWall(map.walls,ax,ay,0)){
+      ctx.beginPath();
+      ctx.ellipse(ax-cam.x,ay-cam.y,(i%5+3),(i%3+2),i*0.5,0,6.2832);
+      ctx.fill();
+    }
+  }
+
+  // ── Scratch marks (bloodhound perk) ──
+  if(isMonster && gs.monsterPerk===0){
+    gs.scratchMarks.forEach(m=>{
+      ctx.globalAlpha=Math.max(0,1-m.age/8000)*0.6;
+      ctx.strokeStyle='#c0392b';
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(m.x-cam.x-8,m.y-cam.y);
+      ctx.lineTo(m.x-cam.x+8,m.y-cam.y);
+      ctx.moveTo(m.x-cam.x-4,m.y-cam.y-6);
+      ctx.lineTo(m.x-cam.x+4,m.y-cam.y+6);
+      ctx.stroke();
+    });
+    ctx.globalAlpha=1;
+  }
+
+  // ── Generators ──
+  gs.gens.forEach(g=>{
+    const sx=g.x-cam.x, sy=g.y-cam.y;
+    if(sx<-80||sx>W+80||sy<-80||sy>H+80) return;
+    // Base
+    ctx.fillStyle=g.done?'#4a3a10':'#1a1a1a';
+    ctx.strokeStyle=g.done?'#e67e22':'#333';
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.roundRect(sx-22,sy-22,44,44,6);
+    ctx.fill(); ctx.stroke();
+    // Icon
+    ctx.fillStyle=g.done?'#e67e22':'#555';
+    ctx.font='20px sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText(g.done?'⚡':'⚙',sx,sy+7);
+    // Progress arc
+    if(!g.done&&g.progress>0){
+      const pct=g.progress/GEN_REPAIR_TIME;
+      ctx.strokeStyle='#e67e22';
+      ctx.lineWidth=3;
+      ctx.beginPath();
+      ctx.arc(sx,sy,28,-Math.PI/2,-Math.PI/2+pct*6.2832);
+      ctx.stroke();
+    }
+    // Regression flicker
+    if(g.regressing && gs.ticks%20<10){
+      ctx.strokeStyle='#9b59b6';
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.arc(sx,sy,30,0,6.2832);
+      ctx.stroke();
+    }
+  });
+
+  // ── Hooks ──
+  gs.hooks.forEach(h=>{
+    const sx=h.x-cam.x, sy=h.y-cam.y;
+    if(sx<-60||sx>W+60||sy<-60||sy>H+60) return;
+    ctx.strokeStyle=h.occupied?'#8b0000':'#2a1a1a';
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(sx,sy+20); ctx.lineTo(sx,sy-20);
+    ctx.moveTo(sx,sy-20); ctx.lineTo(sx+10,sy-30);
+    ctx.stroke();
+  });
+
+  // ── Lockers ──
+  gs.lockers.forEach(l=>{
+    const sx=l.x-cam.x, sy=l.y-cam.y;
+    if(sx<-60||sx>W+60||sy<-60||sy>H+60) return;
+    ctx.fillStyle=l.occupied?'#0a2a1a':'#0a0a14';
+    ctx.strokeStyle=l.occupied?'#1abc9c':'#1a1a2a';
+    ctx.lineWidth=2;
+    ctx.fillRect(sx-16,sy-24,32,48);
+    ctx.strokeRect(sx-16,sy-24,32,48);
+    ctx.strokeStyle='#1a1a2a';
+    ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(sx,sy-24); ctx.lineTo(sx,sy+24); ctx.stroke();
+    // Door handle
+    ctx.fillStyle=l.occupied?'#1abc9c':'#333';
+    ctx.fillRect(sx-2,sy-4,4,8);
+  });
+
+  // ── Exit gates ──
+  gs.gates.forEach(g=>{
+    const sx=g.x-cam.x, sy=g.y-cam.y;
+    if(sx<-100||sx>W+100||sy<-100||sy>H+100) return;
+    ctx.fillStyle=g.open?'#0d2a0d':g.powered?'#1a1a08':'#050508';
+    ctx.strokeStyle=g.open?'#1abc9c':g.powered?'#e67e22':'#1a1a2a';
+    ctx.lineWidth=3;
+    ctx.fillRect(sx-4,sy,g.w,g.h);
+    ctx.strokeRect(sx-4,sy,g.w,g.h);
+    if(g.powered&&!g.open){
+      ctx.fillStyle='#e67e22';
+      ctx.font='14px sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText('EXIT',sx+g.w/2,sy+g.h/2+5);
+      // progress bar
+      if(g.progress>0){
+        ctx.fillStyle='#1abc9c';
+        ctx.fillRect(sx-4,sy+g.h+4,g.w*(g.progress/GATE_OPEN_TIME),6);
+      }
+    }
+    if(g.open){
+      // Glow
+      ctx.fillStyle='rgba(26,188,156,0.15)';
+      ctx.fillRect(sx-20,sy-10,g.w+40,g.h+20);
+      ctx.fillStyle='#1abc9c';
+      ctx.font='14px sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText('OPEN',sx+g.w/2,sy+g.h/2+5);
+    }
+  });
+
+  // ── Walls ──
+  gs.map.walls.forEach(w=>{
+    const sx=w.x-cam.x, sy=w.y-cam.y;
+    if(sx>W+TILE||sy>H+TILE||sx+w.w<0||sy+w.h<0) return;
+    ctx.fillStyle=map.wallColor;
+    ctx.fillRect(sx,sy,w.w,w.h);
+    // Top edge highlight
+    ctx.fillStyle='rgba(255,255,255,0.04)';
+    ctx.fillRect(sx,sy,w.w,3);
+    // Bottom shadow
+    ctx.fillStyle='rgba(0,0,0,0.3)';
+    ctx.fillRect(sx,sy+w.h-3,w.w,3);
+  });
+
+  // ── Survivors ──
+  gs.survivors.forEach((s,i)=>{
+    if(s.dead||s.escaped) return;
+    if(s.inLocker&&!isMonster) return; // hidden
+    const sx=s.x-cam.x, sy=s.y-cam.y;
+    if(sx<-60||sx>W+60||sy<-60||sy>H+60) return;
+
+    const isMe=!isMonster&&(myIndex-1===i);
+    const isHooked=s.hookedOn>=0;
+
+    ctx.save();
+
+    if(isHooked){
+      // Draw hooked survivor
+      ctx.globalAlpha=0.9;
+      ctx.strokeStyle='#8b0000'; ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(sx,sy-20); ctx.lineTo(sx-12,sy+8); ctx.lineTo(sx+12,sy+8); ctx.closePath();
+      ctx.fillStyle='#2a0808'; ctx.fill(); ctx.stroke();
+      // Struggle bar
+      const pct=s.hookProgress/HOOK_STRUGGLE_TIME;
+      ctx.fillStyle='#3a0a0a'; ctx.fillRect(sx-22,sy+14,44,6);
+      ctx.fillStyle=pct>0.6?'#c0392b':'#e67e22'; ctx.fillRect(sx-22,sy+14,44*(1-pct),6);
+    } else {
+      drawSurvivor(ctx, sx, sy, i, s.injured, isMe, s.inLocker, s.facing);
+    }
+
+    // Name tag
+    if(isMe||isHooked){
+      ctx.fillStyle=isMe?'#7ec88e':'#f08080';
+      ctx.font='bold 11px VT323';
+      ctx.textAlign='center';
+      ctx.fillText(isMe?'YOU':'SURVIVOR '+(i+1),sx,sy-(isHooked?38:32));
+    }
+
+    ctx.restore();
+  });
+
+  // ── Monster ──
+  const m=gs.monster;
+  const msx=m.x-cam.x, msy=m.y-cam.y;
+  const mtype=MONSTERS[m.monsterType];
+
+  // Terror radius ring (only for survivors)
+  if(!isMonster){
+    const me=GS.survivors[myIndex-1];
+    if(me&&!me.dead&&!me.escaped&&!me.inLocker){
+      const dist=Math.hypot(m.x-me.x,m.y-me.y);
+      const inTerror=!m.invisible&&dist<TERROR_RADIUS;
+      updateTerrorHUD(inTerror, dist/TERROR_RADIUS);
+    }
+  }
+
+  // Draw monster (visible to monster always, visible to survivors if not invisible)
+  if(isMonster||!m.invisible){
+    ctx.save();
+    ctx.globalAlpha=m.invisible?0.3:1;
+    drawMonster(ctx,msx,msy,mtype,m.facing,m._lunging);
+    if(isMonster&&m.invisible){
+      ctx.fillStyle='#9b59b6';
+      ctx.font='12px VT323';
+      ctx.textAlign='center';
+      ctx.fillText('INVISIBLE',msx,msy-42);
+    }
+    // Cooldown indicators for monster player
+    if(isMonster){
+      const mtype2=MONSTERS[m.monsterType];
+      let labelText;
+      if(mtype2.id==='wraith' && m.invisible){
+        const remaining=Math.ceil(m.perkTimer/1000);
+        labelText=`👻 INVISIBLE ${remaining}s`;
+      } else {
+        const acd=Math.ceil(m.abilityCooldown/1000);
+        labelText=acd>0?`[Q] ${acd}s`:'[Q] READY';
+      }
+      ctx.fillStyle=(m.abilityCooldown>0&&!(mtype2.id==='wraith'&&m.invisible))?'#555':'#9b59b6';
+      ctx.font='11px VT323';
+      ctx.textAlign='center';
+      ctx.fillText(labelText,msx,msy+46);
+    }
+    ctx.restore();
+  }
+
+  // ── Decoys (White Rabbit) ──
+  if(gs.decoys&&gs.decoys.length){
+    const dtype=MONSTERS[gs.monster.monsterType];
+    gs.decoys.forEach(d=>{
+      const dsx=d.x-cam.x, dsy=d.y-cam.y;
+      if(dsx<-60||dsx>W+60||dsy<-60||dsy>H+60) return;
+      ctx.save();
+      ctx.globalAlpha=0.45+Math.sin(Date.now()/200)*0.15;
+      drawMonster(ctx,dsx,dsy,dtype,0,false);
+      ctx.restore();
+    });
+  }
+
+  // ── Jeffrey jumpscare flash ──
+  if(gs._jeffreyJumpscare>0 && !isMonster){
+    ctx.save();
+    ctx.globalAlpha=Math.min(0.75, gs._jeffreyJumpscare/500);
+    ctx.fillStyle='#f39c12';
+    ctx.fillRect(0,0,W,H);
+    ctx.globalAlpha=1;
+    ctx.fillStyle='#000';
+    ctx.font=`bold 52px Creepster`;
+    ctx.textAlign='center';
+    ctx.fillText('🎸  BOO!  🎸', W/2, H/2);
+    ctx.restore();
+  }
+
+  // ── Particles ──
+  gs.particles.forEach(p=>{
+    const sx=p.x-cam.x, sy=p.y-cam.y;
+    ctx.globalAlpha=Math.max(0,p.life/600);
+    ctx.fillStyle=p.color;
+    ctx.fillRect(sx-2,sy-2,4,4);
+  });
+  ctx.globalAlpha=1;
+
+  // ── Fog of war for survivors (slight darkness beyond view range) ──
+  if(!isMonster){
+    const me=GS.survivors[myIndex-1];
+    const fsx=me?(me.x-cam.x):W/2;
+    const fsy=me?(me.y-cam.y):H/2;
+    const grad=ctx.createRadialGradient(fsx,fsy,150,fsx,fsy,500);
+    grad.addColorStop(0,'rgba(0,0,0,0)');
+    grad.addColorStop(1,'rgba(0,0,0,0.7)');
+    ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+  }
+
+  updateActionBar();
+  updatePhaseLabel();
+  updateSurvivorHUD();
+}
+
+// ── Draw survivor ─────────────────────────────────────
+const SURV_COLORS=['#3498db','#2ecc71','#e67e22','#9b59b6','#1abc9c','#e74c3c','#f39c12','#ecf0f1'];
+
+function drawSurvivor(ctx,sx,sy,idx,injured,isMe,inLocker,facing){
+  const color=SURV_COLORS[idx%SURV_COLORS.length];
+  const r=14;
+  ctx.save();
+  if(inLocker){ ctx.globalAlpha=0.3; } // barely visible in locker
+  // Body
+  ctx.fillStyle=injured?'#8b3a3a':color;
+  ctx.strokeStyle=isMe?'#fff':'rgba(255,255,255,0.3)';
+  ctx.lineWidth=isMe?2:1;
+  ctx.beginPath();
+  ctx.arc(sx,sy,r,0,6.2832);
+  ctx.fill(); ctx.stroke();
+  // Torch / flashlight cone — rotated to face movement direction
+  if(isMe&&!inLocker){
+    ctx.save();
+    ctx.translate(sx,sy);
+    ctx.rotate(facing||0);
+    ctx.globalAlpha=0.12;
+    ctx.fillStyle='#fffde0';
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,90,-0.5,0.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    ctx.globalAlpha=1;
+  }
+  // Injury indicator
+  if(injured){
+    ctx.fillStyle='#e74c3c';
+    ctx.font='14px sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('🩸',sx,sy+5);
+  }
+  ctx.restore();
+}
+
+// ── Draw monster ──────────────────────────────────────
+function drawMonster(ctx,sx,sy,mtype,facing,lunging){
+  const r=22;
+  ctx.save();
+  ctx.translate(sx,sy);
+  ctx.rotate(facing);
+  // Body
+  ctx.fillStyle=mtype.color;
+  ctx.shadowBlur=lunging?30:12;
+  ctx.shadowColor=mtype.color;
+  ctx.beginPath();
+  ctx.ellipse(0,0,r,r*1.1,0,0,6.2832);
+  ctx.fill();
+  ctx.shadowBlur=0;
+  // Spiky outline
+  ctx.strokeStyle='rgba(255,255,255,0.2)';
+  ctx.lineWidth=2;
+  ctx.stroke();
+  // Eyes
+  ctx.fillStyle='#ff0000';
+  ctx.beginPath(); ctx.arc(8,-5,5,0,6.2832); ctx.fill();
+  ctx.fillStyle='#000';
+  ctx.beginPath(); ctx.arc(9,-5,2.5,0,6.2832); ctx.fill();
+  // Monster emoji / icon
+  ctx.fillStyle='#fff';
+  ctx.font='16px sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText(mtype.emoji,0,6);
+  ctx.restore();
+}
+
+// ── HUD helpers ───────────────────────────────────────
+function buildHUD(){
+  // Generator pips
+  updateGenPips();
+  // Survivor list
+  updateSurvivorHUD();
+}
+
+function updateGenPips(){
+  if(!GS) return;
+  const pips=document.getElementById('gen-pips');
+  pips.innerHTML='';
+  GS.gens.forEach(g=>{
+    const d=document.createElement('div');
+    d.className='gen-pip'+(g.done?' done':'');
+    pips.appendChild(d);
+  });
+}
+
+let _lastHudUpdate=0;
+function updateSurvivorHUD(){
+  if(!GS) return;
+  const now=performance.now();
+  if(now-_lastHudUpdate<150) return; // max ~7 updates/sec
+  _lastHudUpdate=now;
+  const ul=document.getElementById('survivor-hud-list');
+  ul.innerHTML='';
+  GS.survivors.forEach((s,i)=>{
+    const li=document.createElement('li');
+    const color=SURV_COLORS[i%SURV_COLORS.length];
+    li.innerHTML=`
+      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${s.dead?'#333':s.escaped?'#1abc9c':color}"></span>
+      <span style="color:${s.dead?'#444':s.escaped?'#1abc9c':'inherit'}">${isMonster||(!isMonster&&myIndex-1===i)?'S'+(i+1)+(!isMonster?' (YOU)':''):('S'+(i+1))}</span>
+      ${s.hookedOn>=0?'<span class="status-label status-hooked">HOOKED</span>':''}
+      ${s.dead?'<span class="status-label status-dead">DEAD</span>':''}
+      ${s.escaped?'<span class="status-label" style="background:#0d2a1a;color:#1abc9c">OUT</span>':''}
+    `;
+    ul.appendChild(li);
+  });
+}
+
+let terrorHudActive=false, _lastTerrorUpdate=0;
+function updateTerrorHUD(inTerror, proximity){
+  const el=document.getElementById('terror-hud');
+  const bar=document.getElementById('heartbeat-bar');
+  if(inTerror!==terrorHudActive){
+    terrorHudActive=inTerror;
+    el.classList.toggle('show',inTerror);
+  }
+  if(inTerror){
+    const now=Date.now();
+    if(now-_lastTerrorUpdate<80) return; // ~12fps is plenty for heartbeat animation
+    _lastTerrorUpdate=now;
+    bar.innerHTML='';
+    const beats=10;
+    const intensity=Math.max(0,1-proximity);
+    for(let i=0;i<beats;i++){
+      const pip=document.createElement('div');
+      pip.className='hb-pip';
+      const h=4+Math.sin(now/200+i)*intensity*12;
+      pip.style.height=Math.max(4,h)+'px';
+      pip.style.opacity=0.4+intensity*0.6;
+      bar.appendChild(pip);
+    }
+  }
+}
+
+let _lastActionTarget=null;
+function showActionBar(label, pct){
+  _lastActionTarget={label,pct};
+}
+
+function updateActionBar(){
+  if(!_lastActionTarget){ document.getElementById('action-bar-wrap').classList.remove('show'); return; }
+  document.getElementById('action-bar-wrap').classList.add('show');
+  document.getElementById('action-label').textContent=_lastActionTarget.label;
+  document.getElementById('action-bar-fill').style.width=(Math.min(1,_lastActionTarget.pct)*100)+'%';
+  _lastActionTarget=null;
+}
+
+function updatePhaseLabel(){
+  if(!GS) return;
+  const el=document.getElementById('phase-label');
+  if(GS.phase==='endgame'){
+    el.textContent='⚠ EXIT GATES POWERED';
+    el.style.color='#e67e22';
+  } else if(GS.phase==='end'){
+    el.textContent='';
+  } else {
+    el.textContent='';
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  POLYFILLS
+// ═══════════════════════════════════════════════════
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+    this.beginPath();
+    this.moveTo(x+r,y); this.lineTo(x+w-r,y);
+    this.quadraticCurveTo(x+w,y,x+w,y+r);
+    this.lineTo(x+w,y+h-r);
+    this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    this.lineTo(x+r,y+h);
+    this.quadraticCurveTo(x,y+h,x,y+h-r);
+    this.lineTo(x,y+r);
+    this.quadraticCurveTo(x,y,x+r,y);
+    this.closePath();
+  };
+}
+</script>
+</body>
+</html>
