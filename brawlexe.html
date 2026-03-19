@@ -476,33 +476,60 @@ function gameLoop(ts){
   lastTime = ts;
   if(!GS || !GS.running) return;
 
+  // Host: send own input via throttle (simulation runs in hostSimInterval)
   if(isHost){
-    const inp1 = getInput(P1_KEYS, GS.swapControls);
-    const inp2 = GS.swapControls
-      ? { left: remoteKeys.right, right: remoteKeys.left, up: remoteKeys.up, down: remoteKeys.down, attack: remoteKeys.attack, special: remoteKeys.special }
-      : remoteKeys;
-
-    // Throttle input + state sends to ~20/sec
     if(ts - lastInputSend > 50){
       lastInputSend = ts;
       sendMsg({type:'input', ...getInput(P1_KEYS, false)});
     }
-    simulate(GS, inp1, inp2, dt);
-
-    if(ts - lastStateSync > 50){
-      lastStateSync = ts;
-      sendMsg({type:'state', state: serializeState(GS)});
-    }
-  } else {
-    // Throttle guest input to 20/sec
-    if(ts - lastInputSend > 50){
-      lastInputSend = ts;
-      const myInp = getInput(P2_KEYS, false);
-      sendMsg({type:'input', left:myInp.left, right:myInp.right, up:myInp.up, down:myInp.down, attack:myInp.attack, special:myInp.special});
-    }
   }
+  // Guest: input sent by guestInputInterval
 
   render(GS, ctx);
+}
+
+// ── Host simulation loop — setInterval keeps running in background tabs ──
+let hostSimInterval = null;
+
+function startHostSimLoop(){
+  if(hostSimInterval) clearInterval(hostSimInterval);
+  let lastSimTime = performance.now();
+  hostSimInterval = setInterval(()=>{
+    if(!GS || !GS.running) return;
+    const now = performance.now();
+    const dt = Math.min(now - lastSimTime, 50);
+    lastSimTime = now;
+
+    const inp1 = getInput(P1_KEYS, GS.swapControls);
+    const inp2 = GS.swapControls
+      ? { left:remoteKeys.right, right:remoteKeys.left, up:remoteKeys.up, down:remoteKeys.down, attack:remoteKeys.attack, special:remoteKeys.special }
+      : remoteKeys;
+
+    simulate(GS, inp1, inp2, dt);
+
+    // State sync to guest
+    if(conn && conn.open){
+      sendMsg({type:'state', state: serializeState(GS)});
+    }
+  }, 33); // ~30hz simulation tick
+}
+
+function stopHostSimLoop(){
+  if(hostSimInterval){ clearInterval(hostSimInterval); hostSimInterval = null; }
+}
+let guestInputInterval = null;
+
+function startGuestInputLoop(){
+  if(guestInputInterval) clearInterval(guestInputInterval);
+  guestInputInterval = setInterval(()=>{
+    if(!GS || !conn || !conn.open) return;
+    const myInp = getInput(P2_KEYS, false);
+    sendMsg({type:'input', left:myInp.left, right:myInp.right, up:myInp.up, down:myInp.down, attack:myInp.attack, special:myInp.special});
+  }, 50); // 20/sec, not throttled by tab visibility
+}
+
+function stopGuestInputLoop(){
+  if(guestInputInterval){ clearInterval(guestInputInterval); guestInputInterval = null; }
 }
 
 function applyRemoteInput(msg){
@@ -1221,10 +1248,10 @@ function nextRound(){
   while(roundModeIndex===lastMode && ROUND_MODES.length>1);
   stageIndex = (stageIndex+1) % STAGES.length;
 
-  bgCache = null; bgCacheStage = null; // new stage = invalidate bg cache
-
+  bgCache = null; bgCacheStage = null;
   GS = initGameState(roundModeIndex, stageIndex);
   GS.running=true;
+  if(isHost) startHostSimLoop();
 
   sendMsg({type:'nextRound', modeIndex:roundModeIndex, stageIndex});
   showToast('ROUND ' + (currentRound+1) + ' · ' + ROUND_MODES[roundModeIndex].name);
@@ -1237,9 +1264,9 @@ function receiveNextRound(msg){
   stageIndex = msg.stageIndex;
 
   bgCache = null; bgCacheStage = null;
-
   GS = initGameState(roundModeIndex, stageIndex);
   GS.running=true;
+  if(!isHost) startGuestInputLoop();
   showToast('ROUND ' + (currentRound+1) + ' · ' + ROUND_MODES[roundModeIndex].name);
 }
 
@@ -1286,6 +1313,10 @@ function beginGame(modeIndex, stgIndex){
 
   lastTime = performance.now();
   animId = requestAnimationFrame(gameLoop);
+
+  // Simulation and input loops run via setInterval — not throttled by tab visibility
+  if(isHost) startHostSimLoop();
+  else startGuestInputLoop();
 
   showToast('ROUND 1 · ' + ROUND_MODES[modeIndex].name);
   document.getElementById('hud-p1-name').textContent = isHost ? 'P1 (YOU)' : 'P1';
