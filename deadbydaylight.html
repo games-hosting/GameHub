@@ -33,16 +33,22 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 /* ── LOBBY ── */
 #screen-lobby{
   background:radial-gradient(ellipse at 50% 30%, #1a0814 0%, #05030a 70%);
+  overflow-y:auto;
+  justify-content:flex-start;
+  padding:2.5rem 1rem 2rem;
+  gap:1rem;
 }
+
 .game-title{
   font-family:var(--font-horror);
-  font-size:clamp(3.5rem,11vw,7rem);
+  font-size:clamp(3rem,10vw,6rem);
   color:var(--red-glow);
   letter-spacing:6px;
   text-shadow:0 0 30px #e74c3c88, 0 0 60px #c0392b44;
   line-height:1;
+  flex-shrink:0;
 }
-.game-subtitle{font-family:var(--font-mono);font-size:1.1rem;color:var(--muted);letter-spacing:4px}
+.game-subtitle{font-family:var(--font-mono);font-size:1.1rem;color:var(--muted);letter-spacing:4px;flex-shrink:0}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.5rem 2rem;width:min(440px,92vw)}
 .card h2{font-family:var(--font-horror);font-size:1.6rem;color:var(--amber);margin-bottom:1rem}
 .btn{display:block;width:100%;padding:.7rem 1.2rem;border:none;border-radius:6px;font-family:var(--font-mono);font-size:1.1rem;cursor:pointer;letter-spacing:2px;transition:all .15s}
@@ -62,7 +68,7 @@ input[type=text]:focus{border-color:var(--amber)}
 .lobby-list li.survivor{border-color:var(--teal);color:#7ec88e}
 
 /* monster picker */
-.monster-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin:.5rem 0}
+.monster-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin:.5rem 0;max-height:260px;overflow-y:auto}
 .monster-card{border:1px solid var(--border);border-radius:6px;padding:.7rem .5rem;text-align:center;cursor:pointer;transition:all .15s;background:#0a0510}
 .monster-card:hover{border-color:var(--red);background:#150a15}
 .monster-card.selected{border-color:var(--red-glow);background:#1f0f1f;box-shadow:0 0 12px #e74c3c44}
@@ -71,7 +77,7 @@ input[type=text]:focus{border-color:var(--amber)}
 .monster-card .desc{font-size:.72rem;color:var(--muted);line-height:1.3}
 
 /* perk picker */
-.perk-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin:.4rem 0}
+.perk-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin:.4rem 0;max-height:200px;overflow-y:auto}
 .perk-card{border:1px solid var(--border);border-radius:6px;padding:.5rem .6rem;cursor:pointer;transition:all .15s;background:#0a0510}
 .perk-card:hover{border-color:var(--amber)}
 .perk-card.selected{border-color:var(--amber);background:#1a1505}
@@ -147,7 +153,7 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
   </div>
 
   <!-- How to Play modal -->
-  <div id="lobby-htp" class="card hidden" style="max-height:80vh;overflow-y:auto;width:min(520px,94vw)">
+  <div id="lobby-htp" class="card hidden" style="max-height:75vh;overflow-y:auto;width:min(520px,94vw)">
     <h2>📖 How to Play</h2>
 
     <div style="font-size:.88rem;line-height:1.7;color:var(--text)">
@@ -371,7 +377,6 @@ const SURVIVOR_PERKS = [
 ];
 
 // ── Maps ─────────────────────────────────────────────
-// Each map: walls array [{x,y,w,h}], gen positions, hook positions, gate positions, locker positions
 const MAPS = [
   {
     name:'ASYLUM',
@@ -379,14 +384,11 @@ const MAPS = [
     floorColor:'#111118',
     wallColor:'#1a1a2a',
     accentColor:'#2a1520',
-    // Rooms defined as wall rectangles (world coords)
     walls:[
-      // Outer boundary
       {x:0,   y:0,    w:VW,  h:TILE},
       {x:0,   y:VH-TILE, w:VW, h:TILE},
       {x:0,   y:0,    w:TILE, h:VH},
       {x:VW-TILE, y:0, w:TILE, h:VH},
-      // Internal corridors/rooms
       {x:200, y:200,  w:400, h:TILE},
       {x:200, y:200,  w:TILE, h:300},
       {x:200, y:500,  w:400, h:TILE},
@@ -452,7 +454,6 @@ const MAPS = [
       {x:0,   y:VH-TILE,w:VW,h:TILE},
       {x:0,   y:0,   w:TILE,h:VH},
       {x:VW-TILE,y:0,w:TILE,h:VH},
-      // Trees / dense forest patches (wide pillars)
       {x:200, y:180,  w:80,  h:80},
       {x:500, y:300,  w:80,  h:80},
       {x:350, y:550,  w:80,  h:80},
@@ -479,7 +480,6 @@ const MAPS = [
       {x:450, y:1600, w:80,  h:80},
       {x:1100,y:1600, w:80,  h:80},
       {x:1500,y:1600, w:80,  h:80},
-      // Log cabin walls
       {x:750, y:500,  w:200, h:TILE},
       {x:750, y:500,  w:TILE,h:200},
       {x:750, y:700,  w:200, h:TILE},
@@ -522,7 +522,6 @@ const MAPS = [
       {x:0,   y:VH-TILE,w:VW,h:TILE},
       {x:0,   y:0,   w:TILE,h:VH},
       {x:VW-TILE,y:0,w:TILE,h:VH},
-      // Maze-like basement corridors
       {x:TILE, y:200,  w:600, h:TILE},
       {x:TILE, y:200,  w:TILE, h:400},
       {x:TILE, y:600,  w:400, h:TILE},
@@ -585,9 +584,9 @@ const MAPS = [
 //  NETWORKING
 // ═══════════════════════════════════════════════════
 let peer=null, conn=null, conns=[], isMonster=false;
-let myPeerId='', myIndex=-1; // myIndex: 0=monster, 1..N=survivor
+let myPeerId='', myIndex=-1;
 let selectedMonsterPref=0, selectedPerk=0;
-let connectedPlayers=[]; // [{peerId, monsterPref, perkIdx, name}] — host only
+let connectedPlayers=[];
 
 function genCode(){ return Math.random().toString(36).substr(2,6).toUpperCase(); }
 
@@ -611,7 +610,6 @@ function buildPickers(){
   ['host-perk-grid','join-perk-grid'].forEach(gridId=>{
     const pg=document.getElementById(gridId);
     if(!pg) return;
-    // Show survivor perks (monster perk is fixed based on their monster preference index)
     SURVIVOR_PERKS.forEach((p,i)=>{
       const d=document.createElement('div');
       d.className='perk-card'+(i===0?' selected':'');
@@ -744,28 +742,23 @@ function hostStartGame(){
     alert('Need at least 1 other player to start!');
     return;
   }
-  // Pick random monster from all players — try to honour preferences
   const playerCount=connectedPlayers.length;
   const monsterSlot=Math.floor(Math.random()*playerCount);
   const monsterPlayer=connectedPlayers[monsterSlot];
   const monsterTypeIdx=monsterPlayer.monsterPref;
-  // Monster perk is their monsterPref index mapped into MONSTER_PERKS
   const monsterPerk=monsterPlayer.monsterPref % MONSTER_PERKS.length;
-  // Everyone else is a survivor with their chosen survivor perk
   const survPerks=connectedPlayers
     .filter((_,i)=>i!==monsterSlot)
     .map(p=>p.perkIdx % SURVIVOR_PERKS.length);
 
   const mapIdx=Math.floor(Math.random()*MAPS.length);
 
-  // Send personalised startGame to each connection so they know their own role
   conns.forEach((c,ci)=>{
-    const connSlot=ci+1; // host is slot 0, conn[0] is slot 1, etc.
+    const connSlot=ci+1;
     c.send({type:'startGame', mapIdx, monsterType:monsterTypeIdx, monsterPerk, survPerks,
             monsterSlot, mySlot:connSlot});
   });
 
-  // Host starts game knowing their own slot
   myIndex=0;
   isMonster=(monsterSlot===0);
   initGame(mapIdx, monsterTypeIdx, monsterPerk, survPerks, true, monsterSlot, 0);
@@ -774,18 +767,15 @@ function hostStartGame(){
 function receiveGameStart(msg){
   isMonster=(msg.monsterSlot===msg.mySlot);
   if(isMonster){
-    myIndex=0; // monster uses index 0
+    myIndex=0;
   } else {
-    // Survivor index in gs.survivors array = slot minus 1 if slot < monsterSlot,
-    // otherwise slot minus 1 (monster takes no survivor slot)
-    // Simpler: survivors are all connectedPlayers except monsterSlot, in original order
     const survSlots=[];
-    const totalPlayers=msg.survPerks.length+1; // survivors + 1 monster
+    const totalPlayers=msg.survPerks.length+1;
     for(let i=0;i<totalPlayers;i++){
       if(i!==msg.monsterSlot) survSlots.push(i);
     }
     const survIdx=survSlots.indexOf(msg.mySlot);
-    myIndex=survIdx+1; // 1-based
+    myIndex=survIdx+1;
   }
   initGame(msg.mapIdx, msg.monsterType, msg.monsterPerk, msg.survPerks, false, msg.monsterSlot, msg.mySlot);
 }
@@ -814,42 +804,33 @@ function initGame(mapIdx, monsterTypeIdx, monsterPerk, survPerks, hosting, monst
   const map=MAPS[mapIdx];
   const mtype=MONSTERS[monsterTypeIdx];
 
-  // Monster entity
   const monster=makeEntity(map.monsterSpawn.x, map.monsterSpawn.y, 'monster', 'monster', monsterPerk);
   monster.monsterType=monsterTypeIdx;
   monster.speed=mtype.speed;
   monster.abilityCooldown=0;
   monster.attackCooldown=0;
-  monster.hookCount=0; // for devour hope perk
+  monster.hookCount=0;
 
-  // Survivor entities
   const survivors=[];
   const spawnCount=Math.min(survPerks.length, map.survivorSpawns.length);
   for(let i=0;i<spawnCount;i++){
     const sp=map.survivorSpawns[i];
     const s=makeEntity(sp.x,sp.y,'survivor_'+i,'survivor',survPerks[i]);
     s.survivorIdx=i;
-    // sprint burst — ready at start
     if(survPerks[i]===0) s.sprintReady=true;
     survivors.push(s);
   }
 
-  // Generators
   const gens=map.gens.map((g,i)=>({
     x:g.x, y:g.y, id:i,
-    progress:0, // 0–GEN_REPAIR_TIME ms
+    progress:0,
     done:false,
-    repairers:[], // survivor IDs repairing
+    repairers:[],
     regressing:false,
   }));
 
-  // Hooks
   const hooks=map.hooks.map((h,i)=>({x:h.x,y:h.y,id:i,occupied:false,survivorId:null}));
-
-  // Gates
   const gates=map.gates.map((g,i)=>({...g, id:i, progress:0, open:false, powered:false}));
-
-  // Lockers
   const lockers=map.lockers.map((l,i)=>({x:l.x,y:l.y,id:i,occupied:false,survivorId:null}));
 
   GS={
@@ -859,7 +840,7 @@ function initGame(mapIdx, monsterTypeIdx, monsterPerk, survPerks, hosting, monst
     gatesOpen:0,
     survivorsEscaped:0,
     survivorsDead:0,
-    phase:'chase', // 'chase' | 'endgame' | 'end'
+    phase:'chase',
     particles:[],
     scratchMarks:[],
     decoys:[],
@@ -867,18 +848,13 @@ function initGame(mapIdx, monsterTypeIdx, monsterPerk, survPerks, hosting, monst
     ticks:0,
   };
 
-  // Clear any previous game loops (handles "play again" without page reload)
   clearInterval(simInterval); clearInterval(syncInterval); clearInterval(myInputInterval);
   simInterval=null; syncInterval=null; myInputInterval=null;
-  // Clear stale input state from previous game
   remoteInputs={};
   Object.keys(keys).forEach(k=>{ keys[k]=false; });
-  // Remove old resize handler before GS is overwritten (must save reference before new GS)
   if(window._activeResizeHandler){ window.removeEventListener('resize', window._activeResizeHandler); }
-  // Cancel stacked render loops
   if(window._activeRafId) cancelAnimationFrame(window._activeRafId);
 
-  // Switch to game screen
   document.getElementById('screen-lobby').classList.add('hidden');
   document.getElementById('screen-game').classList.remove('hidden');
 
@@ -893,20 +869,15 @@ function initGame(mapIdx, monsterTypeIdx, monsterPerk, survPerks, hosting, monst
   updateGenPips();
 
   if(hosting){
-    // Host runs simulation
     simInterval=setInterval(()=>hostSimTick(),33);
     syncInterval=setInterval(()=>{
       if(GS) broadcast({type:'state',state:serializeState(GS)});
     },50);
   }
 
-  // Everyone sends input
   myInputInterval=setInterval(()=>sendInput(),50);
-
-  // Start render loop
   window._activeRafId=requestAnimationFrame(renderLoop);
 
-  // Role reveal overlay
   const roleReveal=document.getElementById('role-reveal');
   if(roleReveal){
     roleReveal.textContent=isMonster
@@ -917,15 +888,13 @@ function initGame(mapIdx, monsterTypeIdx, monsterPerk, survPerks, hosting, monst
     setTimeout(()=>roleReveal.classList.remove('show'),3500);
   }
 
-  // Set controls hint
   const hint=isMonster
     ? 'WASD/Arrows: Move  ·  E: Attack / Hook  ·  Q: Ability'
     : 'WASD/Arrows: Move  ·  E: Repair / Unhook / Open Gate / Hide  ·  Shift: Run';
   document.getElementById('controls-hint').textContent=hint;
 }
 
-// ── Remote input state ──────────────────────────────
-let remoteInputs={}; // peerId -> input object
+let remoteInputs={};
 
 function sendInput(){
   const inp=getMyInput();
@@ -980,29 +949,24 @@ function simulate(gs, dt){
   const map=gs.map;
   gs.ticks++;
 
-  // ── Monster movement ──────────────────────────────
   const minp=isMonster ? getMyInput() : (remoteInputs['monster']||EMPTY_INP);
   moveEntity(gs, gs.monster, minp, dt);
 
-  // Monster ability
   if(minp.ability && gs.monster.abilityCooldown<=0){
     triggerMonsterAbility(gs);
   }
   if(gs.monster.abilityCooldown>0) gs.monster.abilityCooldown-=dt;
   if(gs.monster.attackCooldown>0)  gs.monster.attackCooldown-=dt;
 
-  // Wraith invisible timer
   if(gs.monster.invisible){
     gs.monster.perkTimer-=dt;
     if(gs.monster.perkTimer<=0){ gs.monster.invisible=false; gs.monster.abilityCooldown=30000; }
   }
 
-  // Monster attack / hook
   if(minp.action && gs.monster.attackCooldown<=0){
     doMonsterAttack(gs);
   }
 
-  // ── Survivors ────────────────────────────────────
   gs.survivors.forEach((s,i)=>{
     if(s.dead||s.escaped) return;
     const sinp=i===myIndex-1&&!isMonster ? getMyInput() : (remoteInputs[i]||EMPTY_INP);
@@ -1010,7 +974,6 @@ function simulate(gs, dt){
     if(s.hookedOn>=0){
       const wiggling=sinp.left||sinp.right||sinp.up||sinp.down||sinp.action;
       s.hookProgress+=dt;
-      // Self-escape: check once per second, not every tick (avoids dt-dependent probability)
       s._wiggleAcc=(s._wiggleAcc||0)+dt;
       if(wiggling && s._wiggleAcc>=1000){
         s._wiggleAcc=0;
@@ -1031,15 +994,12 @@ function simulate(gs, dt){
       return;
     }
 
-    // Tick freeze and locker cooldown unconditionally
     if(s._frozen>0){ s._frozen-=dt; if(s._frozen<0) s._frozen=0; }
     if(s._lockerCooldown>0){ s._lockerCooldown-=dt; if(s._lockerCooldown<0) s._lockerCooldown=0; }
     if(s._invincTime>0){ s._invincTime-=dt; if(s._invincTime<0) s._invincTime=0; }
 
-    // Run modifier
     let spd=SURVIVOR_SPEED;
-    if(s._frozen>0) spd=0; // frozen!
-    // Sprint burst perk
+    if(s._frozen>0) spd=0;
     if(s.perkIdx===0 && s.sprintReady && (sinp.left||sinp.right||sinp.up||sinp.down)){
       s.sprintReady=false; s.sprintTimer=3000;
     }
@@ -1049,22 +1009,18 @@ function simulate(gs, dt){
 
     moveEntityWithSpeed(gs, s, sinp, dt, spd);
 
-    // Scratch marks (bloodhound perk for monster)
     if(sinp.run && gs.monsterPerk===0 && gs.ticks%20===0){
       gs.scratchMarks.push({x:s.x,y:s.y,age:0});
     }
 
-    // Action: repair gen, unhook survivor, open gate, enter locker
     if(sinp.action){
       tryAction(gs,s,dt);
     } else {
-      // Cancel repair progress if not holding
       gs.gens.forEach(g=>{
         g.repairers=g.repairers.filter(rid=>rid!==s.id);
       });
     }
 
-    // Check if caught by monster
     const mdx=gs.monster.x-s.x, mdy=gs.monster.y-s.y;
     const dist=Math.sqrt(mdx*mdx+mdy*mdy);
     if(!gs.monster.invisible && dist<36 && !s.injured && !s.inLocker && s.hookedOn<0 && s._invincTime<=0 && gs.monster.attackCooldown<=0){
@@ -1073,13 +1029,11 @@ function simulate(gs, dt){
     }
   });
 
-  // ── Generator progress ────────────────────────────
   gs.gens.forEach(g=>{
     if(g.done) return;
     const repCount=g.repairers.filter(rid=>gs.survivors.find(s=>s.id===rid&&s.hookedOn<0&&!s.dead&&!s.escaped)).length;
     if(repCount>0){
       let rate=1;
-      // Botany perk speeds up repair — additive +25% per Botany repairer
       g.repairers.forEach(rid=>{
         const s=gs.survivors.find(s=>s.id===rid);
         if(s && s.perkIdx===1) rate+=0.25;
@@ -1087,7 +1041,6 @@ function simulate(gs, dt){
       g.progress+=dt*repCount*rate;
       g.regressing=false;
     } else if(gs.monsterPerk===3 && g.progress>0){
-      // RUIN: regress gen when no one repairing
       g.progress-=dt*0.4;
       g.regressing=true;
     }
@@ -1105,7 +1058,6 @@ function simulate(gs, dt){
     }
   });
 
-  // ── Decoys (White Rabbit) ─────────────────────────
   if(gs.decoys&&gs.decoys.length){
     gs.decoys=gs.decoys.filter(d=>{
       d.life-=dt;
@@ -1115,33 +1067,28 @@ function simulate(gs, dt){
       return d.life>0;
     });
   }
-  // Jeffrey jumpscare flash
   if(gs._jeffreyJumpscare>0) gs._jeffreyJumpscare-=dt;
 
-  // ── Age scratch marks ─────────────────────────────
   gs.scratchMarks=gs.scratchMarks.filter(m=>{
     m.age+=dt;
     return m.age<8000;
   });
 
-  // ── Particles ─────────────────────────────────────
   gs.particles=gs.particles.filter(p=>{
     p.x+=p.vx; p.y+=p.vy; p.life-=dt;
     return p.life>0;
   });
 
-  // ── Win checks ────────────────────────────────────
   const totalSurvivors=gs.survivors.length;
   const neededEscapes=totalSurvivors===1?1:Math.ceil(totalSurvivors/2);
 
   if(gs.survivorsEscaped>=neededEscapes){
-    endGame(gs,false); // survivors win
+    endGame(gs,false);
   } else if(gs.survivorsDead===totalSurvivors){
-    endGame(gs,true); // monster wins
+    endGame(gs,true);
   }
 }
 
-// ── Movement ─────────────────────────────────────────
 function moveEntity(gs,e,inp,dt){
   moveEntityWithSpeed(gs,e,inp,dt,e.speed);
 }
@@ -1170,10 +1117,7 @@ function collidesWall(walls,x,y,r){
   return false;
 }
 
-// ── Actions ───────────────────────────────────────────
 function tryAction(gs,s,dt){
-
-  // Unhook survivor (highest priority)
   for(const other of gs.survivors){
     if(other===s||other.hookedOn<0||other.dead) continue;
     const hk=gs.hooks[other.hookedOn];
@@ -1189,7 +1133,6 @@ function tryAction(gs,s,dt){
   }
   s._unhookTimer=0;
 
-  // Repair generator
   for(const g of gs.gens){
     if(g.done) continue;
     if(Math.abs(s.x-g.x)<55&&Math.abs(s.y-g.y)<55){
@@ -1199,7 +1142,6 @@ function tryAction(gs,s,dt){
     }
   }
 
-  // Open gate
   if(gs.phase==='endgame'){
     for(const g of gs.gates){
       if(g.open) continue;
@@ -1215,8 +1157,7 @@ function tryAction(gs,s,dt){
     }
   }
 
-  // Walk through open gate
-  if(s._frozen>0) return; // frozen — cannot escape
+  if(s._frozen>0) return;
   for(const g of gs.gates){
     if(!g.open) continue;
     const dx=g.dir==='left'?-1:1;
@@ -1228,13 +1169,12 @@ function tryAction(gs,s,dt){
     }
   }
 
-  // Enter locker (lowest priority, requires fresh key press via cooldown)
   if(s._lockerCooldown>0) return;
   for(let i=0;i<gs.lockers.length;i++){
     const l=gs.lockers[i];
     if(!l.occupied&&Math.abs(s.x-l.x)<40&&Math.abs(s.y-l.y)<40){
       enterLocker(gs,s,i);
-      s._lockerCooldown=500; // prevent re-entry for 500ms
+      s._lockerCooldown=500;
       return;
     }
   }
@@ -1269,7 +1209,7 @@ function doMonsterAttack(gs){
         if(s.dsReady && s.perkIdx===3){
           s.dsReady=false;
           m.attackCooldown=ATTACK_COOLDOWN*2;
-          m._lunging=false; // reset lunge on DS stun
+          m._lunging=false;
           spawnParticle(gs,s.x,s.y,'#f39c12',8);
           return;
         }
@@ -1281,15 +1221,13 @@ function doMonsterAttack(gs){
       return;
     }
   }
-  // No target hit — reset lunge flag so it doesn't persist
   m._lunging=false;
 }
 
 function injureSurvivor(gs,s){
-  // NOED perk: one-hit down after all gens complete
   if(gs.monsterPerk===2 && gs.gensDone>=GENS_NEEDED && !s.injured){
     s.injured=true;
-    hookSurvivor(gs,s); // instant hook — skip the injury phase
+    hookSurvivor(gs,s);
     spawnParticle(gs,s.x,s.y,'#c0392b',12);
     return;
   }
@@ -1298,7 +1236,6 @@ function injureSurvivor(gs,s){
 }
 
 function hookSurvivor(gs,s){
-  // Find nearest free hook
   let nearest=null, nd=Infinity;
   gs.hooks.forEach(h=>{
     if(h.occupied) return;
@@ -1306,9 +1243,7 @@ function hookSurvivor(gs,s){
     if(d<nd){ nd=d; nearest=h; }
   });
   if(!nearest){
-    // No free hooks — survivor stays injured but gets a brief window to escape
-    // (prevents permanent stuck-injured state)
-    s._invincTime=3000; // 3s grace period before monster can re-hit
+    s._invincTime=3000;
     spawnParticle(gs,s.x,s.y,'#e67e22',6);
     return;
   }
@@ -1327,14 +1262,12 @@ function unhookSurvivor(gs,s,selfEscape,rescuer){
   s.hookedOn=-1; s.hookProgress=0;
   s.injured=true;
   if(!selfEscape && rescuer){
-    // Place rescued survivor safely — try both sides of rescuer
     const r=18;
     if(!collidesWall(gs.map.walls,rescuer.x+45,rescuer.y,r))       s.x=rescuer.x+45;
     else if(!collidesWall(gs.map.walls,rescuer.x-45,rescuer.y,r))  s.x=rescuer.x-45;
     else                                                             s.x=rescuer.x;
     s.y=rescuer.y;
   } else if(selfEscape && h){
-    // Offset self-escaped survivor slightly away from hook so monster can't instantly re-catch
     const offsets=[[50,0],[-50,0],[0,50],[0,-50]];
     for(const [ox,oy] of offsets){
       if(!collidesWall(gs.map.walls,h.x+ox,h.y+oy,18)){ s.x=h.x+ox; s.y=h.y+oy; break; }
@@ -1351,7 +1284,6 @@ function killSurvivor(gs,s){
     if(h){ h.occupied=false; h.survivorId=null; }
   }
   s.dead=true; s.hookedOn=-1;
-  // Remove from any gen repairers
   gs.gens.forEach(g=>{ g.repairers=g.repairers.filter(rid=>rid!==s.id); });
   gs.survivorsDead++;
   spawnParticle(gs,s.x,s.y,'#8b0000',20);
@@ -1359,7 +1291,6 @@ function killSurvivor(gs,s){
 
 function escapeSurvivor(gs,s){
   s.escaped=true;
-  // Remove from any gen repairers
   gs.gens.forEach(g=>{ g.repairers=g.repairers.filter(rid=>rid!==s.id); });
   gs.survivorsEscaped++;
   spawnParticle(gs,s.x,s.y,'#1abc9c',15);
@@ -1369,11 +1300,10 @@ function triggerMonsterAbility(gs){
   const m=gs.monster;
   const mtype=MONSTERS[m.monsterType];
   if(mtype.id==='wraith'){
-    if(m.invisible) return; // already invisible — ignore Q during active invisibility
-    m.invisible=true; m.perkTimer=6000; m.abilityCooldown=9999999; // blocked until invis ends
+    if(m.invisible) return;
+    m.invisible=true; m.perkTimer=6000; m.abilityCooldown=9999999;
   } else if(mtype.id==='brute'){
     m._lunging=true; m.attackCooldown=0; m.abilityCooldown=10000;
-    // Lunge forward — step incrementally to stop at first wall
     const lungeSteps=10;
     const stepDist=mtype.lungeRange*0.5/lungeSteps;
     const dx=Math.cos(m.facing), dy=Math.sin(m.facing);
@@ -1384,7 +1314,6 @@ function triggerMonsterAbility(gs){
       m.y=Math.max(30,Math.min(VH-30,ny));
     }
   } else if(mtype.id==='witch'){
-    // Teleport to a random incomplete generator — find wall-safe landing near it
     const targets=gs.gens.filter(g=>!g.done);
     const t=targets[Math.floor(Math.random()*targets.length)]||gs.gens[0];
     const offsets=[[60,0],[-60,0],[0,60],[0,-60],[60,60],[-60,-60],[0,0]];
@@ -1397,13 +1326,11 @@ function triggerMonsterAbility(gs){
     m.abilityCooldown=20000;
     spawnParticle(gs,m.x,m.y,'#1abc9c',12);
   } else if(mtype.id==='rabbit'){
-    // Spawn a decoy that moves randomly for 8s
     gs.decoys=gs.decoys||[];
     gs.decoys.push({x:m.x, y:m.y, vx:(Math.random()-0.5)*3, vy:(Math.random()-0.5)*3, life:8000});
     m.abilityCooldown=15000;
     spawnParticle(gs,m.x,m.y,'#ecf0f1',10);
   } else if(mtype.id==='jeffrey'){
-    // Jumpscare: freeze all survivors within terror radius for 3s
     const freezeRange=TERROR_RADIUS*0.8;
     gs.survivors.forEach(s=>{
       if(s.dead||s.escaped||s.inLocker||s.hookedOn>=0) return;
@@ -1414,7 +1341,7 @@ function triggerMonsterAbility(gs){
       }
     });
     m.abilityCooldown=25000;
-    gs._jeffreyJumpscare=500; // flash duration for render
+    gs._jeffreyJumpscare=500;
     spawnParticle(gs,m.x,m.y,'#f39c12',15);
   }
 }
@@ -1445,7 +1372,6 @@ function showEndScreen(monsterWins){
   el.classList.add('show');
 }
 
-// ── Serialization ────────────────────────────────────
 function serializeState(gs){
   return {
     monster:[gs.monster.x,gs.monster.y,gs.monster.facing,gs.monster.invisible?1:0,gs.monster.attackCooldown,gs.monster.abilityCooldown,gs.monster.speed,gs.monster.perkTimer||0],
@@ -1523,7 +1449,6 @@ function renderLoop(){
   render(GS);
 }
 
-// Camera: follows the local player
 function getCamera(){
   let cx, cy;
   if(isMonster){
@@ -1547,12 +1472,10 @@ function render(gs){
   ctx.fillStyle=map.bg;
   ctx.fillRect(0,0,W,H);
 
-  // ── Floor tiles ──
   ctx.fillStyle=map.floorColor;
   for(let tx=Math.floor(cam.x/TILE);tx<(cam.x+W)/TILE+1;tx++){
     for(let ty=Math.floor(cam.y/TILE);ty<(cam.y+H)/TILE+1;ty++){
       if(tx<0||ty<0||tx>=VW/TILE||ty>=VH/TILE) continue;
-      // Checkerboard subtle effect
       const shade=(tx+ty)%2===0?1:0.92;
       ctx.globalAlpha=shade;
       ctx.fillRect(tx*TILE-cam.x, ty*TILE-cam.y, TILE-1, TILE-1);
@@ -1560,8 +1483,6 @@ function render(gs){
   }
   ctx.globalAlpha=1;
 
-  // ── Accent splatters (blood/dirt) ──
-  // pre-calculated from map name seed
   const seed=map.name.charCodeAt(0);
   ctx.fillStyle=map.accentColor;
   for(let i=0;i<25;i++){
@@ -1574,7 +1495,6 @@ function render(gs){
     }
   }
 
-  // ── Scratch marks (bloodhound perk) ──
   if(isMonster && gs.monsterPerk===0){
     gs.scratchMarks.forEach(m=>{
       ctx.globalAlpha=Math.max(0,1-m.age/8000)*0.6;
@@ -1590,23 +1510,19 @@ function render(gs){
     ctx.globalAlpha=1;
   }
 
-  // ── Generators ──
   gs.gens.forEach(g=>{
     const sx=g.x-cam.x, sy=g.y-cam.y;
     if(sx<-80||sx>W+80||sy<-80||sy>H+80) return;
-    // Base
     ctx.fillStyle=g.done?'#4a3a10':'#1a1a1a';
     ctx.strokeStyle=g.done?'#e67e22':'#333';
     ctx.lineWidth=2;
     ctx.beginPath();
     ctx.roundRect(sx-22,sy-22,44,44,6);
     ctx.fill(); ctx.stroke();
-    // Icon
     ctx.fillStyle=g.done?'#e67e22':'#555';
     ctx.font='20px sans-serif';
     ctx.textAlign='center';
     ctx.fillText(g.done?'⚡':'⚙',sx,sy+7);
-    // Progress arc
     if(!g.done&&g.progress>0){
       const pct=g.progress/GEN_REPAIR_TIME;
       ctx.strokeStyle='#e67e22';
@@ -1615,7 +1531,6 @@ function render(gs){
       ctx.arc(sx,sy,28,-Math.PI/2,-Math.PI/2+pct*6.2832);
       ctx.stroke();
     }
-    // Regression flicker
     if(g.regressing && gs.ticks%20<10){
       ctx.strokeStyle='#9b59b6';
       ctx.lineWidth=2;
@@ -1625,7 +1540,6 @@ function render(gs){
     }
   });
 
-  // ── Hooks ──
   gs.hooks.forEach(h=>{
     const sx=h.x-cam.x, sy=h.y-cam.y;
     if(sx<-60||sx>W+60||sy<-60||sy>H+60) return;
@@ -1637,7 +1551,6 @@ function render(gs){
     ctx.stroke();
   });
 
-  // ── Lockers ──
   gs.lockers.forEach(l=>{
     const sx=l.x-cam.x, sy=l.y-cam.y;
     if(sx<-60||sx>W+60||sy<-60||sy>H+60) return;
@@ -1649,12 +1562,10 @@ function render(gs){
     ctx.strokeStyle='#1a1a2a';
     ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(sx,sy-24); ctx.lineTo(sx,sy+24); ctx.stroke();
-    // Door handle
     ctx.fillStyle=l.occupied?'#1abc9c':'#333';
     ctx.fillRect(sx-2,sy-4,4,8);
   });
 
-  // ── Exit gates ──
   gs.gates.forEach(g=>{
     const sx=g.x-cam.x, sy=g.y-cam.y;
     if(sx<-100||sx>W+100||sy<-100||sy>H+100) return;
@@ -1668,14 +1579,12 @@ function render(gs){
       ctx.font='14px sans-serif';
       ctx.textAlign='center';
       ctx.fillText('EXIT',sx+g.w/2,sy+g.h/2+5);
-      // progress bar
       if(g.progress>0){
         ctx.fillStyle='#1abc9c';
         ctx.fillRect(sx-4,sy+g.h+4,g.w*(g.progress/GATE_OPEN_TIME),6);
       }
     }
     if(g.open){
-      // Glow
       ctx.fillStyle='rgba(26,188,156,0.15)';
       ctx.fillRect(sx-20,sy-10,g.w+40,g.h+20);
       ctx.fillStyle='#1abc9c';
@@ -1685,24 +1594,20 @@ function render(gs){
     }
   });
 
-  // ── Walls ──
   gs.map.walls.forEach(w=>{
     const sx=w.x-cam.x, sy=w.y-cam.y;
     if(sx>W+TILE||sy>H+TILE||sx+w.w<0||sy+w.h<0) return;
     ctx.fillStyle=map.wallColor;
     ctx.fillRect(sx,sy,w.w,w.h);
-    // Top edge highlight
     ctx.fillStyle='rgba(255,255,255,0.04)';
     ctx.fillRect(sx,sy,w.w,3);
-    // Bottom shadow
     ctx.fillStyle='rgba(0,0,0,0.3)';
     ctx.fillRect(sx,sy+w.h-3,w.w,3);
   });
 
-  // ── Survivors ──
   gs.survivors.forEach((s,i)=>{
     if(s.dead||s.escaped) return;
-    if(s.inLocker&&!isMonster) return; // hidden
+    if(s.inLocker&&!isMonster) return;
     const sx=s.x-cam.x, sy=s.y-cam.y;
     if(sx<-60||sx>W+60||sy<-60||sy>H+60) return;
 
@@ -1712,13 +1617,11 @@ function render(gs){
     ctx.save();
 
     if(isHooked){
-      // Draw hooked survivor
       ctx.globalAlpha=0.9;
       ctx.strokeStyle='#8b0000'; ctx.lineWidth=2;
       ctx.beginPath();
       ctx.moveTo(sx,sy-20); ctx.lineTo(sx-12,sy+8); ctx.lineTo(sx+12,sy+8); ctx.closePath();
       ctx.fillStyle='#2a0808'; ctx.fill(); ctx.stroke();
-      // Struggle bar
       const pct=s.hookProgress/HOOK_STRUGGLE_TIME;
       ctx.fillStyle='#3a0a0a'; ctx.fillRect(sx-22,sy+14,44,6);
       ctx.fillStyle=pct>0.6?'#c0392b':'#e67e22'; ctx.fillRect(sx-22,sy+14,44*(1-pct),6);
@@ -1726,7 +1629,6 @@ function render(gs){
       drawSurvivor(ctx, sx, sy, i, s.injured, isMe, s.inLocker, s.facing);
     }
 
-    // Name tag
     if(isMe||isHooked){
       ctx.fillStyle=isMe?'#7ec88e':'#f08080';
       ctx.font='bold 11px VT323';
@@ -1737,12 +1639,10 @@ function render(gs){
     ctx.restore();
   });
 
-  // ── Monster ──
   const m=gs.monster;
   const msx=m.x-cam.x, msy=m.y-cam.y;
   const mtype=MONSTERS[m.monsterType];
 
-  // Terror radius ring (only for survivors)
   if(!isMonster){
     const me=GS.survivors[myIndex-1];
     if(me&&!me.dead&&!me.escaped&&!me.inLocker){
@@ -1752,7 +1652,6 @@ function render(gs){
     }
   }
 
-  // Draw monster (visible to monster always, visible to survivors if not invisible)
   if(isMonster||!m.invisible){
     ctx.save();
     ctx.globalAlpha=m.invisible?0.3:1;
@@ -1763,7 +1662,6 @@ function render(gs){
       ctx.textAlign='center';
       ctx.fillText('INVISIBLE',msx,msy-42);
     }
-    // Cooldown indicators for monster player
     if(isMonster){
       const mtype2=MONSTERS[m.monsterType];
       let labelText;
@@ -1782,7 +1680,6 @@ function render(gs){
     ctx.restore();
   }
 
-  // ── Decoys (White Rabbit) ──
   if(gs.decoys&&gs.decoys.length){
     const dtype=MONSTERS[gs.monster.monsterType];
     gs.decoys.forEach(d=>{
@@ -1795,7 +1692,6 @@ function render(gs){
     });
   }
 
-  // ── Jeffrey jumpscare flash ──
   if(gs._jeffreyJumpscare>0 && !isMonster){
     ctx.save();
     ctx.globalAlpha=Math.min(0.75, gs._jeffreyJumpscare/500);
@@ -1809,7 +1705,6 @@ function render(gs){
     ctx.restore();
   }
 
-  // ── Particles ──
   gs.particles.forEach(p=>{
     const sx=p.x-cam.x, sy=p.y-cam.y;
     ctx.globalAlpha=Math.max(0,p.life/600);
@@ -1818,7 +1713,6 @@ function render(gs){
   });
   ctx.globalAlpha=1;
 
-  // ── Fog of war for survivors (slight darkness beyond view range) ──
   if(!isMonster){
     const me=GS.survivors[myIndex-1];
     const fsx=me?(me.x-cam.x):W/2;
@@ -1834,22 +1728,19 @@ function render(gs){
   updateSurvivorHUD();
 }
 
-// ── Draw survivor ─────────────────────────────────────
 const SURV_COLORS=['#3498db','#2ecc71','#e67e22','#9b59b6','#1abc9c','#e74c3c','#f39c12','#ecf0f1'];
 
 function drawSurvivor(ctx,sx,sy,idx,injured,isMe,inLocker,facing){
   const color=SURV_COLORS[idx%SURV_COLORS.length];
   const r=14;
   ctx.save();
-  if(inLocker){ ctx.globalAlpha=0.3; } // barely visible in locker
-  // Body
+  if(inLocker){ ctx.globalAlpha=0.3; }
   ctx.fillStyle=injured?'#8b3a3a':color;
   ctx.strokeStyle=isMe?'#fff':'rgba(255,255,255,0.3)';
   ctx.lineWidth=isMe?2:1;
   ctx.beginPath();
   ctx.arc(sx,sy,r,0,6.2832);
   ctx.fill(); ctx.stroke();
-  // Torch / flashlight cone — rotated to face movement direction
   if(isMe&&!inLocker){
     ctx.save();
     ctx.translate(sx,sy);
@@ -1864,7 +1755,6 @@ function drawSurvivor(ctx,sx,sy,idx,injured,isMe,inLocker,facing){
     ctx.restore();
     ctx.globalAlpha=1;
   }
-  // Injury indicator
   if(injured){
     ctx.fillStyle='#e74c3c';
     ctx.font='14px sans-serif';
@@ -1874,13 +1764,11 @@ function drawSurvivor(ctx,sx,sy,idx,injured,isMe,inLocker,facing){
   ctx.restore();
 }
 
-// ── Draw monster ──────────────────────────────────────
 function drawMonster(ctx,sx,sy,mtype,facing,lunging){
   const r=22;
   ctx.save();
   ctx.translate(sx,sy);
   ctx.rotate(facing);
-  // Body
   ctx.fillStyle=mtype.color;
   ctx.shadowBlur=lunging?30:12;
   ctx.shadowColor=mtype.color;
@@ -1888,16 +1776,13 @@ function drawMonster(ctx,sx,sy,mtype,facing,lunging){
   ctx.ellipse(0,0,r,r*1.1,0,0,6.2832);
   ctx.fill();
   ctx.shadowBlur=0;
-  // Spiky outline
   ctx.strokeStyle='rgba(255,255,255,0.2)';
   ctx.lineWidth=2;
   ctx.stroke();
-  // Eyes
   ctx.fillStyle='#ff0000';
   ctx.beginPath(); ctx.arc(8,-5,5,0,6.2832); ctx.fill();
   ctx.fillStyle='#000';
   ctx.beginPath(); ctx.arc(9,-5,2.5,0,6.2832); ctx.fill();
-  // Monster emoji / icon
   ctx.fillStyle='#fff';
   ctx.font='16px sans-serif';
   ctx.textAlign='center';
@@ -1905,11 +1790,8 @@ function drawMonster(ctx,sx,sy,mtype,facing,lunging){
   ctx.restore();
 }
 
-// ── HUD helpers ───────────────────────────────────────
 function buildHUD(){
-  // Generator pips
   updateGenPips();
-  // Survivor list
   updateSurvivorHUD();
 }
 
@@ -1928,7 +1810,7 @@ let _lastHudUpdate=0;
 function updateSurvivorHUD(){
   if(!GS) return;
   const now=performance.now();
-  if(now-_lastHudUpdate<150) return; // max ~7 updates/sec
+  if(now-_lastHudUpdate<150) return;
   _lastHudUpdate=now;
   const ul=document.getElementById('survivor-hud-list');
   ul.innerHTML='';
@@ -1956,7 +1838,7 @@ function updateTerrorHUD(inTerror, proximity){
   }
   if(inTerror){
     const now=Date.now();
-    if(now-_lastTerrorUpdate<80) return; // ~12fps is plenty for heartbeat animation
+    if(now-_lastTerrorUpdate<80) return;
     _lastTerrorUpdate=now;
     bar.innerHTML='';
     const beats=10;
@@ -1998,9 +1880,6 @@ function updatePhaseLabel(){
   }
 }
 
-// ═══════════════════════════════════════════════════
-//  POLYFILLS
-// ═══════════════════════════════════════════════════
 if(!CanvasRenderingContext2D.prototype.roundRect){
   CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
     this.beginPath();
