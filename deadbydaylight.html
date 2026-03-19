@@ -626,12 +626,13 @@ function buildPickers(){
 }
 buildPickers();
 
-function showHostSetup(){ hide('lobby-main'); show('lobby-host-setup'); }
-function hideHostSetup(){ hide('lobby-host-setup'); show('lobby-main'); }
-function showJoin(){ hide('lobby-main'); show('lobby-join'); }
-function hideJoin(){ hide('lobby-join'); show('lobby-main'); }
-function showHTP(){ hide('lobby-main'); show('lobby-htp'); }
-function hideHTP(){ hide('lobby-htp'); show('lobby-main'); }
+function scrollLobbyTop(){ document.getElementById('screen-lobby').scrollTop=0; }
+function showHostSetup(){ hide('lobby-main'); show('lobby-host-setup'); scrollLobbyTop(); }
+function hideHostSetup(){ hide('lobby-host-setup'); show('lobby-main'); scrollLobbyTop(); }
+function showJoin(){ hide('lobby-main'); show('lobby-join'); scrollLobbyTop(); }
+function hideJoin(){ hide('lobby-join'); show('lobby-main'); scrollLobbyTop(); }
+function showHTP(){ hide('lobby-main'); show('lobby-htp'); scrollLobbyTop(); }
+function hideHTP(){ hide('lobby-htp'); show('lobby-main'); scrollLobbyTop(); }
 function show(id){ document.getElementById(id).classList.remove('hidden'); }
 function hide(id){ document.getElementById(id).classList.add('hidden'); }
 
