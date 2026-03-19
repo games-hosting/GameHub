@@ -84,7 +84,7 @@ input[type=text]:focus{border-color:var(--p1)}
 #round-result .score-display{font-family:var(--font-display);font-size:2rem;margin-bottom:1.5rem}
 
 /* ── CANVAS ── */
-#gameCanvas{display:block;width:100%;height:100%}
+#gameCanvas{display:block;width:100%;height:100%;will-change:transform}
 #screen-game{background:#0d0d0d}
 
 /* ── CONTROLS HINT ── */
@@ -434,6 +434,15 @@ function initGameState(modeIndex, stgIndex){
   };
 }
 
+// ── Cached HUD elements (set in beginGame) ──────────────────
+let hudP1Hp, hudP2Hp, hudP1Lives, hudP2Lives, hudTimer, hudMode, hudScore;
+
+// ── Background cache (offscreen canvas per stage) ───────────
+let bgCache = null, bgCacheStage = null;
+
+// ── Input send throttle ──────────────────────────────────────
+let lastInputSend = 0;
+
 // ══════════════════════════════════════════════════════════════
 //  CONTROLS
 // ══════════════════════════════════════════════════════════════
@@ -468,26 +477,29 @@ function gameLoop(ts){
   if(!GS || !GS.running) return;
 
   if(isHost){
-    // Gather local input (host = P1)
     const inp1 = getInput(P1_KEYS, GS.swapControls);
-    // For P2 (guest), host applies swap to their remote keys too
     const inp2 = GS.swapControls
-      ? { ...remoteKeys, left: remoteKeys.right, right: remoteKeys.left }
+      ? { left: remoteKeys.right, right: remoteKeys.left, up: remoteKeys.up, down: remoteKeys.down, attack: remoteKeys.attack, special: remoteKeys.special }
       : remoteKeys;
 
-    sendMsg({type:'input', ...getInput(P1_KEYS, false)}); // send raw, host applies swap logic
+    // Throttle input + state sends to ~20/sec
+    if(ts - lastInputSend > 50){
+      lastInputSend = ts;
+      sendMsg({type:'input', ...getInput(P1_KEYS, false)});
+    }
     simulate(GS, inp1, inp2, dt);
 
-    // Sync state to guest every ~50ms
     if(ts - lastStateSync > 50){
       lastStateSync = ts;
       sendMsg({type:'state', state: serializeState(GS)});
     }
   } else {
-    // Guest: send own input, render last received state
-    const myInp = getInput(P2_KEYS, false);
-    sendMsg({type:'input', ...myInp});
-    // Guest does local prediction only for responsiveness (just render received state)
+    // Throttle guest input to 20/sec
+    if(ts - lastInputSend > 50){
+      lastInputSend = ts;
+      const myInp = getInput(P2_KEYS, false);
+      sendMsg({type:'input', left:myInp.left, right:myInp.right, up:myInp.up, down:myInp.down, attack:myInp.attack, special:myInp.special});
+    }
   }
 
   render(GS, ctx);
@@ -752,10 +764,13 @@ function damagePlayer(gs, p, dmg, s){
 }
 
 function spawnParticles(gs, x, y, color, n){
-  for(let i=0;i<n;i++){
-    const a = Math.random()*Math.PI*2;
-    const spd = 1+Math.random()*4;
-    gs.particles.push({ x, y, vx:Math.cos(a)*spd, vy:Math.sin(a)*spd-2, life:600+Math.random()*400, color });
+  // Hard cap to prevent particle explosion lag
+  if(gs.particles.length > 55) return;
+  const add = Math.min(n, 60 - gs.particles.length);
+  for(let i=0;i<add;i++){
+    const a = Math.random()*6.2832;
+    const spd = 1+Math.random()*3.5;
+    gs.particles.push({ x, y, vx:Math.cos(a)*spd, vy:Math.sin(a)*spd-1.5, life:500+Math.random()*300, color });
   }
 }
 
@@ -845,15 +860,16 @@ function render(gs, ctx){
   if(!gs) return;
   const cw = canvas.width, ch = canvas.height;
   const sx = cw/VW, sy = ch/VH;
+  const now = Date.now();
+
   ctx.save();
   ctx.scale(sx, sy);
 
-  // Background
-  drawBackground(gs.stage, ctx);
+  // Background — use cached offscreen canvas for static/semi-static stages
+  drawBackground(gs.stage, ctx, now);
 
-  // KOTH center zone indicator
+  // KOTH zone — no save/restore, just set and reset
   if(gs.mode.id==='koth'){
-    ctx.save();
     ctx.fillStyle='rgba(255,215,0,0.08)';
     ctx.fillRect(VW/2-80,0,160,VH);
     ctx.strokeStyle='rgba(255,215,0,0.3)';
@@ -861,212 +877,275 @@ function render(gs, ctx){
     ctx.setLineDash([8,6]);
     ctx.strokeRect(VW/2-80,0,160,VH);
     ctx.setLineDash([]);
-    ctx.restore();
   }
 
-  // Platforms
-  for(const p of gs.platforms){
-    if(!p.alive) continue;
-    drawPlatform(p, ctx, gs.stage);
-  }
+  // Platforms — batched by color group to reduce state changes
+  drawPlatformsBatched(gs.platforms, ctx, gs.stage);
 
-  // Hot potato indicator
+  // Hot potato
   if(gs.hotPotato){
     const holder = gs.hotPotato.holder===1?gs.p1:gs.p2;
     const pct = Math.min(1, 1 - gs.hotPotato.timer/12000);
-    ctx.save();
     ctx.fillStyle = `hsl(${30-pct*30},100%,${50+pct*20}%)`;
     ctx.font='bold 22px sans-serif';
     ctx.textAlign='center';
     ctx.fillText('🥔', holder.x + holder.w*holder.scale/2, holder.y - 14);
-    ctx.restore();
   }
 
-  // Bullets
-  for(const b of gs.bullets){
-    ctx.save();
-    ctx.fillStyle = b.owner===1 ? '#00f5d4' : '#f72585';
-    ctx.shadowBlur=8; ctx.shadowColor=ctx.fillStyle;
-    ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI*2); ctx.fill();
-    ctx.restore();
+  // Bullets — batch all into one path per color, NO shadowBlur
+  if(gs.bullets.length){
+    ctx.beginPath();
+    for(const b of gs.bullets){
+      if(b.owner===1){ ctx.moveTo(b.x+5,b.y); ctx.arc(b.x,b.y,5,0,6.2832); }
+    }
+    ctx.fillStyle='#00f5d4'; ctx.fill();
+    ctx.beginPath();
+    for(const b of gs.bullets){
+      if(b.owner===2){ ctx.moveTo(b.x+5,b.y); ctx.arc(b.x,b.y,5,0,6.2832); }
+    }
+    ctx.fillStyle='#f72585'; ctx.fill();
   }
 
   // Players
-  drawPlayer(gs.p1, ctx, gs);
-  drawPlayer(gs.p2, ctx, gs);
+  drawPlayer(gs.p1, ctx, gs, now);
+  drawPlayer(gs.p2, ctx, gs, now);
 
-  // Particles
-  for(const pt of gs.particles){
-    const a = Math.max(0, pt.life/800);
-    ctx.save();
-    ctx.globalAlpha=a;
-    ctx.fillStyle=pt.color;
-    ctx.fillRect(pt.x-3,pt.y-3,5,5);
-    ctx.restore();
+  // Particles — single pass, group by alpha bucket to minimize state changes
+  if(gs.particles.length){
+    // Sort not needed — just draw all with individual alpha (still no save/restore)
+    for(const pt of gs.particles){
+      ctx.globalAlpha = Math.max(0, pt.life/800);
+      ctx.fillStyle = pt.color;
+      ctx.fillRect(pt.x-2, pt.y-2, 4, 4);
+    }
+    ctx.globalAlpha = 1;
   }
 
   // KOTH score bars
   if(gs.mode.id==='koth'){
-    ctx.save();
     ctx.fillStyle='rgba(0,0,0,.5)';
     ctx.fillRect(VW/2-60,VH-22,120,14);
     ctx.fillStyle='#00f5d4';
     ctx.fillRect(VW/2-60,VH-22,(gs.p1.kothScore/10)*60,14);
     ctx.fillStyle='#f72585';
     ctx.fillRect(VW/2,VH-22,(gs.p2.kothScore/10)*60,14);
-    ctx.restore();
   }
 
   ctx.restore();
 
-  // HUD update
+  // HUD update — throttled, use cached elements
   updateHUD(gs);
 }
 
-function drawBackground(stage, ctx){
+// Pre-cached gradient for cloud stage
+let cloudGrad = null;
+
+function drawBackground(stage, ctx, now){
+  // For stages with purely static backgrounds, cache to offscreen canvas
+  const isStatic = stage.bgStars || stage.bgGrid || stage.bgClouds;
+
+  if(isStatic && bgCacheStage === stage){
+    ctx.drawImage(bgCache, 0, 0);
+    return;
+  }
+
+  if(isStatic){
+    // Draw once into offscreen cache
+    bgCache = document.createElement('canvas');
+    bgCache.width = VW; bgCache.height = VH;
+    const bctx = bgCache.getContext('2d');
+    bctx.fillStyle = stage.bg;
+    bctx.fillRect(0,0,VW,VH);
+
+    if(stage.bgStars){
+      bctx.fillStyle='rgba(255,255,255,0.7)';
+      for(let i=0;i<80;i++){
+        const x=(i*137+41)%VW, y=(i*91+17)%VH;
+        bctx.fillRect(x,y,(i%3===0)?2:1,(i%3===0)?2:1);
+      }
+    }
+    if(stage.bgGrid){
+      bctx.fillStyle='#080d18';
+      bctx.fillRect(0,0,VW,VH);
+      bctx.strokeStyle='rgba(0,200,255,0.07)';
+      bctx.lineWidth=1;
+      // Batch all grid lines into two paths
+      bctx.beginPath();
+      for(let x=0;x<=VW;x+=40){ bctx.moveTo(x,0); bctx.lineTo(x,VH); }
+      for(let y=0;y<=VH;y+=40){ bctx.moveTo(0,y); bctx.lineTo(VW,y); }
+      bctx.stroke();
+    }
+    if(stage.bgClouds){
+      const grad = bctx.createLinearGradient(0,0,0,VH);
+      grad.addColorStop(0,'#87ceeb'); grad.addColorStop(1,'#e8f4f8');
+      bctx.fillStyle=grad; bctx.fillRect(0,0,VW,VH);
+    }
+    bgCacheStage = stage;
+    ctx.drawImage(bgCache, 0, 0);
+    return;
+  }
+
+  // Dynamic backgrounds (lava, void) drawn fresh each frame but efficiently
   ctx.fillStyle = stage.bg;
   ctx.fillRect(0,0,VW,VH);
 
-  if(stage.bgStars){
-    ctx.fillStyle='rgba(255,255,255,0.6)';
-    // simple deterministic stars using stage index as seed
-    for(let i=0;i<80;i++){
-      const x=(i*137+41)%VW, y=(i*91+17)%VH;
-      ctx.fillRect(x,y,(i%3===0)?2:1,(i%3===0)?2:1);
-    }
-  }
   if(stage.bgLava){
-    const t = Date.now()/1200;
-    ctx.fillStyle=`hsl(${10+Math.sin(t)*5},90%,${18+Math.sin(t*1.3)*4}%)`;
+    const t = now/1200;
+    ctx.fillStyle=`hsl(${10+Math.sin(t)*5|0},90%,${18+Math.sin(t*1.3)*4|0}%)`;
     ctx.fillRect(0,VH-20,VW,20);
+    ctx.fillStyle='hsl(30,100%,58%)';
+    ctx.beginPath();
     for(let i=0;i<6;i++){
-      const bx = (i*133+Math.sin(t+i)*20)%VW;
-      ctx.fillStyle=`hsl(30,100%,60%)`;
-      ctx.beginPath(); ctx.arc(bx, VH-10+Math.sin(t*2+i)*5, 8+Math.sin(t+i)*4, 0, Math.PI*2); ctx.fill();
+      const bx=(i*133+Math.sin(t+i)*20+VW)%VW;
+      const by=VH-10+Math.sin(t*2+i)*5;
+      const r=8+Math.sin(t+i)*4;
+      ctx.moveTo(bx+r,by); ctx.arc(bx,by,r,0,6.2832);
     }
+    ctx.fill();
   }
-  if(stage.bgGrid){
-    ctx.strokeStyle='rgba(0,200,255,0.06)';
-    ctx.lineWidth=1;
-    for(let x=0;x<VW;x+=40){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,VH); ctx.stroke(); }
-    for(let y=0;y<VH;y+=40){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(VW,y); ctx.stroke(); }
-  }
-  if(stage.bgClouds){
-    // sky gradient
-    const grad = ctx.createLinearGradient(0,0,0,VH);
-    grad.addColorStop(0,'#87ceeb'); grad.addColorStop(1,'#e8f4f8');
-    ctx.fillStyle=grad; ctx.fillRect(0,0,VW,VH);
-  }
+
   if(stage.bgVoid){
-    // nebula-ish
-    const t = Date.now()/3000;
+    const t = now/3000;
     for(let i=0;i<3;i++){
       const gx=(i*250+100)%VW, gy=(i*150+80)%VH;
       const g=ctx.createRadialGradient(gx,gy,10,gx,gy,120);
-      const cols=['rgba(80,0,120,0.12)','rgba(0,60,120,0.1)','rgba(120,0,60,0.1)'];
+      const cols=['rgba(80,0,120,0.1)','rgba(0,60,120,0.08)','rgba(120,0,60,0.08)'];
       g.addColorStop(0,cols[i]); g.addColorStop(1,'transparent');
       ctx.fillStyle=g; ctx.fillRect(0,0,VW,VH);
     }
   }
 }
 
-function drawPlatform(p, ctx, stage){
-  ctx.save();
-  let color, topColor;
-  if(stage.bgClouds || p.cloud){
-    color='rgba(255,255,255,0.85)'; topColor='#fff';
-    ctx.shadowBlur=12; ctx.shadowColor='rgba(180,220,255,0.5)';
+function drawPlatformsBatched(platforms, ctx, stage){
+  const isCloud = stage.bgClouds;
+
+  if(isCloud){
+    ctx.shadowBlur=10; ctx.shadowColor='rgba(180,220,255,0.4)';
+    ctx.fillStyle='rgba(255,255,255,0.85)';
     ctx.beginPath();
-    ctx.roundRect(p.x, p.y, p.w, p.h, 8);
-    ctx.fillStyle=color; ctx.fill();
-  } else if(p.hazard){
-    color='#b22222'; topColor='#ff4500';
-    ctx.fillStyle=color; ctx.fillRect(p.x,p.y,p.w,p.h);
-    ctx.fillStyle=topColor; ctx.fillRect(p.x,p.y,p.w,4);
-  } else if(p._crumbling){
-    const pct = Math.max(0, p._crumbleTimer/600);
-    ctx.globalAlpha=pct;
-    color='#6b4c11'; topColor='#a0721a';
-    ctx.fillStyle=color; ctx.fillRect(p.x,p.y,p.w,p.h);
-    ctx.fillStyle=topColor; ctx.fillRect(p.x,p.y,p.w,3);
-  } else {
-    color='#1e293b'; topColor= stage.bgGrid?'#00e5ff': stage.bgLava?'#555':'#334155';
-    ctx.fillStyle=color; ctx.fillRect(p.x,p.y,p.w,p.h);
-    ctx.fillStyle=topColor; ctx.fillRect(p.x,p.y,p.w,3);
+    for(const p of platforms){
+      if(!p.alive) continue;
+      ctx.roundRect(p.x, p.y, p.w, p.h, 8);
+    }
+    ctx.fill();
+    ctx.shadowBlur=0;
+    return;
   }
-  ctx.restore();
+
+  // Normal platforms — batch by type
+  const topColor = stage.bgGrid?'#00e5ff': stage.bgLava?'#555':'#334155';
+
+  // Draw solid bodies first
+  ctx.fillStyle='#1e293b';
+  ctx.beginPath();
+  for(const p of platforms){
+    if(!p.alive || p.hazard || p._crumbling) continue;
+    ctx.rect(p.x, p.y, p.w, p.h);
+  }
+  ctx.fill();
+  // Top edge stripe
+  ctx.fillStyle=topColor;
+  ctx.beginPath();
+  for(const p of platforms){
+    if(!p.alive || p.hazard || p._crumbling) continue;
+    ctx.rect(p.x, p.y, p.w, 3);
+  }
+  ctx.fill();
+
+  // Hazard platforms
+  ctx.fillStyle='#b22222';
+  ctx.beginPath();
+  for(const p of platforms){ if(!p.alive || !p.hazard) continue; ctx.rect(p.x,p.y,p.w,p.h); }
+  ctx.fill();
+  ctx.fillStyle='#ff4500';
+  ctx.beginPath();
+  for(const p of platforms){ if(!p.alive || !p.hazard) continue; ctx.rect(p.x,p.y,p.w,4); }
+  ctx.fill();
+
+  // Crumbling — need individual alpha so draw separately
+  for(const p of platforms){
+    if(!p.alive || !p._crumbling) continue;
+    const pct = Math.max(0, p._crumbleTimer/600);
+    ctx.globalAlpha = pct;
+    ctx.fillStyle='#6b4c11'; ctx.fillRect(p.x,p.y,p.w,p.h);
+    ctx.fillStyle='#a0721a'; ctx.fillRect(p.x,p.y,p.w,3);
+  }
+  ctx.globalAlpha=1;
 }
 
-function drawPlayer(p, ctx, gs){
+function drawPlayer(p, ctx, gs, now){
   if(p.dead) return;
   const pw = p.w*p.scale, ph = p.h*p.scale;
 
+  // Invincibility flicker — skip drawing entirely on odd frames
+  if(p.invincTime>0 && Math.floor(now/80)%2===0) return;
+
   ctx.save();
-  // Invincibility flicker
-  if(p.invincTime>0 && Math.floor(Date.now()/80)%2===0){ ctx.restore(); return; }
 
   const isJugg = gs.mode.id==='juggernaut' && p.id===1;
-  const hasPotatoe = gs.hotPotato && gs.hotPotato.holder===p.id;
 
-  // Shadow
-  ctx.fillStyle='rgba(0,0,0,0.3)';
-  ctx.ellipse(p.x+pw/2, p.y+ph+2, pw*0.4, 5, 0, 0, Math.PI*2);
+  // Shadow (no save needed, just draw)
+  ctx.fillStyle='rgba(0,0,0,0.25)';
+  ctx.beginPath();
+  ctx.ellipse(p.x+pw/2, p.y+ph+2, pw*0.4, 4, 0, 0, 6.2832);
   ctx.fill();
+
+  // Set body color + glow
+  let bodyColor = p.color;
+  if(isJugg) bodyColor='#ff6b35';
+  if(p.hitStun>100) bodyColor='#fff';
+  ctx.fillStyle = bodyColor;
+  if(isJugg){ ctx.shadowBlur=16; ctx.shadowColor='#ff6b35'; }
 
   // Body
-  ctx.fillStyle = p.color;
-  if(isJugg) ctx.fillStyle='#ff6b35';
-  if(p.hitStun>100){ ctx.fillStyle='#fff'; }
-
-  // Glow for juggernaut or invincible
-  if(isJugg){ ctx.shadowBlur=20; ctx.shadowColor='#ff6b35'; }
-  if(p.invincTime>0){ ctx.shadowBlur=15; ctx.shadowColor=p.color; }
-
-  // Draw body (capsule-ish)
-  const bx=p.x, by=p.y+ph*0.3, bw=pw, bh=ph*0.7;
   ctx.beginPath();
-  ctx.roundRect(bx, by, bw, bh, pw*0.2);
+  ctx.roundRect(p.x, p.y+ph*0.3, pw, ph*0.7, pw*0.2);
   ctx.fill();
 
-  // Head (big head mode uses headSize)
+  // Head
+  ctx.shadowBlur=0;
   const headR = pw*0.32*p.headSize;
   const headX = p.x + pw/2;
   const headY = p.y + ph*0.28;
   ctx.beginPath();
-  ctx.arc(headX, headY, headR, 0, Math.PI*2);
+  ctx.arc(headX, headY, headR, 0, 6.2832);
   ctx.fill();
 
-  // Eyes
-  ctx.fillStyle = '#000';
+  // Eye
+  ctx.fillStyle='#000';
   const eyeOff = p.facing * headR*0.35;
-  ctx.beginPath(); ctx.arc(headX+eyeOff, headY-headR*0.1, headR*0.2, 0, Math.PI*2); ctx.fill();
-  // Eye shine
+  ctx.beginPath();
+  ctx.arc(headX+eyeOff, headY-headR*0.1, headR*0.2, 0, 6.2832);
+  ctx.fill();
   ctx.fillStyle='#fff';
-  ctx.beginPath(); ctx.arc(headX+eyeOff+headR*0.05, headY-headR*0.15, headR*0.08, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath();
+  ctx.arc(headX+eyeOff+headR*0.05, headY-headR*0.15, headR*0.08, 0, 6.2832);
+  ctx.fill();
 
-  // Legs (animated while walking)
-  const legAnim = p.onGround && Math.abs(p.vx)>0.5 ? Math.sin(Date.now()/80)*0.25 : 0;
-  ctx.fillStyle = p.color; ctx.globalAlpha=0.7;
+  // Legs
+  const legAnim = p.onGround && Math.abs(p.vx)>0.5 ? Math.sin(now/80)*0.25 : 0;
+  ctx.fillStyle = bodyColor;
+  ctx.globalAlpha = 0.75;
   ctx.fillRect(p.x+pw*0.18, p.y+ph*(0.82+legAnim), pw*0.22, ph*0.22);
   ctx.fillRect(p.x+pw*0.58, p.y+ph*(0.82-legAnim), pw*0.22, ph*0.22);
-  ctx.globalAlpha=1;
+  ctx.globalAlpha = 1;
 
   // Attack flash
   if(p.attackActive>0){
-    const aDir = p.facing;
     ctx.fillStyle = p.color;
-    ctx.globalAlpha = 0.6;
+    ctx.globalAlpha = 0.55;
     ctx.beginPath();
-    const ax = aDir>0 ? p.x+pw : p.x-48;
-    ctx.ellipse(ax, p.y+ph*0.45, 30, 18, aDir>0?-0.4:0.4, 0, Math.PI*2);
+    const ax = p.facing>0 ? p.x+pw : p.x-48;
+    ctx.ellipse(ax, p.y+ph*0.45, 30, 18, p.facing>0?-0.4:0.4, 0, 6.2832);
     ctx.fill();
-    ctx.globalAlpha=1;
+    ctx.globalAlpha = 1;
   }
 
-  // Hot potato
-  if(hasPotatoe){
+  // Hot potato emoji
+  if(gs.hotPotato && gs.hotPotato.holder===p.id){
     ctx.font=`${16*p.scale}px sans-serif`;
     ctx.textAlign='center';
+    ctx.fillStyle='#fff';
     ctx.fillText('🥔', p.x+pw/2, p.y-8);
   }
 
@@ -1074,26 +1153,31 @@ function drawPlayer(p, ctx, gs){
   ctx.fillStyle = p.color;
   ctx.font=`bold ${Math.max(10,11*p.scale)}px 'Share Tech Mono'`;
   ctx.textAlign='center';
-  ctx.shadowBlur=0;
   ctx.fillText('P'+p.id, p.x+pw/2, p.y-4);
 
   ctx.restore();
 }
 
+let lastHudUpdate = 0;
 function updateHUD(gs){
-  document.getElementById('hud-p1-hp').style.width = (gs.p1.hp/gs.p1.maxHp*100)+'%';
-  document.getElementById('hud-p2-hp').style.width = (gs.p2.hp/gs.p2.maxHp*100)+'%';
-  document.getElementById('hud-p1-lives').textContent = '♥'.repeat(Math.max(0,gs.p1.lives));
-  document.getElementById('hud-p2-lives').textContent = '♥'.repeat(Math.max(0,gs.p2.lives));
+  // Throttle DOM updates to ~15/sec — imperceptible but saves a lot
+  const now = performance.now();
+  if(now - lastHudUpdate < 66) return;
+  lastHudUpdate = now;
+
+  hudP1Hp.style.width = (gs.p1.hp/gs.p1.maxHp*100)+'%';
+  hudP2Hp.style.width = (gs.p2.hp/gs.p2.maxHp*100)+'%';
+  hudP1Lives.textContent = '♥'.repeat(Math.max(0,gs.p1.lives));
+  hudP2Lives.textContent = '♥'.repeat(Math.max(0,gs.p2.lives));
   const secs = Math.ceil(gs.timerMs/1000);
-  document.getElementById('hud-timer').textContent = secs;
-  document.getElementById('hud-timer').style.color = secs<=10 ? '#ff4444' : 'var(--text)';
-  document.getElementById('hud-mode').textContent = gs.mode.name;
-  document.getElementById('hud-score').textContent = gameScore.p1 + ' — ' + gameScore.p2;
+  hudTimer.textContent = secs;
+  hudTimer.style.color = secs<=10 ? '#ff4444' : 'var(--text)';
+  hudMode.textContent = gs.mode.name;
+  hudScore.textContent = gameScore.p1 + ' — ' + gameScore.p2;
 
   if(gs.mode.id==='koth'){
-    document.getElementById('hud-p1-lives').textContent = Math.floor(gs.p1.kothScore)+'/10 pts';
-    document.getElementById('hud-p2-lives').textContent = Math.floor(gs.p2.kothScore)+'/10 pts';
+    hudP1Lives.textContent = Math.floor(gs.p1.kothScore)+'/10 pts';
+    hudP2Lives.textContent = Math.floor(gs.p2.kothScore)+'/10 pts';
   }
 }
 
@@ -1132,11 +1216,12 @@ function showRoundResult(winnerPid, isSelf){
 function nextRound(){
   document.getElementById('round-result').classList.remove('show');
   currentRound++;
-  // Rotate mode randomly (avoid repeating last)
   const lastMode = roundModeIndex;
   do { roundModeIndex = Math.floor(Math.random()*ROUND_MODES.length); }
   while(roundModeIndex===lastMode && ROUND_MODES.length>1);
   stageIndex = (stageIndex+1) % STAGES.length;
+
+  bgCache = null; bgCacheStage = null; // new stage = invalidate bg cache
 
   GS = initGameState(roundModeIndex, stageIndex);
   GS.running=true;
@@ -1150,6 +1235,9 @@ function receiveNextRound(msg){
   currentRound++;
   roundModeIndex = msg.modeIndex;
   stageIndex = msg.stageIndex;
+
+  bgCache = null; bgCacheStage = null;
+
   GS = initGameState(roundModeIndex, stageIndex);
   GS.running=true;
   showToast('ROUND ' + (currentRound+1) + ' · ' + ROUND_MODES[roundModeIndex].name);
@@ -1170,22 +1258,31 @@ function receiveGameStart(msg){
 }
 
 function beginGame(modeIndex, stgIndex){
-  // Switch screens
   document.getElementById('screen-lobby').classList.add('hidden');
   document.getElementById('screen-game').classList.remove('hidden');
 
   canvas = document.getElementById('gameCanvas');
-  ctx = canvas.getContext('2d');
+  ctx = canvas.getContext('2d', {alpha: false}); // opaque canvas = faster compositing
+
+  // Cache HUD elements once
+  hudP1Hp    = document.getElementById('hud-p1-hp');
+  hudP2Hp    = document.getElementById('hud-p2-hp');
+  hudP1Lives = document.getElementById('hud-p1-lives');
+  hudP2Lives = document.getElementById('hud-p2-lives');
+  hudTimer   = document.getElementById('hud-timer');
+  hudMode    = document.getElementById('hud-mode');
+  hudScore   = document.getElementById('hud-score');
 
   function resize(){
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
+    bgCache = null; bgCacheStage = null; // invalidate bg cache on resize
   }
   resize();
   window.addEventListener('resize', resize);
 
   GS = initGameState(modeIndex, stgIndex);
-  GS.running=true;
+  GS.running = true;
 
   lastTime = performance.now();
   animId = requestAnimationFrame(gameLoop);
