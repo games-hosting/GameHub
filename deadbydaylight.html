@@ -594,40 +594,40 @@ function sfxPlay(fn){
 
 // Short pitched hit / thud
 function sfxHit(){
-  sfxPlay(ctx=>{
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.type='sawtooth'; o.frequency.setValueAtTime(180,ctx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(40,ctx.currentTime+0.18);
-    g.gain.setValueAtTime(0.5,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.2);
-    o.start(ctx.currentTime); o.stop(ctx.currentTime+0.2);
+  sfxPlay(a=>{
+    const o=a.createOscillator(), g=a.createGain();
+    o.connect(g); g.connect(a.destination);
+    o.type='sawtooth'; o.frequency.setValueAtTime(180,a.currentTime);
+    o.frequency.exponentialRampToValueAtTime(40,a.currentTime+0.18);
+    g.gain.setValueAtTime(0.5,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.2);
+    o.start(a.currentTime); o.stop(a.currentTime+0.2);
   });
 }
 
 // Hook clang — metallic scrape
 function sfxHook(){
-  sfxPlay(ctx=>{
-    const buf=ctx.createBuffer(1,ctx.sampleRate*0.35,ctx.sampleRate);
+  sfxPlay(a=>{
+    const buf=a.createBuffer(1,a.sampleRate*0.35,a.sampleRate);
     const d=buf.getChannelData(0);
-    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*0.08));
-    const src=ctx.createBufferSource(), g=ctx.createGain();
-    const flt=ctx.createBiquadFilter(); flt.type='bandpass'; flt.frequency.value=900; flt.Q.value=8;
-    src.buffer=buf; src.connect(flt); flt.connect(g); g.connect(ctx.destination);
-    g.gain.setValueAtTime(0.6,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(a.sampleRate*0.08));
+    const src=a.createBufferSource(), g=a.createGain();
+    const flt=a.createBiquadFilter(); flt.type='bandpass'; flt.frequency.value=900; flt.Q.value=8;
+    src.buffer=buf; src.connect(flt); flt.connect(g); g.connect(a.destination);
+    g.gain.setValueAtTime(0.6,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.35);
     src.start();
   });
 }
 
 // Gen repair complete — power-up buzz
 function sfxGenDone(){
-  sfxPlay(ctx=>{
+  sfxPlay(a=>{
     [220,330,440,660].forEach((freq,i)=>{
-      const o=ctx.createOscillator(), g=ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
+      const o=a.createOscillator(), g=a.createGain();
+      o.connect(g); g.connect(a.destination);
       o.type='square'; o.frequency.value=freq;
-      const t=ctx.currentTime+i*0.07;
+      const t=a.currentTime+i*0.07;
       g.gain.setValueAtTime(0,t);
       g.gain.linearRampToValueAtTime(0.18,t+0.03);
       g.gain.exponentialRampToValueAtTime(0.001,t+0.25);
@@ -638,82 +638,82 @@ function sfxGenDone(){
 
 // Locker enter — quiet creak
 function sfxLockerEnter(){
-  sfxPlay(ctx=>{
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.type='sine'; o.frequency.setValueAtTime(300,ctx.currentTime);
-    o.frequency.linearRampToValueAtTime(120,ctx.currentTime+0.15);
-    g.gain.setValueAtTime(0.15,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.2);
-    o.start(); o.stop(ctx.currentTime+0.2);
+  sfxPlay(a=>{
+    const o=a.createOscillator(), g=a.createGain();
+    o.connect(g); g.connect(a.destination);
+    o.type='sine'; o.frequency.setValueAtTime(300,a.currentTime);
+    o.frequency.linearRampToValueAtTime(120,a.currentTime+0.15);
+    g.gain.setValueAtTime(0.15,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.2);
+    o.start(); o.stop(a.currentTime+0.2);
   });
 }
 
 // Locker grab — whoosh + impact
 function sfxLockerGrab(){
-  sfxPlay(ctx=>{
-    const buf=ctx.createBuffer(1,ctx.sampleRate*0.12,ctx.sampleRate);
+  sfxPlay(a=>{
+    const buf=a.createBuffer(1,a.sampleRate*0.12,a.sampleRate);
     const d=buf.getChannelData(0);
-    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*0.04));
-    const src=ctx.createBufferSource(), g=ctx.createGain();
-    const flt=ctx.createBiquadFilter(); flt.type='lowpass'; flt.frequency.value=400;
-    src.buffer=buf; src.connect(flt); flt.connect(g); g.connect(ctx.destination);
-    g.gain.setValueAtTime(0.7,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.15);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(a.sampleRate*0.04));
+    const src=a.createBufferSource(), g=a.createGain();
+    const flt=a.createBiquadFilter(); flt.type='lowpass'; flt.frequency.value=400;
+    src.buffer=buf; src.connect(flt); flt.connect(g); g.connect(a.destination);
+    g.gain.setValueAtTime(0.7,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.15);
     src.start();
     // Follow-up thud
-    const o=ctx.createOscillator(), g2=ctx.createGain();
-    o.connect(g2); g2.connect(ctx.destination);
-    o.type='sine'; o.frequency.setValueAtTime(90,ctx.currentTime+0.08);
-    o.frequency.exponentialRampToValueAtTime(30,ctx.currentTime+0.25);
-    g2.gain.setValueAtTime(0.4,ctx.currentTime+0.08);
-    g2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.28);
-    o.start(ctx.currentTime+0.08); o.stop(ctx.currentTime+0.28);
+    const o=a.createOscillator(), g2=a.createGain();
+    o.connect(g2); g2.connect(a.destination);
+    o.type='sine'; o.frequency.setValueAtTime(90,a.currentTime+0.08);
+    o.frequency.exponentialRampToValueAtTime(30,a.currentTime+0.25);
+    g2.gain.setValueAtTime(0.4,a.currentTime+0.08);
+    g2.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.28);
+    o.start(a.currentTime+0.08); o.stop(a.currentTime+0.28);
   });
 }
 
 // Unhook — relief whoosh
 function sfxUnhook(){
-  sfxPlay(ctx=>{
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.type='sine'; o.frequency.setValueAtTime(200,ctx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(500,ctx.currentTime+0.2);
-    g.gain.setValueAtTime(0.2,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.25);
-    o.start(); o.stop(ctx.currentTime+0.25);
+  sfxPlay(a=>{
+    const o=a.createOscillator(), g=a.createGain();
+    o.connect(g); g.connect(a.destination);
+    o.type='sine'; o.frequency.setValueAtTime(200,a.currentTime);
+    o.frequency.exponentialRampToValueAtTime(500,a.currentTime+0.2);
+    g.gain.setValueAtTime(0.2,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.25);
+    o.start(); o.stop(a.currentTime+0.25);
   });
 }
 
 // Gate open — deep rumble + power hum
 function sfxGateOpen(){
-  sfxPlay(ctx=>{
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.type='sawtooth'; o.frequency.setValueAtTime(55,ctx.currentTime);
-    o.frequency.linearRampToValueAtTime(80,ctx.currentTime+0.5);
-    g.gain.setValueAtTime(0.3,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.6);
-    o.start(); o.stop(ctx.currentTime+0.6);
+  sfxPlay(a=>{
+    const o=a.createOscillator(), g=a.createGain();
+    o.connect(g); g.connect(a.destination);
+    o.type='sawtooth'; o.frequency.setValueAtTime(55,a.currentTime);
+    o.frequency.linearRampToValueAtTime(80,a.currentTime+0.5);
+    g.gain.setValueAtTime(0.3,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.6);
+    o.start(); o.stop(a.currentTime+0.6);
     // Harmonic
-    const o2=ctx.createOscillator(), g2=ctx.createGain();
-    o2.connect(g2); g2.connect(ctx.destination);
+    const o2=a.createOscillator(), g2=a.createGain();
+    o2.connect(g2); g2.connect(a.destination);
     o2.type='sine'; o2.frequency.value=220;
-    g2.gain.setValueAtTime(0,ctx.currentTime+0.1);
-    g2.gain.linearRampToValueAtTime(0.15,ctx.currentTime+0.3);
-    g2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.7);
-    o2.start(ctx.currentTime+0.1); o2.stop(ctx.currentTime+0.7);
+    g2.gain.setValueAtTime(0,a.currentTime+0.1);
+    g2.gain.linearRampToValueAtTime(0.15,a.currentTime+0.3);
+    g2.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.7);
+    o2.start(a.currentTime+0.1); o2.stop(a.currentTime+0.7);
   });
 }
 
 // Escape — triumphant sting
 function sfxEscape(){
-  sfxPlay(ctx=>{
+  sfxPlay(a=>{
     [440,550,660,880].forEach((f,i)=>{
-      const o=ctx.createOscillator(), g=ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
+      const o=a.createOscillator(), g=a.createGain();
+      o.connect(g); g.connect(a.destination);
       o.type='triangle'; o.frequency.value=f;
-      const t=ctx.currentTime+i*0.06;
+      const t=a.currentTime+i*0.06;
       g.gain.setValueAtTime(0.12,t);
       g.gain.exponentialRampToValueAtTime(0.001,t+0.4);
       o.start(t); o.stop(t+0.4);
@@ -723,43 +723,43 @@ function sfxEscape(){
 
 // Death — descending tone
 function sfxDeath(){
-  sfxPlay(ctx=>{
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
+  sfxPlay(a=>{
+    const o=a.createOscillator(), g=a.createGain();
+    o.connect(g); g.connect(a.destination);
     o.type='sawtooth';
-    o.frequency.setValueAtTime(220,ctx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(30,ctx.currentTime+0.8);
-    g.gain.setValueAtTime(0.25,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.85);
-    o.start(); o.stop(ctx.currentTime+0.85);
+    o.frequency.setValueAtTime(220,a.currentTime);
+    o.frequency.exponentialRampToValueAtTime(30,a.currentTime+0.8);
+    g.gain.setValueAtTime(0.25,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.85);
+    o.start(); o.stop(a.currentTime+0.85);
   });
 }
 
 // Ability used — swoosh
 function sfxAbility(){
-  sfxPlay(ctx=>{
-    const buf=ctx.createBuffer(1,ctx.sampleRate*0.2,ctx.sampleRate);
+  sfxPlay(a=>{
+    const buf=a.createBuffer(1,a.sampleRate*0.2,a.sampleRate);
     const d=buf.getChannelData(0);
-    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(ctx.sampleRate*0.06));
-    const src=ctx.createBufferSource(), g=ctx.createGain();
-    const flt=ctx.createBiquadFilter(); flt.type='bandpass'; flt.frequency.value=600; flt.Q.value=3;
-    src.buffer=buf; src.connect(flt); flt.connect(g); g.connect(ctx.destination);
-    g.gain.setValueAtTime(0.4,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.22);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/(a.sampleRate*0.06));
+    const src=a.createBufferSource(), g=a.createGain();
+    const flt=a.createBiquadFilter(); flt.type='bandpass'; flt.frequency.value=600; flt.Q.value=3;
+    src.buffer=buf; src.connect(flt); flt.connect(g); g.connect(a.destination);
+    g.gain.setValueAtTime(0.4,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.22);
     src.start();
   });
 }
 
 // Jeffrey jumpscare — dissonant stab
 function sfxJumpscare(){
-  sfxPlay(ctx=>{
+  sfxPlay(a=>{
     [110,155,233].forEach((f,i)=>{
-      const o=ctx.createOscillator(), g=ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
+      const o=a.createOscillator(), g=a.createGain();
+      o.connect(g); g.connect(a.destination);
       o.type='sawtooth'; o.frequency.value=f;
-      g.gain.setValueAtTime(0.3,ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
-      o.start(); o.stop(ctx.currentTime+0.5);
+      g.gain.setValueAtTime(0.3,a.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.5);
+      o.start(); o.stop(a.currentTime+0.5);
     });
   });
 }
@@ -770,13 +770,13 @@ function sfxRepairTick(){
   const now=Date.now();
   if(now-_lastRepairTick<1800) return;
   _lastRepairTick=now;
-  sfxPlay(ctx=>{
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
+  sfxPlay(a=>{
+    const o=a.createOscillator(), g=a.createGain();
+    o.connect(g); g.connect(a.destination);
     o.type='sine'; o.frequency.value=800;
-    g.gain.setValueAtTime(0.06,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.04);
-    o.start(); o.stop(ctx.currentTime+0.04);
+    g.gain.setValueAtTime(0.06,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,a.currentTime+0.04);
+    o.start(); o.stop(a.currentTime+0.04);
   });
 }
 
