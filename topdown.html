@@ -551,8 +551,16 @@ function onMsg(e){
   else if(m.t==='DIED'){
     applyDeath(m);
   }
-  else if(m.t==='SHOOT_VFX'){
+  else if(m.t==='BULLETS'){
+    // Spawn opponent's bullets locally so we can detect hits against ourselves
     spawnMuzzleFlash(m.x, m.y, m.angle);
+    const wep=WEAPONS.find(w=>w.id===m.wepId)||WEAPONS[0];
+    for(let i=0;i<m.count;i++){
+      const sp=(Math.random()-0.5)*m.spread*2;
+      const ang=m.angle+sp;
+      bullets.push({x:m.x,y:m.y,vx:Math.cos(ang)*m.spd,vy:Math.sin(ang)*m.spd,
+        dmg:m.dmg,owner:m.from,wep,life:m.range/m.spd,color:m.color});
+    }
   }
 }
 
@@ -782,7 +790,10 @@ function fireWeapon(p){
 
   // Muzzle flash
   spawnMuzzleFlash(bx, by, p.angle);
-  channel?.postMessage({t:'SHOOT_VFX',rc:roomCode,from:peerId,x:bx,y:by,angle:p.angle});
+  // Broadcast bullets so opponent can run hit detection against themselves
+  channel?.postMessage({t:'BULLETS',rc:roomCode,from:peerId,x:bx,y:by,angle:p.angle,
+    wepId:p.weapon.id,count:p.weapon.count,spread:p.weapon.spread,
+    spd:p.weapon.spd,dmg:p.weapon.dmg,range:p.weapon.range,color:p.weapon.color});
 
   // Recoil
   p.x-=Math.cos(p.angle)*2; p.y-=Math.sin(p.angle)*2;
@@ -819,18 +830,17 @@ function updateBullets(dt){
 function onBulletHit(b,p){
   spawnHitParticles(b.x,b.y,p.sprite.B);
   p.hitFlash=1;
-  // Only local player self-reports being hit; host decides for opponent
+  screenShake(2);
+  // Each client is authoritative only for their own player
   if(p.id===peerId){
     p.hp=Math.max(0,p.hp-b.dmg);
-    channel?.postMessage({t:'HIT',rc:roomCode,from:peerId,victim:peerId,dmg:b.dmg,shooter:b.owner});
+    channel?.postMessage({t:'HIT',rc:roomCode,from:peerId,victim:peerId,hp:p.hp,shooter:b.owner});
     if(p.hp<=0) diePlayer(p,b.owner);
-  } else if(isHost&&p.id!=='bot'){
-    // (already handled locally for bot)
   } else if(p.id==='bot'){
     p.hp=Math.max(0,p.hp-b.dmg);
     if(p.hp<=0) diePlayer(p,b.owner);
   }
-  screenShake(2);
+  // For remote players hit by our bullets: they'll detect it on their end and send back HIT msg
 }
 
 function diePlayer(p,killerId){
@@ -842,13 +852,14 @@ function diePlayer(p,killerId){
     flashScreen();
     toast('💀 KNOCKED OUT — RESPAWNING IN 3s', 2800);
     channel?.postMessage({t:'DIED',rc:roomCode,from:peerId,victim:peerId,killer:killerId});
-  } else {
-    myStats.kills++;
-    score.me++;
+  } else if(p.id==='bot'){
+    // bot death — we scored, solo mode
+    myStats.kills++; score.me++;
     myStats.bestWep=myP?.weapon?.name||'PISTOL';
     addKillFeed(`${players[killerId]?.name||'?'} ↣ ${p.name}`);
-    toast('⚔ KILL +1', 1200);
+    toast('⚔ KILL +1',1200);
   }
+  // For online opponent deaths: kills are counted in applyHit when we receive their HIT message
 }
 
 function respawn(p){
@@ -961,16 +972,29 @@ function applySync(m){
 }
 
 function applyHit(m){
+  // The victim is reporting their own authoritative HP
   const p=players[m.victim];
-  if(!p||m.victim===peerId) return;
-  p.hp=Math.max(0,p.hp-m.dmg);
+  if(!p) return;
+  p.hp=m.hp;
   p.hitFlash=1;
-  if(p.hp<=0&&p.alive){ p.alive=false; p.hp=0; p.respawnT=3; spawnDeathPop(p.x,p.y,p.sprite?.B||'#fff'); }
+  spawnHitParticles(p.x,p.y,p.sprite?.B||'#fff');
+  screenShake(2);
+  // If victim is the opponent and they're now dead, mark them
+  if(m.victim!==peerId&&p.hp<=0&&p.alive){
+    p.alive=false; p.hp=0; p.respawnT=3;
+    spawnDeathPop(p.x,p.y,p.sprite?.B||'#fff');
+    // We scored a kill
+    myStats.kills++; score.me++;
+    myStats.bestWep=myP?.weapon?.name||'PISTOL';
+    addKillFeed(`${players[m.shooter]?.name||'?'} ↣ ${p.name}`);
+    toast('⚔ KILL +1',1200);
+  }
 }
 
 function applyDeath(m){
   const p=players[m.victim];
   if(!p||m.victim===peerId) return;
+  if(!p.alive) return; // already handled by applyHit
   p.alive=false; p.hp=0; p.respawnT=3;
   spawnDeathPop(p.x,p.y,p.sprite?.B||'#fff');
 }
