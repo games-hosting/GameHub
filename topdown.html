@@ -395,7 +395,8 @@ function circleHitsWall(cx, cy, r) {
 //  STATE
 // ═══════════════════════════════════════════════════
 let myName='', roomCode='', isHost=false;
-let channel=null;
+let ws=null;          // WebSocket connection
+let wsReady=false;    // socket open and usable
 const peerId = Math.random().toString(36).slice(2,10);
 let roomPlayers={}, charChoices={};
 
@@ -471,51 +472,88 @@ function goLobby(){
   nav('s-lobby');
 }
 
+// ── WebSocket transport ──
+// Uses a free public WS echo/broadcast server.
+// Every message is JSON with a "rc" (room code) field so we filter by room.
+const WS_URL = 'wss://socketsbay.com/wss/v2/1/demo/';
+let wsQueue = [];   // messages queued before socket is open
+let wsJoinTimer = null;
+
+function initWS(onOpenCb){
+  if(ws){ try{ ws.close(); }catch(e){} }
+  wsReady = false;
+  ws = new WebSocket(WS_URL);
+  ws.onopen = ()=>{
+    wsReady = true;
+    wsQueue.forEach(m=>ws.send(m));
+    wsQueue=[];
+    if(onOpenCb) onOpenCb();
+  };
+  ws.onmessage = e=>{
+    let m;
+    try{ m=JSON.parse(e.data); }catch(ex){ return; }
+    onMsg({data:m});
+  };
+  ws.onerror = ()=>{ toast('CONNECTION ERROR — RETRY'); hideConn(); };
+  ws.onclose = ()=>{ wsReady=false; };
+}
+
+function send(obj){
+  const s=JSON.stringify(obj);
+  if(wsReady) ws.send(s);
+  else wsQueue.push(s);
+}
+
 function createRoom(){
   roomCode=genCode(); isHost=true;
-  initCh();
   roomPlayers={};
   roomPlayers[peerId]={name:myName,peerId,ready:false};
-  renderRoom();
   nav('s-room');
   document.getElementById('disp-code').textContent=roomCode;
-  bcastRoom();
+  showConn('CONNECTING...');
+  initWS(()=>{
+    hideConn();
+    renderRoom();
+    // Periodically re-broadcast room state so late joiners catch it
+    clearInterval(wsJoinTimer);
+    wsJoinTimer=setInterval(()=>{ if(gameRunning){ clearInterval(wsJoinTimer); return; } bcastRoom(); },1500);
+  });
 }
 
 function joinRoom(){
   const code=document.getElementById('inp-room').value.trim().toUpperCase();
   if(code.length<4){toast('ENTER VALID CODE!');return;}
   roomCode=code; isHost=false;
-  initCh();
   roomPlayers={};
   roomPlayers[peerId]={name:myName,peerId,ready:false};
   showConn('FINDING ROOM...');
-  channel.postMessage({t:'JOIN_REQ',rc:roomCode,from:peerId,name:myName});
+  initWS(()=>{
+    // Send join request; host will reply with ROOM_STATE
+    send({t:'JOIN_REQ',rc:roomCode,from:peerId,name:myName});
+  });
+  // Timeout if host never responds
   setTimeout(()=>{
-    hideConn();
-    if(Object.keys(roomPlayers).length<2) toast('ROOM NOT FOUND — TRY AGAIN');
-  },4000);
+    if(Object.keys(roomPlayers).length<2){ hideConn(); toast('ROOM NOT FOUND — CHECK CODE'); }
+  },6000);
 }
 
 function leaveRoom(){
-  channel?.postMessage({t:'LEAVE',rc:roomCode,from:peerId});
-  channel?.close(); channel=null;
+  clearInterval(wsJoinTimer);
+  send({t:'LEAVE',rc:roomCode,from:peerId});
+  try{ ws?.close(); }catch(e){}
+  ws=null; wsReady=false; wsQueue=[];
   roomPlayers={};
   nav('s-lobby');
 }
 
-function initCh(){
-  channel?.close();
-  channel=new BroadcastChannel('pb_'+roomCode);
-  channel.onmessage=onMsg;
-}
-
 function bcastRoom(){
-  channel?.postMessage({t:'ROOM_STATE',rc:roomCode,from:peerId,players:roomPlayers});
+  send({t:'ROOM_STATE',rc:roomCode,from:peerId,players:roomPlayers});
 }
 
 function onMsg(e){
   const m=e.data;
+  // Ignore malformed messages, messages not for this room, and our own echoed messages
+  if(!m||typeof m!=='object'||!m.t||!m.rc) return;
   if(m.rc!==roomCode||m.from===peerId) return;
   if(m.t==='JOIN_REQ'){
     if(!isHost||Object.keys(roomPlayers).length>=4) return;
@@ -597,12 +635,12 @@ function renderRoom(){
   if(me&&!me.ready){
     const b=document.createElement('button');
     b.className='btn btn-g'; b.textContent='✓ READY UP';
-    b.onclick=()=>{roomPlayers[peerId].ready=true;channel?.postMessage({t:'READY',rc:roomCode,from:peerId,v:true});renderRoom();};
+    b.onclick=()=>{roomPlayers[peerId].ready=true;send({t:'READY',rc:roomCode,from:peerId,v:true});renderRoom();};
     ract.appendChild(b);
   } else if(me&&me.ready){
     const b=document.createElement('button');
     b.className='btn btn-d'; b.textContent='○ UNREADY';
-    b.onclick=()=>{roomPlayers[peerId].ready=false;channel?.postMessage({t:'READY',rc:roomCode,from:peerId,v:false});renderRoom();};
+    b.onclick=()=>{roomPlayers[peerId].ready=false;send({t:'READY',rc:roomCode,from:peerId,v:false});renderRoom();};
     ract.appendChild(b);
   }
   if(isHost&&allRdy){
@@ -611,7 +649,7 @@ function renderRoom(){
     b.onclick=()=>{
       const cc={};
       Object.keys(roomPlayers).forEach((id,i)=>cc[id]=i);
-      channel.postMessage({t:'START',rc:roomCode,from:peerId,cc});
+      send({t:'START',rc:roomCode,from:peerId,cc});
       charChoices=cc; startGame();
     };
     ract.appendChild(b);
@@ -623,7 +661,7 @@ function renderRoom(){
 
 function setReady(v){
   if(roomPlayers[peerId]) roomPlayers[peerId].ready=v;
-  channel?.postMessage({t:'READY',rc:roomCode,from:peerId,v});
+  send({t:'READY',rc:roomCode,from:peerId,v});
   renderRoom();
 }
 
@@ -767,7 +805,9 @@ function updatePlayers(dt){
       }
 
       // Broadcast our authoritative position every frame
-      if(channel) channel.postMessage({t:'POS',rc:roomCode,from:peerId,x:p.x,y:p.y,angle:p.angle,wepId:p.weapon.id,hp:p.hp,alive:p.alive,respawnT:p.respawnT});
+      // Throttle POS to ~20/sec to avoid flooding the WS server
+      p._posTimer=(p._posTimer||0)+1;
+      if(wsReady && p._posTimer%3===0) send({t:'POS',rc:roomCode,from:peerId,x:Math.round(p.x*10)/10,y:Math.round(p.y*10)/10,angle:Math.round(p.angle*100)/100,wepId:p.weapon.id,hp:p.hp,alive:p.alive,respawnT:Math.round(p.respawnT*10)/10});
 
     } else {
       // remote player: position driven by POS messages, just animate
@@ -807,7 +847,7 @@ function fireWeapon(p){
   for(const b of bullets.slice(-p.weapon.count)){
     bcastDirs.push({vx:b.vx, vy:b.vy});
   }
-  channel?.postMessage({t:'BULLETS',rc:roomCode,from:peerId,x:bx,y:by,baseAngle:p.angle,
+  send({t:'BULLETS',rc:roomCode,from:peerId,x:bx,y:by,baseAngle:p.angle,
     wepId:p.weapon.id,dirs:bcastDirs,
     spd:p.weapon.spd,dmg:p.weapon.dmg,range:p.weapon.range,color:p.weapon.color});
 
@@ -850,7 +890,7 @@ function onBulletHit(b,p){
   // Each client is authoritative only for their own player
   if(p.id===peerId){
     p.hp=Math.max(0,p.hp-b.dmg);
-    channel?.postMessage({t:'HIT',rc:roomCode,from:peerId,victim:peerId,hp:p.hp,shooter:b.owner});
+    send({t:'HIT',rc:roomCode,from:peerId,victim:peerId,hp:p.hp,shooter:b.owner});
     if(p.hp<=0) diePlayer(p,b.owner);
   } else if(p.id==='bot'){
     p.hp=Math.max(0,p.hp-b.dmg);
@@ -867,7 +907,7 @@ function diePlayer(p,killerId){
     score.opp++;
     flashScreen();
     toast('💀 KNOCKED OUT — RESPAWNING IN 3s', 2800);
-    channel?.postMessage({t:'DIED',rc:roomCode,from:peerId,victim:peerId,killer:killerId});
+    send({t:'DIED',rc:roomCode,from:peerId,victim:peerId,killer:killerId});
   } else if(p.id==='bot'){
     // bot death — we scored, solo mode
     myStats.kills++; score.me++;
