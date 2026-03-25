@@ -324,45 +324,62 @@
     }
   </script>
 
-  <!-- === BALATRO DEBUG MENU UNLOCKER === -->
+  <!-- === BALATRO DEBUG MENU UNLOCKER v2 (stronger) === -->
   <script>
-    console.log('%c[Balatro Web Debug] Installing debug menu unlocker...', 'color: #00ffcc; font-weight: bold');
+    console.log('%c[Balatro Web Debug] Installing stronger debug menu unlocker...', 'color: #00ffcc; font-weight: bold');
 
     window.addEventListener('load', function() {
       let attempts = 0;
-      const maxAttempts = 20;   // increased a bit
+      const maxAttempts = 25;
 
       const tryEnableDebug = function() {
         attempts++;
 
+        // Try common global variables first
         if (typeof _RELEASE_MODE !== 'undefined') {
           _RELEASE_MODE = false;
-          console.log('%c✅ [Balatro Debug] SUCCESS: _RELEASE_MODE set to false! Hold TAB for the debug menu.', 'color: lime; font-size: 16px; font-weight: bold');
+          console.log('%c✅ SUCCESS: _RELEASE_MODE forced false! Hold TAB', 'color: lime; font-size: 16px; font-weight: bold');
           return true;
         }
-        if (typeof G_DEBUG !== 'undefined') {
-          G_DEBUG = true;
-          console.log('%c✅ [Balatro Debug] SUCCESS: G_DEBUG = true', 'color: lime');
-          return true;
-        }
-        if (typeof DEBUG_MODE !== 'undefined') {
-          DEBUG_MODE = true;
-          console.log('%c✅ [Balatro Debug] SUCCESS: DEBUG_MODE = true', 'color: lime');
-          return true;
+        if (typeof G_DEBUG !== 'undefined') { G_DEBUG = true; console.log('%c✅ G_DEBUG enabled', 'color: lime'); return true; }
+        if (typeof DEBUG_MODE !== 'undefined') { DEBUG_MODE = true; console.log('%c✅ DEBUG_MODE enabled', 'color: lime'); return true; }
+
+        // Stronger attempt: try to reach into the Lua VM / love.js globals
+        try {
+          if (window.Module && Module.lua && typeof Module.lua.setglobal === 'function') {
+            Module.lua.setglobal('_RELEASE_MODE', false);
+            console.log('%c✅ Injected _RELEASE_MODE via Lua VM!', 'color: lime; font-size: 16px; font-weight: bold');
+            return true;
+          }
+
+          // Alternative common paths in LÖVE.js / Balatro web builds
+          if (window._G && _G._RELEASE_MODE !== undefined) {
+            _G._RELEASE_MODE = false;
+            console.log('%c✅ _G._RELEASE_MODE forced false!', 'color: lime; font-size: 16px; font-weight: bold');
+            return true;
+          }
+
+          if (typeof love !== 'undefined' && love._release_mode !== undefined) {
+            love._release_mode = false;
+            console.log('%c✅ love._release_mode forced false!', 'color: lime');
+            return true;
+          }
+        } catch (e) {
+          // silent fail, continue trying
         }
 
         if (attempts < maxAttempts) {
-          setTimeout(tryEnableDebug, 700);
+          setTimeout(tryEnableDebug, 600);
         } else {
-          console.log('%c⚠️ [Balatro Debug] Could not find the debug flag after ' + maxAttempts + ' attempts. The menu might not work on this build.', 'color: orange');
+          console.log('%c⚠️ Could not find any debug flag after ' + maxAttempts + ' attempts.', 'color: orange');
+          console.log('%c   Tip: Open DevTools (F12) → Console and tell me exactly what messages appear.', 'color: yellow');
         }
       };
 
-      // Give the game more time to fully initialize
-      setTimeout(tryEnableDebug, 3000);
+      setTimeout(tryEnableDebug, 3500); // start a bit later
     });
   </script>
-  <!-- === END DEBUG UNLOCKER === -->
+  <!-- === END DEBUG UNLOCKER v2 === -->
 
   <script type="text/javascript" src="game.js"></script>
   <script async type="text/javascript" src="love.js" onload="applicationLoad(this)"></script>
