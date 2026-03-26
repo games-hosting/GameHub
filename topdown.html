@@ -334,7 +334,6 @@ function drawChar(ctx,spr,cx,cy,ang,px){
 
 // ════════════════════════════════════════
 //  MAP GENERATOR
-//  Chunked approach: grid of 5×5 room chunks connected by 1-tile corridors
 // ════════════════════════════════════════
 const MAP_THEMES={
   arena: {fA:'#191919',fB:'#1b1b1b',wA:'#242424',wB:'#2c2c2c',name:'ARENA'},
@@ -344,35 +343,22 @@ const MAP_THEMES={
 };
 const THEME_KEYS=Object.keys(MAP_THEMES);
 
-// Room chunk patterns (5×5, 0=floor,1=wall)
 const CHUNKS=[
-  // open
   [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]],
-  // four pillars
   [[0,0,0,0,0],[0,1,0,1,0],[0,0,0,0,0],[0,1,0,1,0],[0,0,0,0,0]],
-  // cross
   [[0,0,1,0,0],[0,0,0,0,0],[1,0,0,0,1],[0,0,0,0,0],[0,0,1,0,0]],
-  // L wall
   [[0,0,0,0,0],[0,1,1,0,0],[0,1,0,0,0],[0,0,0,0,0],[0,0,0,0,0]],
-  // T wall
   [[0,0,0,0,0],[0,1,1,1,0],[0,0,1,0,0],[0,0,0,0,0],[0,0,0,0,0]],
-  // diagonal cover
   [[0,0,0,0,1],[0,0,0,1,1],[0,0,0,0,0],[1,1,0,0,0],[1,0,0,0,0]],
-  // hollow box
   [[0,0,0,0,0],[0,1,1,1,0],[0,1,0,1,0],[0,1,1,1,0],[0,0,0,0,0]],
-  // scattered
   [[1,0,0,0,0],[0,0,1,0,0],[0,0,0,0,0],[0,1,0,0,1],[0,0,0,0,0]],
-  // S-wall
   [[0,0,1,1,0],[0,0,1,0,0],[0,0,0,0,0],[0,0,1,0,0],[0,1,1,0,0]],
-  // two horizontal covers
   [[0,0,0,0,0],[0,1,1,0,0],[0,0,0,0,0],[0,0,1,1,0],[0,0,0,0,0]],
 ];
 
 function buildMap(cols,rows,themeKey){
   const tk=themeKey||THEME_KEYS[0|Math.random()*THEME_KEYS.length];
   const theme=MAP_THEMES[tk];
-  // Each chunk is 5 tiles. Between chunks: 1 floor tile corridor (both h and v).
-  // Total width: cols*5 + (cols-1) + 2 = cols*6+1 tiles
   const TW=cols*6+1, TH=rows*6+1;
   const grid=[];
   for(let y=0;y<TH;y++){grid.push([]);for(let x=0;x<TW;x++)grid[y].push(1);}
@@ -380,19 +366,17 @@ function buildMap(cols,rows,themeKey){
   const roomCenters=[];
   for(let ry=0;ry<rows;ry++){
     for(let rx=0;rx<cols;rx++){
-      const ox=rx*6+1, oy=ry*6+1; // top-left of this chunk in tile coords
+      const ox=rx*6+1, oy=ry*6+1;
       const chunk=CHUNKS[0|Math.random()*CHUNKS.length];
       for(let cy=0;cy<5;cy++) for(let cx=0;cx<5;cx++) grid[oy+cy][ox+cx]=chunk[cy][cx];
       roomCenters.push({x:(ox+2)*TILE+TILE/2, y:(oy+2)*TILE+TILE/2});
-      // Horizontal corridor to right chunk
       if(rx<cols-1){
-        const cy2=oy+2; // mid-row of chunk
-        grid[cy2][ox+5]=0; grid[cy2+1]&&(grid[cy2+1][ox+5]=0);
+        const cy2=oy+2;
+        grid[cy2][ox+5]=0; if(grid[cy2+1])grid[cy2+1][ox+5]=0;
       }
-      // Vertical corridor to chunk below
       if(ry<rows-1){
-        const cx2=ox+2; // mid-col of chunk
-        grid[oy+5][cx2]=0; grid[oy+5][cx2+1]&&(grid[oy+5][cx2+1]=0);
+        const cx2=ox+2;
+        grid[oy+5][cx2]=0; if(grid[oy+5][cx2+1]!==undefined)grid[oy+5][cx2+1]=0;
       }
     }
   }
@@ -406,7 +390,7 @@ function buildMap(cols,rows,themeKey){
   };
 }
 
-let MAP=null; // current map
+let MAP=null;
 
 function circleHitsWall(cx,cy,r){
   const x0=0|(cx-r)/TILE,x1=0|(cx+r)/TILE,y0=0|(cy-r)/TILE,y1=0|(cy+r)/TILE;
@@ -442,7 +426,7 @@ function farSpawn(px,py,minD){
 // ════════════════════════════════════════
 //  GAME STATE
 // ════════════════════════════════════════
-let gameMode='duel'; // duel|waves|br|online-duel|online-waves|online-br
+let gameMode='duel';
 let onlineMode='duel';
 let canvas,ctx;
 let gameRunning=false,rafId=0,lastT=0;
@@ -500,7 +484,15 @@ function onMsg(m){
   else if(m.t==='LEAVE'){delete roomPlayers[m._from];renderRoom();}
   else if(m.t==='READY'){if(roomPlayers[m._from])roomPlayers[m._from].ready=m.v;renderRoom();}
   else if(m.t==='START'){charChoices=m.cc;onlineMode=m.mode||'duel';startOnlineGame();}
-  else if(m.t==='POS'){const p=players[m._from];if(p){p.x=m.x;p.y=m.y;p.angle=m.angle;p.hp=m.hp;p.alive=m.alive;p.respawnT=m.respawnT;p.walkT+=.016;const w=WEAPONS.find(w=>w.id===m.wepId);if(w)p.weapon=w;}}
+  else if(m.t==='POS'){
+    const p=players[m._from];
+    if(p){
+      // FIX: Apply received position to remote players so they actually move on screen
+      p.x=m.x;p.y=m.y;p.angle=m.angle;p.hp=m.hp;p.alive=m.alive;p.respawnT=m.respawnT;
+      if(m.alive) p.walkT+=.016;
+      const w=WEAPONS.find(w=>w.id===m.wepId);if(w)p.weapon=w;
+    }
+  }
   else if(m.t==='BULLETS'){spawnMuzzleFlash(m.x,m.y,m.ba);const wep=WEAPONS.find(w=>w.id===m.wid)||WEAPONS[0];for(const d of m.dirs)bullets.push({x:m.x,y:m.y,vx:d.vx,vy:d.vy,dmg:m.dmg,owner:m._from,wep,life:m.range/m.spd,color:m.color});}
   else if(m.t==='HIT')applyOnlineHit(m);
   else if(m.t==='DIED')applyOnlineDeath(m);
@@ -617,7 +609,7 @@ function startBR(){
   }
   brZoneX=MAP.W/2;brZoneY=MAP.H/2;
   brZoneR=Math.hypot(MAP.W,MAP.H)/2+50;
-  brShrink=brZoneR/200; // ~3.3 min total to close
+  brShrink=brZoneR/200;
   startLoop();
 }
 
@@ -639,7 +631,11 @@ function startOnlineGame(){
 // ════════════════════════════════════════
 //  MAIN LOOP
 // ════════════════════════════════════════
-function startLoop(){setupInput();gameRunning=true;lastT=performance.now();rafId=requestAnimationFrame(loop);}
+function startLoop(){
+  // FIX: Reset input state on each game start instead of guarding with _inputDone
+  setupInput();
+  gameRunning=true;lastT=performance.now();rafId=requestAnimationFrame(loop);
+}
 function loop(ts){
   if(!gameRunning) return;
   const dt=Math.min((ts-lastT)/1000,.05);lastT=ts;
@@ -676,7 +672,6 @@ function spawnWave(){
     const id='wbot_'+Date.now()+'_'+i;
     const si=1+(0|Math.random()*(CHAR_SPRITES.length-1));
     const bot=makePlayer(id,nextBotName(),sp.x,sp.y,si,true);
-    // Scale weapon pool with wave
     bot.weapon=WEAPONS[0|Math.random()*Math.min(WEAPONS.length,2+Math.floor(waveNum/2))];
     players[id]=bot;
   }
@@ -721,7 +716,8 @@ function updatePlayers(dt){
   Object.values(players).forEach(p=>{
     if(!p.alive){if(p.respawnT>0){p.respawnT-=dt;if(p.respawnT<=0)respawn(p);}return;}
     p.hitFlash=Math.max(0,p.hitFlash-dt*5);
-    if(p.id!=='player'&&!p.isBot){p.walkT+=dt*1.2;return;} // remote human
+    // Remote human players: position is already applied in onMsg(POS), just skip local control
+    if(p.id!=='player'&&!p.isBot) return;
     if(p.id!=='player') return; // bots handled in updateBots
     // --- LOCAL PLAYER ---
     if(p.dashT>0){
@@ -744,7 +740,7 @@ function updatePlayers(dt){
     }
     if(p.dashCd>0) p.dashCd-=dt;
     if(shootHeld||aimState.active){const now=performance.now()/1000;if(now-p.lastShot>=p.weapon.rate){p.lastShot=now;fireWeapon(p);}}
-    // Network
+    // Network position broadcast
     p._posTimer++;
     if(mqttReady&&p._posTimer%3===0) send({t:'POS',x:+(p.x.toFixed(1)),y:+(p.y.toFixed(1)),angle:+(p.angle.toFixed(2)),wepId:p.weapon.id,hp:p.hp,alive:p.alive,respawnT:+(p.respawnT.toFixed(1))});
   });
@@ -761,7 +757,6 @@ function updateBots(dt){
     if(p.aiTimer>0) return;
     p.aiTimer=0.08+Math.random()*0.05;
 
-    // Pick nearest alive target (not self)
     let best=null,bestD=9e9;
     live.forEach(t=>{if(t.id===p.id)return;const d=Math.hypot(t.x-p.x,t.y-p.y);if(d<bestD){bestD=d;best=t;}});
     if(!best) return;
@@ -769,7 +764,6 @@ function updateBots(dt){
     const dx=best.x-p.x,dy=best.y-p.y,dist=Math.hypot(dx,dy),ang=Math.atan2(dy,dx);
     p.angle=ang+(Math.random()-.5)*.2;
 
-    // State machine
     if(p.aiStateTimer<=0){
       p.aiState=p.hp<25?'retreat':dist>180?'hunt':Math.random()<.28?'strafe':'hunt';
       p.aiStateTimer=.35+Math.random()*.55;
@@ -781,7 +775,6 @@ function updateBots(dt){
     mx+=(Math.random()-.5)*5;my+=(Math.random()-.5)*5;
     const pos=moveAndSlide(p.x,p.y,mx,my,PLAYER_R);p.x=pos.x;p.y=pos.y;p.walkT+=.08;
 
-    // Shoot
     if(dist<p.weapon.range*.9){
       const now=performance.now()/1000,err=.1+Math.max(0,(dist-100)/500)*.25;
       if(now-p.lastShot>=p.weapon.rate*(.8+Math.random()*.35)){
@@ -793,14 +786,17 @@ function updateBots(dt){
         spawnMuzzleFlash(bx,by,p.angle);
       }
     }
-    // Dash
+    // FIX: Use dt for dash cooldown/timer instead of hardcoded 0.08
     if(p.dashCd<=0&&Math.random()<.022){
       p.dashT=DASH_DUR;p.dashCd=DASH_CD;
       const da=ang+(p.hp<40?Math.PI:0)+(Math.random()-.5)*1.4;
       p.dashVx=Math.cos(da)*DASH_SPEED;p.dashVy=Math.sin(da)*DASH_SPEED;spawnDustTrail(p.x,p.y,5);
     }
-    if(p.dashCd>0)p.dashCd-=.08;
-    if(p.dashT>0){p.dashT-=.08;const pos=moveAndSlide(p.x,p.y,p.dashVx*.08,p.dashVy*.08,PLAYER_R);p.x=pos.x;p.y=pos.y;}
+    if(p.dashCd>0) p.dashCd-=dt;
+    if(p.dashT>0){
+      p.dashT-=dt;
+      const pos=moveAndSlide(p.x,p.y,p.dashVx*dt,p.dashVy*dt,PLAYER_R);p.x=pos.x;p.y=pos.y;
+    }
   });
 }
 
@@ -818,7 +814,10 @@ function fireWeapon(p){
   }
   spawnMuzzleFlash(bx,by,p.angle);
   if(mqttReady) send({t:'BULLETS',x:bx,y:by,ba:p.angle,wid:p.weapon.id,dirs,spd:p.weapon.spd,dmg:p.weapon.dmg,range:p.weapon.range,color:p.weapon.color});
-  p.x-=Math.cos(p.angle)*1.5;p.y-=Math.sin(p.angle)*1.5;
+  // FIX: Run recoil through moveAndSlide so it can't push player through walls
+  const recoilDist=1.5;
+  const rpos=moveAndSlide(p.x,p.y,-Math.cos(p.angle)*recoilDist,-Math.sin(p.angle)*recoilDist,PLAYER_R);
+  p.x=rpos.x;p.y=rpos.y;
   screenShake(p.weapon.id==='sniper'?5:p.weapon.id==='shotgun'?3:1.5);
 }
 
@@ -837,11 +836,24 @@ function updateBullets(dt){
     return true;
   });
 }
+
 function hitPlayer(b,p){
   spawnHitParticles(b.x,b.y,p.sprite.B);p.hitFlash=1;screenShake(1.5);
-  if(p.id==='player'){p.hp=Math.max(0,p.hp-b.dmg);if(mqttReady)send({t:'HIT',victim:'player',hp:p.hp,shooter:b.owner});if(p.hp<=0)diePlayer(p,b.owner);}
-  else if(p.isBot){p.hp=Math.max(0,p.hp-b.dmg);if(p.hp<=0)diePlayer(p,b.owner);}
+  // FIX: Handle all player types — local, bot, and remote online players
+  p.hp=Math.max(0,p.hp-b.dmg);
+  if(p.id==='player'){
+    // We are the victim — broadcast HIT so others know our HP
+    if(mqttReady) send({t:'HIT',victim:'player',hp:p.hp,shooter:b.owner});
+    if(p.hp<=0) diePlayer(p,b.owner);
+  } else if(p.isBot){
+    if(p.hp<=0) diePlayer(p,b.owner);
+  } else {
+    // Remote human player hit by our local bullet — we own the damage, send HIT message
+    if(mqttReady) send({t:'HIT',victim:p.id,hp:p.hp,shooter:peerId});
+    if(p.hp<=0) diePlayer(p,peerId);
+  }
 }
+
 function diePlayer(p,killer){
   p.alive=false;p.hp=0;spawnDeathPop(p.x,p.y,p.sprite.B);
   const kname=players[killer]?.name||(killer==='zone'?'ZONE':'?');
@@ -854,14 +866,30 @@ function diePlayer(p,killer){
   } else if(p.isBot){
     if(killer==='player'||killer===peerId){myStats.kills++;myStats.bestWep=myP?.weapon?.name||myStats.bestWep;if(gameMode!=='br')score.me++;addKillFeed('YOU → '+p.name);toast('⚔ KILL!',800);}
     else addKillFeed(kname+' → '+p.name);
+  } else {
+    // Remote human died — credit kill if we were the shooter
+    if(killer===peerId){myStats.kills++;myStats.bestWep=myP?.weapon?.name||myStats.bestWep;if(gameMode!=='br')score.me++;addKillFeed('YOU → '+p.name);toast('⚔ KILL!',800);}
+    else addKillFeed(kname+' → '+p.name);
+    p.respawnT=3;
+    if(mqttReady) send({t:'DIED',victim:p.id,killer});
   }
 }
+
 function respawn(p){
   if(gameMode==='waves'||gameMode==='br') return;
   const sp=randomOpen();p.x=sp.x;p.y=sp.y;p.hp=100;p.alive=true;p.weapon=randWeapon();p.dashT=0;p.dashCd=0;
   spawnRespawnPop(p.x,p.y,p.sprite.H);if(p.id==='player')toast('🔫 BACK WITH '+p.weapon.name+'!',1400);
 }
-function applyOnlineHit(m){const p=players[m.victim];if(!p)return;p.hp=m.hp;p.hitFlash=1;spawnHitParticles(p.x,p.y,p.sprite?.B||'#fff');screenShake(1.5);if(m.victim!==peerId&&p.hp<=0&&p.alive){p.alive=false;p.hp=0;p.respawnT=3;spawnDeathPop(p.x,p.y,p.sprite?.B||'#fff');myStats.kills++;score.me++;addKillFeed(players[m.shooter]?.name+'→'+p.name);toast('⚔ KILL!',800);}}
+function applyOnlineHit(m){
+  const p=players[m.victim];if(!p)return;
+  p.hp=m.hp;p.hitFlash=1;
+  spawnHitParticles(p.x,p.y,p.sprite?.B||'#fff');screenShake(1.5);
+  // Only process death for players that aren't us (we handle our own deaths locally)
+  if(m.victim!==peerId&&p.hp<=0&&p.alive){
+    p.alive=false;p.hp=0;p.respawnT=3;
+    spawnDeathPop(p.x,p.y,p.sprite?.B||'#fff');
+  }
+}
 function applyOnlineDeath(m){const p=players[m.victim];if(!p||m.victim===peerId||!p.alive)return;p.alive=false;p.hp=0;p.respawnT=3;spawnDeathPop(p.x,p.y,p.sprite?.B||'#fff');}
 
 // ════════════════════════════════════════
@@ -901,7 +929,6 @@ function render(){
   ctx.translate(shakeX,shakeY);
   if(useCamera) ctx.translate(-camX*S,-camY*S);
 
-  // Visible tile range
   const tx0=Math.max(0,0|(camX/TILE)),ty0=Math.max(0,0|(camY/TILE));
   const tx1=Math.min(MAP.TW,2+0|((camX+CW/S)/TILE)),ty1=Math.min(MAP.TH,2+0|((camY+CH/S)/TILE));
   const th=MAP.theme;
@@ -918,10 +945,8 @@ function render(){
     }
   }
 
-  // BR zone
   if(gameMode==='br'){
     ctx.save();
-    // Danger tint outside zone
     ctx.fillStyle='rgba(200,0,0,.065)';ctx.fillRect(0,0,MAP.W*S,MAP.H*S);
     ctx.globalCompositeOperation='destination-out';
     ctx.beginPath();ctx.arc(brZoneX*S,brZoneY*S,brZoneR*S,0,Math.PI*2);ctx.fill();
@@ -932,28 +957,24 @@ function render(){
     ctx.setLineDash([]);ctx.restore();
   }
 
-  // Particles
   particles.forEach(p=>{
     ctx.save();ctx.globalAlpha=Math.min(1,p.life/p.maxLife*1.4);ctx.fillStyle=p.color;
     const sz=p.size*(p.type==='dust'?p.life/p.maxLife:1)*S;
     ctx.fillRect((p.x-p.size/2)*S,(p.y-p.size/2)*S,sz,sz);ctx.restore();
   });
 
-  // Muzzle flashes
   flashes.forEach(f=>{
     ctx.save();ctx.translate(f.x*S,f.y*S);ctx.rotate(f.a);ctx.globalAlpha=f.t*12;
     ctx.fillStyle='#fffaa0';ctx.fillRect(0,-4*S,13*S,8*S);
     ctx.fillStyle='#fff';ctx.fillRect(0,-2*S,6*S,4*S);ctx.restore();
   });
 
-  // Bullets
   bullets.forEach(b=>{
     ctx.save();ctx.fillStyle=b.color;ctx.shadowColor=b.color;ctx.shadowBlur=4*S;
     const bl=(b.wep?.id==='sniper'?14:b.wep?.id==='smg'?6:8)*S,bw=(b.wep?.id==='sniper'?2:3)*S;
     ctx.translate(b.x*S,b.y*S);ctx.rotate(Math.atan2(b.vy,b.vx));ctx.fillRect(-bl/2,-bw/2,bl,bw);ctx.restore();
   });
 
-  // Players
   Object.values(players).forEach(p=>{
     if(!p.alive){
       if(p.respawnT>0){ctx.save();ctx.globalAlpha=.2+.12*Math.sin(Date.now()*.008);ctx.font=Math.floor(17*S)+'px serif';ctx.textAlign='center';ctx.fillText('💀',p.x*S,p.y*S+7*S);ctx.restore();}
@@ -971,7 +992,6 @@ function render(){
     ctx.fillStyle=p.hp>60?'#28a050':p.hp>30?'#f0a500':'#e83030';ctx.fillRect(bx,by,bw*p.hp/p.maxHp,bh);
   });
 
-  // Respawn timers
   Object.values(players).forEach(p=>{
     if(!p.alive&&p.respawnT>0){ctx.save();ctx.font=Math.floor(9*S)+"px 'Press Start 2P',monospace";ctx.textAlign='center';ctx.fillStyle='#f0a500';ctx.shadowColor='#000';ctx.shadowBlur=4;ctx.fillText(Math.ceil(p.respawnT),p.x*S,(p.y+PLAYER_R*2)*S);ctx.restore();}
   });
@@ -1034,9 +1054,23 @@ function restartGame(){
 // ════════════════════════════════════════
 //  INPUT
 // ════════════════════════════════════════
-let _inputDone=false;
+// FIX: Remove _inputDone guard — input is re-registered each game start.
+// Listeners are attached once to document, but state variables are reset each call.
+let _inputListenersAttached=false;
+let _keyInterval=null;
+
 function setupInput(){
-  if(_inputDone) return;_inputDone=true;
+  // Reset all transient input state on each game start
+  inputState={dx:0,dy:0};
+  aimState={dx:0,dy:0,active:false};
+  mouseAimActive=false;
+  shootHeld=false;
+  dashQueued=false;
+  jActive=false;
+
+  if(_inputListenersAttached) return; // Only attach DOM listeners once ever
+  _inputListenersAttached=true;
+
   const jb=document.getElementById('jbase'),jk=document.getElementById('jknob');
   const ab=document.getElementById('jbase-aim'),ak=document.getElementById('jknob-aim');
   let jTid=-1,aTid=-1;const JR=40,DEAD=7;
@@ -1058,7 +1092,18 @@ function setupInput(){
   const K={};
   document.addEventListener('keydown',e=>{K[e.key]=true;if(e.key===' '){shootHeld=true;e.preventDefault();}if(e.key==='Shift'||e.key==='f'||e.key==='F')dashQueued=true;});
   document.addEventListener('keyup',e=>{K[e.key]=false;if(e.key===' ')shootHeld=false;});
-  setInterval(()=>{if(!gameRunning||jActive)return;let dx=0,dy=0;if(K['a']||K['A']||K['ArrowLeft'])dx--;if(K['d']||K['D']||K['ArrowRight'])dx++;if(K['w']||K['W']||K['ArrowUp'])dy--;if(K['s']||K['S']||K['ArrowDown'])dy++;if(dx&&dy){dx*=.707;dy*=.707;}inputState.dx=dx;inputState.dy=dy;},16);
+
+  if(_keyInterval) clearInterval(_keyInterval);
+  _keyInterval=setInterval(()=>{
+    if(!gameRunning||jActive)return;
+    let dx=0,dy=0;
+    if(K['a']||K['A']||K['ArrowLeft'])dx--;
+    if(K['d']||K['D']||K['ArrowRight'])dx++;
+    if(K['w']||K['W']||K['ArrowUp'])dy--;
+    if(K['s']||K['S']||K['ArrowDown'])dy++;
+    if(dx&&dy){dx*=.707;dy*=.707;}
+    inputState.dx=dx;inputState.dy=dy;
+  },16);
 }
 
 // ════════════════════════════════════════
