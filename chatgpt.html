@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>YOU SHOULDN'T BE HERE</title>
+<style>
+body { margin:0; background:black; color:#0f0; font-family:monospace; overflow:hidden; transition:0.5s; }
+#game { padding:20px; }
+button { background:black; color:#0f0; border:1px solid #0f0; padding:10px; cursor:pointer; margin-top:10px; }
+input { background:black; color:#0f0; border:1px solid #0f0; }
+.glitch { color:red; text-shadow:2px 0 red, -2px 0 blue; }
+</style>
+</head>
+<body>
+<div id="game"></div>
+<script>
+const game = document.getElementById("game");
+let state = JSON.parse(localStorage.getItem("horror_save")) || {
+  stage:0,
+  name:null,
+  code:null,
+  visits:0,
+  lastVisit:Date.now(),
+  corruption:0
+};
+
+state.visits++;
+let timeGone = Math.floor((Date.now() - state.lastVisit)/1000);
+state.lastVisit = Date.now();
+save();
+
+function save(){ localStorage.setItem("horror_save", JSON.stringify(state)); }
+
+function typeText(text, speed=30, cb){
+  game.innerHTML="";
+  let i=0;
+  let interval=setInterval(()=>{
+    game.innerHTML += text[i];
+    i++;
+    if(i>=text.length){ clearInterval(interval); if(cb) cb(); }
+  }, speed);
+}
+
+function next(fn){ setTimeout(fn, 800); }
+
+function glitchText(){
+  game.classList.add("glitch");
+  setTimeout(()=>game.classList.remove("glitch"), 300);
+}
+
+function stage0(){
+  typeText("...Hello?",50,()=>{
+    next(()=>{
+      typeText("You came back " + state.visits + " times.",50,()=>{
+        next(()=>{
+          typeText("You were gone for " + timeGone + " seconds.",50,()=>{
+            next(()=>{
+              game.innerHTML += "<br><br>What is your name?<br><input id='name'><button onclick='setName()'>Enter</button>";
+            });
+          });
+        });
+      });
+    });
+  });
+}
+
+function setName(){
+  state.name = document.getElementById("name").value || "Unknown";
+  state.stage = 1;
+  save();
+  stage1();
+}
+
+function stage1(){
+  typeText("Hello, " + state.name + ".",50,()=>{
+    next(()=>{
+      typeText("I remember you.",50,()=>{
+        next(()=>{
+          state.stage=2; save(); stage2();
+        });
+      });
+    });
+  });
+}
+
+function stage2(){
+  const code = Math.floor(1000 + Math.random()*9000);
+  state.code = code;
+  save();
+  typeText("Check your messages.",50,()=>{
+    next(()=>{
+      alert("CODE: " + code);
+      game.innerHTML = "Enter the code:<br><input id='code'><button onclick='checkCode()'>Submit</button>";
+    });
+  });
+}
+
+function checkCode(){
+  const val = document.getElementById("code").value;
+  if(val == state.code){
+    state.stage=3; save(); stage3();
+  } else {
+    game.innerHTML += "<br>Wrong.";
+    glitchText();
+  }
+}
+
+function stage3(){
+  typeText("Good.",50,()=>{
+    next(()=>{
+      typeText("Stay with me.",50,()=>{
+        next(()=> checkpoint(4));
+      });
+    });
+  });
+}
+
+function checkpoint(nextStage){
+  state.stage = nextStage;
+  save();
+  game.innerHTML = "Checkpoint reached.<br><button onclick='loadStage()'>Continue</button>";
+}
+
+function stage4(){
+  let fear = 0;
+  function loop(){
+    let fake = Math.random() > 0.7 ? "The button moved." : "";
+    game.innerHTML = "Something is watching you...<br>Fear: " + fear + "<br>" + fake + "<br><button onclick='fear++'>Resist</button>";
+    if(Math.random() > 0.85){
+      document.title = "DON'T LEAVE";
+    }
+    if(fear>=15){
+      state.stage=5; save(); stage5();
+    } else {
+      setTimeout(loop,800);
+    }
+  }
+  loop();
+}
+
+function stage5(){
+  document.body.style.background = "#100";
+  typeText("Why are you still here, " + state.name + "?",50,()=>{
+    next(()=>{
+      typeText("I changed something.",50,()=>{
+        state.corruption++;
+        state.name = scramble(state.name);
+        save();
+        next(()=> checkpoint(6));
+      });
+    });
+  });
+}
+
+function scramble(name){
+  return name.split('').sort(()=>Math.random()-0.5).join('');
+}
+
+function stage6(){
+  typeText("Your name is " + state.name + " now.",50,()=>{
+    next(()=>{
+      typeText("Do you trust this?",50,()=>{
+        next(()=>{
+          game.innerHTML = "<button onclick='lie()'>YES</button><button onclick='truth()'>NO</button>";
+        });
+      });
+    });
+  });
+}
+
+function lie(){
+  typeText("You shouldn't.",80,()=>{
+    next(()=> stage7());
+  });
+}
+
+function truth(){
+  typeText("Good.",80,()=>{
+    next(()=> stage7());
+  });
+}
+
+function stage7(){
+  document.title = "I SEE YOU";
+  typeText("Closing won't help.",60,()=>{
+    next(()=>{
+      checkpoint(8);
+    });
+  });
+}
+
+function stage8(){
+  let timer = 10;
+  function countdown(){
+    game.innerHTML = "Don't leave.<br>" + timer;
+    timer--;
+    if(timer < 0){
+      state.stage=9; save(); stage9();
+    } else {
+      setTimeout(countdown,1000);
+    }
+  }
+  countdown();
+}
+
+function stage9(){
+  document.body.style.background = "black";
+  typeText("We are just getting started.",100);
+}
+
+function loadStage(){
+  switch(state.stage){
+    case 0: stage0(); break;
+    case 1: stage1(); break;
+    case 2: stage2(); break;
+    case 3: stage3(); break;
+    case 4: stage4(); break;
+    case 5: stage5(); break;
+    case 6: stage6(); break;
+    case 7: stage7(); break;
+    case 8: stage8(); break;
+    case 9: stage9(); break;
+    default: stage0();
+  }
+}
+
+loadStage();
+</script>
+</body>
+</html>
