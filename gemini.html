@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SCANNING...</title>
+    <style>
+        body {
+            background-color: #050505;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            text-shadow: 0 0 5px #00ff41;
+        }
+
+        #monitor {
+            width: 80%;
+            max-width: 900px;
+            height: 70%;
+            border: 2px solid #111;
+            padding: 20px;
+            background: rgba(0, 10, 0, 0.9);
+            box-shadow: inset 0 0 50px #000, 0 0 20px rgba(0, 255, 65, 0.2);
+            position: relative;
+            overflow-y: auto;
+        }
+
+        .input-line {
+            display: flex;
+            margin-top: 10px;
+        }
+
+        #user-input {
+            background: transparent;
+            border: none;
+            color: #00ff41;
+            font-family: inherit;
+            font-size: 1.1em;
+            outline: none;
+            width: 100%;
+        }
+
+        .glitch {
+            animation: shake 0.5s infinite;
+        }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            50% { transform: translate(-1px, 2px) rotate(1deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        .crt-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05));
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #004411; }
+    </style>
+</head>
+<body>
+    <div class="crt-overlay"></div>
+    <div id="monitor">
+        <div id="output"></div>
+        <div class="input-line">
+            <span>>&nbsp;</span>
+            <input type="text" id="user-input" autofocus autocomplete="off">
+        </div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        const input = document.getElementById('user-input');
+        const monitor = document.getElementById('monitor');
+
+        let state = JSON.parse(localStorage.getItem('void_save')) || {
+            checkpoint: 0,
+            userName: "USER",
+            hasKey: false,
+            refreshCount: 0
+        };
+
+        const systemInfo = {
+            os: navigator.platform,
+            cores: navigator.hardwareConcurrency,
+            res: `${window.screen.width}x${window.screen.height}`
+        };
+
+        function save() {
+            localStorage.setItem('void_save', JSON.stringify(state));
+        }
+
+        function print(text, delay = 30) {
+            const line = document.createElement('div');
+            line.style.marginBottom = "8px";
+            output.appendChild(line);
+            
+            let i = 0;
+            return new Promise(resolve => {
+                const interval = setInterval(() => {
+                    line.textContent += text[i];
+                    i++;
+                    monitor.scrollTop = monitor.scrollHeight;
+                    if (i === text.length) {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                }, delay);
+            });
+        }
+
+        async function init() {
+            if (state.checkpoint > 0) {
+                state.refreshCount++;
+                save();
+                await print(`[RECOVERY_SYSTEM]: Session resumed.`);
+                await print(`I saw you leave, ${state.userName}. You can't refresh your way out of this.`);
+                await print(`Current progress: Stage ${state.checkpoint}. Let's continue.`);
+            } else {
+                await print("Initializing System...");
+                await print(`Hardware detected: ${systemInfo.os} | ${systemInfo.cores} Core Logic.`);
+                await print("Searching for life signs...");
+                await print("...");
+                await print("Hello? Can you hear me?");
+                await print("What is your name?");
+            }
+            gameLoop();
+        }
+
+        async function gameLoop() {
+            input.addEventListener('keydown', async (e) => {
+                if (e.key === 'Enter') {
+                    const val = input.value.trim().toLowerCase();
+                    input.value = '';
+                    
+                    if (state.checkpoint === 0) {
+                        state.userName = val;
+                        state.checkpoint = 1;
+                        save();
+                        await print(`Nice to meet you, ${state.userName}. Or should I say... nice to watch you?`);
+                        await print("Your screen resolution is " + systemInfo.res + ". I can see everything in that frame.");
+                        await print("Type 'OPEN' to try the first door.");
+                    } 
+                    
+                    else if (val === 'open' && state.checkpoint === 1) {
+                        await print("The door is locked. A prompt appears on your 'Email'.");
+                        await print("META-TASK: The code is the last 4 digits of your system hardware count + 1987.");
+                        await print("Enter the code:");
+                        state.checkpoint = 2;
+                        save();
+                    }
+
+                    else if (state.checkpoint === 2) {
+                        const correctCode = (systemInfo.cores + 1987).toString();
+                        if (val === correctCode) {
+                            await print("ACCESS GRANTED.");
+                            await print("You are deeper now. Do you feel the hum of the processor?");
+                            document.title = "I AM INSIDE";
+                            state.checkpoint = 3;
+                            save();
+                        } else {
+                            await print("WRONG CODE. Check your 'reality' again.");
+                        }
+                    }
+
+                    else if (val === 'quit' || val === 'exit') {
+                        document.body.classList.add('glitch');
+                        await print("THERE IS NO EXIT.");
+                        setTimeout(() => document.body.classList.remove('glitch'), 1000);
+                    }
+                }
+            });
+        }
+
+        // 4th Wall: Tab monitoring
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                console.log("Player tried to look away.");
+            } else {
+                print("\n[SYSTEM]: I saw you looking at another tab. Stay focused on us.");
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>
