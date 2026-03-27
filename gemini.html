@@ -2,199 +2,152 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SCANNING...</title>
+    <title>S Y S T E M _ F A I L U R E</title>
     <style>
-        body {
-            background-color: #050505;
-            color: #00ff41;
-            font-family: 'Courier New', monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-            text-shadow: 0 0 5px #00ff41;
-        }
-
-        #monitor {
-            width: 80%;
-            max-width: 900px;
-            height: 70%;
-            border: 2px solid #111;
-            padding: 20px;
-            background: rgba(0, 10, 0, 0.9);
-            box-shadow: inset 0 0 50px #000, 0 0 20px rgba(0, 255, 65, 0.2);
-            position: relative;
-            overflow-y: auto;
-        }
-
-        .input-line {
-            display: flex;
-            margin-top: 10px;
-        }
-
-        #user-input {
-            background: transparent;
-            border: none;
-            color: #00ff41;
-            font-family: inherit;
-            font-size: 1.1em;
-            outline: none;
-            width: 100%;
-        }
-
-        .glitch {
-            animation: shake 0.5s infinite;
-        }
-
+        body { margin: 0; background: #050505; color: #33ff33; font-family: 'Courier New', monospace; overflow: hidden; cursor: none; }
+        canvas { display: block; image-rendering: pixelated; }
+        #ui { position: absolute; top: 10px; left: 10px; pointer-events: none; text-shadow: 2px 2px #000; }
+        .glitch { animation: shake 0.2s infinite; color: #ff3333; }
         @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            50% { transform: translate(-1px, 2px) rotate(1deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
+            0% { transform: translate(0,0); }
+            25% { transform: translate(2px, -2px); }
+            50% { transform: translate(-2px, 2px); }
+            75% { transform: translate(2px, 2px); }
+            100% { transform: translate(0,0); }
         }
-
-        .crt-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.05), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.05));
-            background-size: 100% 3px, 3px 100%;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: #004411; }
     </style>
 </head>
 <body>
-    <div class="crt-overlay"></div>
-    <div id="monitor">
-        <div id="output"></div>
-        <div class="input-line">
-            <span>>&nbsp;</span>
-            <input type="text" id="user-input" autofocus autocomplete="off">
-        </div>
+    <div id="ui">
+        <div id="status">LOCAL_FILES: OK</div>
+        <div id="msg"></div>
     </div>
+    <canvas id="gameCanvas"></canvas>
 
-    <script>
-        const output = document.getElementById('output');
-        const input = document.getElementById('user-input');
-        const monitor = document.getElementById('monitor');
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const msgEl = document.getElementById('msg');
+const statusEl = document.getElementById('status');
 
-        let state = JSON.parse(localStorage.getItem('void_save')) || {
-            checkpoint: 0,
-            userName: "USER",
-            hasKey: false,
-            refreshCount: 0
-        };
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-        const systemInfo = {
-            os: navigator.platform,
-            cores: navigator.hardwareConcurrency,
-            res: `${window.screen.width}x${window.screen.height}`
-        };
+// Game State
+const player = { x: canvas.width/2, y: canvas.height/2, size: 20, speed: 4, angle: 0 };
+const monster = { x: 100, y: 100, size: 40, speed: 1.5, active: false, alpha: 0 };
+let frames = 0;
+let keys = {};
+let glitches = [];
 
-        function save() {
-            localStorage.setItem('void_save', JSON.stringify(state));
-        }
+// Input
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+window.addEventListener('mousemove', e => {
+    player.angle = Math.atan2(e.clientY - player.y, e.clientX - player.x);
+});
 
-        function print(text, delay = 30) {
-            const line = document.createElement('div');
-            line.style.marginBottom = "8px";
-            output.appendChild(line);
-            
-            let i = 0;
-            return new Promise(resolve => {
-                const interval = setInterval(() => {
-                    line.textContent += text[i];
-                    i++;
-                    monitor.scrollTop = monitor.scrollHeight;
-                    if (i === text.length) {
-                        clearInterval(interval);
-                        resolve();
-                    }
-                }, delay);
-            });
-        }
+function drawPlayer() {
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(player.angle);
+    ctx.fillStyle = "#33ff33";
+    // Pixel art style triangle
+    ctx.fillRect(-10, -10, 20, 20);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(5, -5, 5, 10); 
+    ctx.restore();
+}
 
-        async function init() {
-            if (state.checkpoint > 0) {
-                state.refreshCount++;
-                save();
-                await print(`[RECOVERY_SYSTEM]: Session resumed.`);
-                await print(`I saw you leave, ${state.userName}. You can't refresh your way out of this.`);
-                await print(`Current progress: Stage ${state.checkpoint}. Let's continue.`);
-            } else {
-                await print("Initializing System...");
-                await print(`Hardware detected: ${systemInfo.os} | ${systemInfo.cores} Core Logic.`);
-                await print("Searching for life signs...");
-                await print("...");
-                await print("Hello? Can you hear me?");
-                await print("What is your name?");
-            }
-            gameLoop();
-        }
+function drawMonster() {
+    if (!monster.active) return;
+    
+    ctx.save();
+    ctx.globalAlpha = monster.alpha;
+    // Draw the "Looming Shadow"
+    ctx.fillStyle = "#000";
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = "red";
+    // Body (Elongated)
+    ctx.fillRect(monster.x - 10, monster.y - 60, 20, 120);
+    // Head & Glowing Eyes
+    ctx.fillStyle = "#0a0a0a";
+    ctx.beginPath();
+    ctx.arc(monster.x, monster.y - 70, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "red";
+    ctx.fillRect(monster.x - 8, monster.y - 75, 4, 4);
+    ctx.fillRect(monster.x + 4, monster.y - 75, 4, 4);
+    ctx.restore();
+}
 
-        async function gameLoop() {
-            input.addEventListener('keydown', async (e) => {
-                if (e.key === 'Enter') {
-                    const val = input.value.trim().toLowerCase();
-                    input.value = '';
-                    
-                    if (state.checkpoint === 0) {
-                        state.userName = val;
-                        state.checkpoint = 1;
-                        save();
-                        await print(`Nice to meet you, ${state.userName}. Or should I say... nice to watch you?`);
-                        await print("Your screen resolution is " + systemInfo.res + ". I can see everything in that frame.");
-                        await print("Type 'OPEN' to try the first door.");
-                    } 
-                    
-                    else if (val === 'open' && state.checkpoint === 1) {
-                        await print("The door is locked. A prompt appears on your 'Email'.");
-                        await print("META-TASK: The code is the last 4 digits of your system hardware count + 1987.");
-                        await print("Enter the code:");
-                        state.checkpoint = 2;
-                        save();
-                    }
+function update() {
+    // Movement
+    if (keys['w']) player.y -= player.speed;
+    if (keys['s']) player.y += player.speed;
+    if (keys['a']) player.x -= player.speed;
+    if (keys['d']) player.x += player.speed;
 
-                    else if (state.checkpoint === 2) {
-                        const correctCode = (systemInfo.cores + 1987).toString();
-                        if (val === correctCode) {
-                            await print("ACCESS GRANTED.");
-                            await print("You are deeper now. Do you feel the hum of the processor?");
-                            document.title = "I AM INSIDE";
-                            state.checkpoint = 3;
-                            save();
-                        } else {
-                            await print("WRONG CODE. Check your 'reality' again.");
-                        }
-                    }
+    // The Weeping Angel Mechanic: Monster only moves when NOT in player's view or far away
+    let dx = player.x - monster.x;
+    let dy = player.y - monster.y;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    let angleToMonster = Math.atan2(dy, dx);
+    let diff = Math.abs(player.angle - angleToMonster);
 
-                    else if (val === 'quit' || val === 'exit') {
-                        document.body.classList.add('glitch');
-                        await print("THERE IS NO EXIT.");
-                        setTimeout(() => document.body.classList.remove('glitch'), 1000);
-                    }
-                }
-            });
-        }
+    if (diff > 1.2 || dist < 100) { 
+        monster.x += Math.cos(angleToMonster) * monster.speed;
+        monster.y += Math.sin(angleToMonster) * monster.speed;
+        monster.alpha = Math.min(monster.alpha + 0.01, 1);
+    } else {
+        monster.alpha = Math.max(monster.alpha - 0.02, 0.2);
+    }
 
-        // 4th Wall: Tab monitoring
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                console.log("Player tried to look away.");
-            } else {
-                print("\n[SYSTEM]: I saw you looking at another tab. Stay focused on us.");
-            }
-        });
+    // Fourth Wall Breaks
+    frames++;
+    if (frames === 300) {
+        statusEl.innerText = "LOCAL_FILES: CORRUPTED";
+        statusEl.classList.add('glitch');
+    }
+    if (frames === 600) msgEl.innerText = "I SEE YOU, " + (navigator.platform || "USER");
+    if (frames % 200 === 0) monster.active = true;
 
-        init();
-    </script>
+    // Random visual glitches
+    if (Math.random() > 0.98) {
+        glitches.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, w: 50, h: 5, t: 10});
+    }
+}
+
+function draw() {
+    // Persistent trail (makes the player doubt where they've been)
+    ctx.fillStyle = "rgba(5, 5, 5, 0.1)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw glitches
+    glitches.forEach((g, i) => {
+        ctx.fillStyle = Math.random() > 0.5 ? "#ff0000" : "#00ff00";
+        ctx.fillRect(g.x, g.y, g.w, g.h);
+        g.t--;
+        if (g.t <= 0) glitches.splice(i, 1);
+    });
+
+    drawMonster();
+    drawPlayer();
+
+    // Death condition
+    let dist = Math.sqrt((player.x - monster.x)**2 + (player.y - monster.y)**2);
+    if (dist < 30 && monster.active) {
+        document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:20%;'>EXECUTION_SUCCESSFUL. EXE TERMINATED.</h1>";
+        return;
+    }
+
+    requestAnimationFrame(() => {
+        update();
+        draw();
+    });
+}
+
+draw();
+</script>
 </body>
 </html>
