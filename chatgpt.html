@@ -27,17 +27,6 @@ const t = document.getElementById("t");
 
 const NAMES = ["Theodor","Robert","Jackson","Chabran","Axel","Advay","Joseph","Eddie","Ayham","Oliver","David","Shehryaar"];
 
-let state = JSON.parse(localStorage.getItem("sys_save")) || {
-  visits:0,
-  name:null,
-  realName:null
-};
-
-state.visits++;
-save();
-
-function save(){ localStorage.setItem("sys_save", JSON.stringify(state)); }
-
 function type(txt,s=30,cb){
   t.innerHTML="";
   let i=0;
@@ -51,9 +40,13 @@ function type(txt,s=30,cb){
   },s);
 }
 
-function next(f,t=1200){ setTimeout(f,t); }
+function next(fn,time=1000){
+  setTimeout(fn,time);
+}
 
-function rand(a,b){ return Math.floor(Math.random()*(b-a)+a); }
+function rand(min,max){
+  return Math.floor(Math.random()*(max-min)+min);
+}
 
 function fakeIP(){
   return `${rand(11,255)}.${rand(0,255)}.${rand(0,255)}.${rand(0,255)}`;
@@ -62,105 +55,87 @@ function fakeIP(){
 // --- START ---
 function start(){
 
-type("Booting system...",30,()=>{
-next(()=>{
+  type("Booting system...",30,()=>{
+    next(()=>{
+      type("Initialize data collection?",40,()=>{
+        next(()=>{
+          t.innerHTML += "<br><br><button onclick='allow()'>Allow</button> <button onclick='deny()'>Deny</button>";
+        });
+      });
+    });
+  });
 
-type(`Session: ${state.visits}`,40,()=>{
-next(()=>{
-
-type("Initialize data collection?",50,()=>{
-next(()=>{
-t.innerHTML += "<br><br><button onclick='allow()'>Allow</button> <button onclick='deny()'>Deny</button>";
-});
-
-});
-});
-});
-});
 }
 
 // --- PERMISSION ---
 function allow(){
-type("Access granted.",40,()=> next(scan));
+  type("Access granted.",40,()=> next(scan));
 }
 
 function deny(){
-type("Access denied.",40,()=>{
-next(()=>{
-type("...Overriding.",60,()=> next(scan));
-});
-});
+  type("Access denied.",40,()=>{
+    next(()=>{
+      type("...Overriding.",60,()=> next(scan));
+    });
+  });
 }
 
 // --- SCAN ---
 function scan(){
 
-let ip = fakeIP();
+  let ip = fakeIP();
 
-type("Scanning system...",40,()=>{
-next(()=>{
+  type("Scanning...",40,()=>{
+    next(()=>{
+      type("IP detected: " + ip,40,()=>{
+        next(()=>{
+          type("Location: UNKNOWN",50,()=>{
+            next(()=>{
+              type("Why are you here?",60,()=>{
+                next(nameInput);
+              });
+            });
+          });
+        });
+      });
+    });
+  });
 
-type(`IP detected: ${ip}`,50,()=>{
-next(()=>{
-
-type("Location: UNKNOWN",60,()=>{
-next(()=>{
-
-type("Device: UNRECOGNIZED",60,()=>{
-next(()=>{
-
-type("...",120,()=>{
-next(()=>{
-type("Why are you here?",70,()=>{
-next(nameInput);
-});
-},2000);
-
-});
-});
-});
-});
-});
-});
-});
 }
 
 // --- NAME ---
 function nameInput(){
-t.innerHTML += "<br><br>Enter your name:<br><input id='n'><button onclick='setName()'>Enter</button>";
+  t.innerHTML += "<br><br>Enter your name:<br><input id='n'><button onclick='setName()'>Enter</button>";
 }
 
 function setName(){
-let input = document.getElementById("n").value.trim() || "Unknown";
+  let input = document.getElementById("n").value || "Unknown";
+  let chosen = NAMES[rand(0,NAMES.length)];
 
-state.name = input;
-state.realName = NAMES[rand(0,NAMES.length)];
-save();
-
-type(`Hello, ${input}.`,50,()=>{
-next(()=>{
-type("...",100,()=>{
-next(()=>{
-type("No.",100,()=>{
-next(()=>{
-type(`You know a person named ${state.realName}, don't you?`,70,()=>{
-next(()=>{
-type("...or is that you?",80,()=>{
-next(()=>{
-type(`Hello, ${state.realName}.`,70,()=>{
-});
-});
-});
-});
-});
-});
-});
-});
-});
-});
+  type("Hello, " + input + ".",50,()=>{
+    next(()=>{
+      type("...",100,()=>{
+        next(()=>{
+          type("No.",100,()=>{
+            next(()=>{
+              type("You know a person named " + chosen + ", don't you?",70,()=>{
+                next(()=>{
+                  type("...or is that you?",80,()=>{
+                    next(()=>{
+                      type("Hello, " + chosen + ".",70);
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
 }
 
-// START IMMEDIATELY
+// RUN
 start();
 
 </script>
