@@ -4,172 +4,209 @@
 <meta charset="UTF-8">
 <title>ANOMALY</title>
 <style>
-body { margin:0; background:black; overflow:hidden; }
+body { margin:0; background:black; overflow:hidden; font-family:monospace; color:#0f0; }
 canvas { display:block; margin:auto; image-rendering: pixelated; }
+#terminal { padding:20px; }
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
+<div id="terminal"></div>
+<canvas id="game" style="display:none"></canvas>
 <script>
 
+const term = document.getElementById("terminal");
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 canvas.width = 640;
 canvas.height = 480;
 
-// --- WORLD ---
-const TILE = 32;
-const MAP_W = 40;
-const MAP_H = 40;
+function typeText(text, speed=30, cb){
+  term.innerHTML="";
+  let i=0;
+  let interval=setInterval(()=>{
+    term.innerHTML += text[i];
+    i++;
+    if(i>=text.length){ clearInterval(interval); if(cb) cb(); }
+  }, speed);
+}
 
-let map = [];
+function next(fn,t=800){ setTimeout(fn,t); }
+
+// --- TERMINAL INTRO ---
+function startTerminal(){
+  typeText("Booting system...",30,()=>{
+    next(()=>{
+      typeText("Initializing connection...",30,()=>{
+        next(()=>{
+          typeText("Loading environment...",30,()=>{
+            next(()=>{
+              typeText("...Something is wrong.",40,()=>{
+                next(()=>{
+                  typeText("Do not proceed.",60,()=>{
+                    next(()=>{
+                      typeText("\n\n> Press ENTER to continue",30,()=>{
+                        window.onkeydown = (e)=>{
+                          if(e.key === "Enter"){
+                            window.onkeydown=null;
+                            glitchTransition();
+                          }
+                        }
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+}
+
+function glitchTransition(){
+  let i=0;
+  term.innerHTML="";
+  let glitch=setInterval(()=>{
+    term.innerHTML += "ERROR_"+Math.random().toString(36).substring(2,8)+"<br>";
+    document.body.style.background = (i%2==0)?"#001100":"black";
+    i++;
+    if(i>40){
+      clearInterval(glitch);
+      term.innerHTML="";
+      typeText("Take it off.",80,()=>{
+        next(()=>{
+          term.style.display="none";
+          canvas.style.display="block";
+          startGame();
+        });
+      });
+    }
+  },40);
+}
+
+// --- GAME ---
+const TILE=32, MAP_W=40, MAP_H=40;
+let map=[];
 for(let y=0;y<MAP_H;y++){
   let row=[];
   for(let x=0;x<MAP_W;x++){
-    row.push(Math.random() > 0.1 ? 0 : 1); // walls
+    row.push(Math.random()>0.1?0:1);
   }
   map.push(row);
 }
 
-// --- PLAYER ---
-let player = {x:200,y:200,speed:2};
-let cam = {x:0,y:0};
-
-let keys = {};
+let player={x:200,y:200,speed:2};
+let cam={x:0,y:0};
+let keys={};
 document.onkeydown=e=>keys[e.key]=true;
 document.onkeyup=e=>keys[e.key]=false;
 
-// --- OBJECTIVES ---
-let terminals = [
+let terminals=[
   {x:300,y:300,active:false},
   {x:900,y:400,active:false},
   {x:700,y:900,active:false}
 ];
 
-let exitDoor = {x:1100,y:1100,open:false,progress:0};
+let exitDoor={x:1100,y:1100,open:false,progress:0};
+let anomaly={x:100,y:100,visible:false};
 
-// --- ANOMALY ---
-let anomaly = {x:100,y:100,visible:false,timer:0};
-
-function drawPixelMonster(x,y){
-  ctx.fillStyle = "#2b0040";
+function drawMonster(x,y){
+  ctx.fillStyle="#2b0040";
   ctx.fillRect(x,y,32,32);
-
-  ctx.fillStyle = "#550088";
+  ctx.fillStyle="#550088";
   ctx.fillRect(x+4,y+4,24,24);
-
-  ctx.fillStyle = "white";
+  ctx.fillStyle="white";
   ctx.fillRect(x+8,y+8,4,4);
   ctx.fillRect(x+20,y+8,4,4);
-
-  ctx.fillStyle = "black";
+  ctx.fillStyle="black";
   ctx.fillRect(x+8,y+20,16,4);
 }
 
-// --- DRAW ---
 function draw(){
-  ctx.fillStyle = "black";
+  ctx.fillStyle="black";
   ctx.fillRect(0,0,640,480);
 
-  cam.x = player.x - 320;
-  cam.y = player.y - 240;
+  cam.x=player.x-320;
+  cam.y=player.y-240;
 
   for(let y=0;y<MAP_H;y++){
     for(let x=0;x<MAP_W;x++){
-      if(map[y][x]===1){
-        ctx.fillStyle = "#111";
+      if(map[y][x]){
+        ctx.fillStyle="#111";
         ctx.fillRect(x*TILE-cam.x,y*TILE-cam.y,TILE,TILE);
       }
     }
   }
 
-  // terminals
-  ctx.fillStyle = "cyan";
-  terminals.forEach(t=>{
-    ctx.fillRect(t.x-cam.x,t.y-cam.y,16,16);
-  });
+  ctx.fillStyle="cyan";
+  terminals.forEach(t=>ctx.fillRect(t.x-cam.x,t.y-cam.y,16,16));
 
-  // exit
-  ctx.fillStyle = exitDoor.open ? "green" : "red";
+  ctx.fillStyle=exitDoor.open?"green":"red";
   ctx.fillRect(exitDoor.x-cam.x,exitDoor.y-cam.y,32,32);
 
-  // player
-  ctx.fillStyle = "lime";
+  ctx.fillStyle="lime";
   ctx.fillRect(player.x-cam.x,player.y-cam.y,16,16);
 
-  // anomaly
-  if(anomaly.visible){
-    drawPixelMonster(anomaly.x-cam.x, anomaly.y-cam.y);
-  }
+  if(anomaly.visible) drawMonster(anomaly.x-cam.x,anomaly.y-cam.y);
 }
 
-// --- UPDATE ---
 function update(){
   if(keys['w']) player.y-=player.speed;
   if(keys['s']) player.y+=player.speed;
   if(keys['a']) player.x-=player.speed;
   if(keys['d']) player.x+=player.speed;
 
-  // terminal interaction
   terminals.forEach(t=>{
-    if(!t.active && Math.hypot(player.x-t.x, player.y-t.y)<30){
+    if(!t.active && Math.hypot(player.x-t.x,player.y-t.y)<30){
       t.active=true;
-      flashText("RUNNING DELETE.EXE");
+      flash("RUNNING DELETE.EXE");
     }
   });
 
-  // check all active
   if(terminals.every(t=>t.active)){
     exitDoor.progress++;
     if(exitDoor.progress>300) exitDoor.open=true;
   }
 
-  // anomaly logic
-  anomaly.timer++;
-  if(Math.random() > 0.995){
-    anomaly.visible = true;
-    anomaly.x = player.x + (Math.random()*200-100);
-    anomaly.y = player.y + (Math.random()*200-100);
+  if(Math.random()>0.995){
+    anomaly.visible=true;
+    anomaly.x=player.x+(Math.random()*200-100);
+    anomaly.y=player.y+(Math.random()*200-100);
   }
 
   if(anomaly.visible){
-    let dx = player.x - anomaly.x;
-    let dy = player.y - anomaly.y;
-    let d = Math.hypot(dx,dy);
+    let dx=player.x-anomaly.x;
+    let dy=player.y-anomaly.y;
+    let d=Math.hypot(dx,dy)||1;
+    anomaly.x+=dx/d*1.2;
+    anomaly.y+=dy/d*1.2;
 
-    anomaly.x += dx/d * 1.2;
-    anomaly.y += dy/d * 1.2;
-
-    if(d < 80) screenCorrupt();
-
-    if(d < 20) ending();
+    if(d<80) glitchScreen();
+    if(d<20) ending();
 
     if(Math.random()>0.98) anomaly.visible=false;
   }
 
-  // exit
-  if(exitDoor.open && Math.hypot(player.x-exitDoor.x, player.y-exitDoor.y)<20){
+  if(exitDoor.open && Math.hypot(player.x-exitDoor.x,player.y-exitDoor.y)<20){
     trueEnding();
   }
 }
 
-// --- EFFECTS ---
-function flashText(txt){
-  let div = document.createElement("div");
+function flash(txt){
+  let div=document.createElement("div");
   div.style.position="absolute";
   div.style.color="#0f0";
-  div.style.fontFamily="monospace";
-  div.innerText = txt;
+  div.innerText=txt;
   document.body.appendChild(div);
   setTimeout(()=>div.remove(),1000);
 }
 
-function screenCorrupt(){
+function glitchScreen(){
   ctx.fillStyle="rgba(0,255,0,0.1)";
   ctx.fillRect(0,0,640,480);
 }
 
-// --- ENDINGS ---
 function ending(){
   document.body.innerHTML="<h1 style='color:red'>YOU WERE NEVER RUNNING.</h1>";
 }
@@ -178,14 +215,11 @@ function trueEnding(){
   document.body.innerHTML="<h1 style='color:#0f0'>SIMULATION DELETED.<br>...WAIT.<br>WHO PRESSED ENTER?</h1>";
 }
 
-// --- LOOP ---
-function loop(){
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
+function loop(){ update(); draw(); requestAnimationFrame(loop); }
 
-loop();
+function startGame(){ loop(); }
+
+startTerminal();
 
 </script>
 </body>
