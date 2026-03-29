@@ -19,19 +19,19 @@ input,button{
 </head>
 <body>
 
-<div id="t"></div>
+<div id="t">Loading...</div>
 
 <script>
+window.onload = function(){
+
 const t = document.getElementById("t");
 
 const NAMES = ["Theodor","Robert","Jackson","Chabran","Axel","Advay","Joseph","Eddie","Ayham","Oliver","David","Shehryaar"];
 
 let state = JSON.parse(localStorage.getItem("sys_save")) || {
-  stage:0,
   visits:0,
   name:null,
-  realName:null,
-  flags:{}
+  realName:null
 };
 
 state.visits++;
@@ -60,10 +60,7 @@ function fakeIP(){
   return `${rand(11,255)}.${rand(0,255)}.${rand(0,255)}.${rand(0,255)}`;
 }
 
-let ip = fakeIP();
-
-
-// ================= START =================
+// --- START ---
 function start(){
 
 type("Booting system...",30,()=>{
@@ -74,9 +71,7 @@ next(()=>{
 
 type("Initialize data collection?",50,()=>{
 next(()=>{
-
 t.innerHTML += "<br><br><button onclick='allow()'>Allow</button> <button onclick='deny()'>Deny</button>";
-
 });
 
 });
@@ -85,16 +80,12 @@ t.innerHTML += "<br><br><button onclick='allow()'>Allow</button> <button onclick
 });
 }
 
-
-// ================= PERMISSION =================
-function allow(){
-state.flags.allowed=true;
-save();
-
+// --- PERMISSION ---
+window.allow = function(){
 type("Access granted.",40,()=> next(scan));
 }
 
-function deny(){
+window.deny = function(){
 type("Access denied.",40,()=>{
 next(()=>{
 type("...Overriding.",60,()=> next(scan));
@@ -102,9 +93,10 @@ type("...Overriding.",60,()=> next(scan));
 });
 }
 
-
-// ================= SCAN =================
+// --- SCAN ---
 function scan(){
+
+let ip = fakeIP();
 
 type("Scanning system...",40,()=>{
 next(()=>{
@@ -120,37 +112,26 @@ next(()=>{
 
 type("...",120,()=>{
 next(()=>{
-
 type("Why are you here?",70,()=>{
 next(nameInput);
-
+});
 },2000);
 
 });
-
 });
-
 });
-
 });
-
 });
-
 });
-
 });
-
-});
-
 }
 
-
-// ================= NAME =================
+// --- NAME ---
 function nameInput(){
 t.innerHTML += "<br><br>Enter your name:<br><input id='n'><button onclick='setName()'>Enter</button>";
 }
 
-function setName(){
+window.setName = function(){
 let input = document.getElementById("n").value.trim() || "Unknown";
 
 state.name = input;
@@ -159,251 +140,32 @@ save();
 
 type(`Hello, ${input}.`,50,()=>{
 next(()=>{
-
 type("...",100,()=>{
 next(()=>{
-
 type("No.",100,()=>{
 next(()=>{
-
 type(`You know a person named ${state.realName}, don't you?`,70,()=>{
 next(()=>{
-
-type("Think.",90,()=>{
+type("...or is that you?",80,()=>{
 next(()=>{
-
-type("You hesitated.",90,()=>{
-next(()=>{
-
-type(`...or maybe that's you.`,70,()=>{
-next(()=>{
-
 type(`Hello, ${state.realName}.`,70,()=>{
-next(memory1);
-
 });
-
 });
-
 });
-
 });
-
 });
-
 });
-
 });
-
 });
-
 });
-
-});
-
-});
-
 });
 }
 
-
-// ================= MEMORY 1 =================
-function memory1(){
-
-type("Accessing logs...",50,()=>{
-next(()=>{
-
-type("Searching...",50,()=>{
-next(()=>{
-
-type("Match found.",60,()=>{
-next(()=>{
-
-type(`You've used '${state.realName}' before.`,70,()=>{
-next(()=>{
-
-type("Don't deny it.",80,()=>{
-next(()=>{
-
-type(`You came back ${state.visits} times.`,80,()=>{
-next(()=>{
-
-type("You always come back.",90,()=>{
-next(memory2);
-
-});
-
-});
-
-});
-
-});
-
-});
-
-});
-
-});
-
-});
-
-});
-
-});
-}
-
-
-// ================= MEMORY 2 =================
-function memory2(){
-
-type("You left earlier.",80,()=>{
-next(()=>{
-
-type("You closed the tab.",80,()=>{
-next(()=>{
-
-type("But that didn't stop this.",90,()=>{
-next(()=>{
-
-type("It doesn't work like that.",90,()=>{
-next(control);
-
-});
-
-});
-
-});
-
-});
-
-});
-
-});
-}
-
-
-// ================= CONTROL =================
-function control(){
-
-type("Do not press ENTER.",90,()=>{
-next(()=>{
-
-type("\n\n> Press ENTER",50,()=>{
-
-window.onkeydown=(e)=>{
-if(e.key==="Enter"){
-window.onkeydown=null;
-breakPhase();
-}
-};
-
-});
-
-});
-
-});
-}
-
-
-// ================= BREAK =================
-function breakPhase(){
-
-let i=0;
-t.innerHTML="";
-
-let g=setInterval(()=>{
-
-t.innerHTML += "ERROR_"+Math.random().toString(36).substring(2,8)+"<br>";
-document.body.style.background = i%2?"black":"#001100";
-
-i++;
-
-if(i>60){
-clearInterval(g);
-after();
-}
-
-},40);
-}
-
-
-// ================= AFTER =================
-function after(){
-
-type("You shouldn't have done that.",90,()=>{
-next(()=>{
-
-type(`Why did you press it, ${state.realName}?`,90,()=>{
-next(()=>{
-
-type("It was your choice.",100,()=>{
-next(()=>{
-
-type("You had time to stop.",100,()=>{
-next(final1);
-
-});
-
-});
-
-});
-
-});
-
-});
-
-});
-}
-
-
-// ================= FINAL =================
-function final1(){
-
-type("There is no system.",100,()=>{
-next(()=>{
-
-type("There is no program.",100,()=>{
-next(()=>{
-
-type("There is only this.",110,()=>{
-next(()=>{
-
-type("And you are still here.",110,()=>{
-next(()=>{
-
-type("Watching.",120,()=>{
-next(()=>{
-
-type("Waiting.",120,()=>{
-next(()=>{
-
-type(`Goodbye, ${state.realName}.`,140,()=>{
-localStorage.clear();
-});
-
-});
-
-});
-
-});
-
-});
-
-});
-
-});
-
-});
-
-});
-
-});
-}
-
-
-// ================= RUN =================
+// START GAME
 start();
 
+};
 </script>
+
 </body>
 </html>
