@@ -1,225 +1,408 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>ANOMALY</title>
+<title>SYSTEM</title>
 <style>
-body { margin:0; background:black; overflow:hidden; font-family:monospace; color:#0f0; }
-canvas { display:block; margin:auto; image-rendering: pixelated; }
-#terminal { padding:20px; }
+body {
+  background:black;
+  color:#0f0;
+  font-family:monospace;
+  padding:20px;
+}
+input,button{
+  background:black;
+  color:#0f0;
+  border:1px solid #0f0;
+}
 </style>
 </head>
 <body>
-<div id="terminal"></div>
-<canvas id="game" style="display:none"></canvas>
+
+<div id="t"></div>
+
 <script>
+const t = document.getElementById("t");
 
-const term = document.getElementById("terminal");
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-canvas.width = 640;
-canvas.height = 480;
+const NAMES = ["Theodor","Robert","Jackson","Chabran","Axel","Advay","Joseph","Eddie","Ayham","Oliver","David","Shehryaar"];
 
-function typeText(text, speed=30, cb){
-  term.innerHTML="";
+let state = JSON.parse(localStorage.getItem("sys_save")) || {
+  stage:0,
+  visits:0,
+  name:null,
+  realName:null,
+  flags:{}
+};
+
+state.visits++;
+save();
+
+function save(){ localStorage.setItem("sys_save", JSON.stringify(state)); }
+
+function type(txt,s=30,cb){
+  t.innerHTML="";
   let i=0;
-  let interval=setInterval(()=>{
-    term.innerHTML += text[i];
+  let int=setInterval(()=>{
+    t.innerHTML+=txt[i];
     i++;
-    if(i>=text.length){ clearInterval(interval); if(cb) cb(); }
-  }, speed);
-}
-
-function next(fn,t=800){ setTimeout(fn,t); }
-
-// --- TERMINAL INTRO ---
-function startTerminal(){
-  typeText("Booting system...",30,()=>{
-    next(()=>{
-      typeText("Initializing connection...",30,()=>{
-        next(()=>{
-          typeText("Loading environment...",30,()=>{
-            next(()=>{
-              typeText("...Something is wrong.",40,()=>{
-                next(()=>{
-                  typeText("Do not proceed.",60,()=>{
-                    next(()=>{
-                      typeText("\n\n> Press ENTER to continue",30,()=>{
-                        window.onkeydown = (e)=>{
-                          if(e.key === "Enter"){
-                            window.onkeydown=null;
-                            glitchTransition();
-                          }
-                        }
-                      });
-                    });
-                  });
-                });
-              });
-            });
-          });
-        });
-      });
-    });
-  });
-}
-
-function glitchTransition(){
-  let i=0;
-  term.innerHTML="";
-  let glitch=setInterval(()=>{
-    term.innerHTML += "ERROR_"+Math.random().toString(36).substring(2,8)+"<br>";
-    document.body.style.background = (i%2==0)?"#001100":"black";
-    i++;
-    if(i>40){
-      clearInterval(glitch);
-      term.innerHTML="";
-      typeText("Take it off.",80,()=>{
-        next(()=>{
-          term.style.display="none";
-          canvas.style.display="block";
-          startGame();
-        });
-      });
+    if(i>=txt.length){
+      clearInterval(int);
+      if(cb)cb();
     }
-  },40);
+  },s);
 }
 
-// --- GAME ---
-const TILE=32, MAP_W=40, MAP_H=40;
-let map=[];
-for(let y=0;y<MAP_H;y++){
-  let row=[];
-  for(let x=0;x<MAP_W;x++){
-    row.push(Math.random()>0.1?0:1);
-  }
-  map.push(row);
+function next(f,t=1200){ setTimeout(f,t); }
+
+function rand(a,b){ return Math.floor(Math.random()*(b-a)+a); }
+
+function fakeIP(){
+  return `${rand(11,255)}.${rand(0,255)}.${rand(0,255)}.${rand(0,255)}`;
 }
 
-let player={x:200,y:200,speed:2};
-let cam={x:0,y:0};
-let keys={};
-document.onkeydown=e=>keys[e.key]=true;
-document.onkeyup=e=>keys[e.key]=false;
+let ip = fakeIP();
 
-let terminals=[
-  {x:300,y:300,active:false},
-  {x:900,y:400,active:false},
-  {x:700,y:900,active:false}
-];
 
-let exitDoor={x:1100,y:1100,open:false,progress:0};
-let anomaly={x:100,y:100,visible:false};
+// ================= START =================
+function start(){
 
-function drawMonster(x,y){
-  ctx.fillStyle="#2b0040";
-  ctx.fillRect(x,y,32,32);
-  ctx.fillStyle="#550088";
-  ctx.fillRect(x+4,y+4,24,24);
-  ctx.fillStyle="white";
-  ctx.fillRect(x+8,y+8,4,4);
-  ctx.fillRect(x+20,y+8,4,4);
-  ctx.fillStyle="black";
-  ctx.fillRect(x+8,y+20,16,4);
+type("Booting system...",30,()=>{
+next(()=>{
+
+type(`Session: ${state.visits}`,40,()=>{
+next(()=>{
+
+type("Initialize data collection?",50,()=>{
+next(()=>{
+
+t.innerHTML += "<br><br><button onclick='allow()'>Allow</button> <button onclick='deny()'>Deny</button>";
+
+});
+
+});
+});
+});
+});
 }
 
-function draw(){
-  ctx.fillStyle="black";
-  ctx.fillRect(0,0,640,480);
 
-  cam.x=player.x-320;
-  cam.y=player.y-240;
+// ================= PERMISSION =================
+function allow(){
+state.flags.allowed=true;
+save();
 
-  for(let y=0;y<MAP_H;y++){
-    for(let x=0;x<MAP_W;x++){
-      if(map[y][x]){
-        ctx.fillStyle="#111";
-        ctx.fillRect(x*TILE-cam.x,y*TILE-cam.y,TILE,TILE);
-      }
-    }
-  }
-
-  ctx.fillStyle="cyan";
-  terminals.forEach(t=>ctx.fillRect(t.x-cam.x,t.y-cam.y,16,16));
-
-  ctx.fillStyle=exitDoor.open?"green":"red";
-  ctx.fillRect(exitDoor.x-cam.x,exitDoor.y-cam.y,32,32);
-
-  ctx.fillStyle="lime";
-  ctx.fillRect(player.x-cam.x,player.y-cam.y,16,16);
-
-  if(anomaly.visible) drawMonster(anomaly.x-cam.x,anomaly.y-cam.y);
+type("Access granted.",40,()=> next(scan));
 }
 
-function update(){
-  if(keys['w']) player.y-=player.speed;
-  if(keys['s']) player.y+=player.speed;
-  if(keys['a']) player.x-=player.speed;
-  if(keys['d']) player.x+=player.speed;
-
-  terminals.forEach(t=>{
-    if(!t.active && Math.hypot(player.x-t.x,player.y-t.y)<30){
-      t.active=true;
-      flash("RUNNING DELETE.EXE");
-    }
-  });
-
-  if(terminals.every(t=>t.active)){
-    exitDoor.progress++;
-    if(exitDoor.progress>300) exitDoor.open=true;
-  }
-
-  if(Math.random()>0.995){
-    anomaly.visible=true;
-    anomaly.x=player.x+(Math.random()*200-100);
-    anomaly.y=player.y+(Math.random()*200-100);
-  }
-
-  if(anomaly.visible){
-    let dx=player.x-anomaly.x;
-    let dy=player.y-anomaly.y;
-    let d=Math.hypot(dx,dy)||1;
-    anomaly.x+=dx/d*1.2;
-    anomaly.y+=dy/d*1.2;
-
-    if(d<80) glitchScreen();
-    if(d<20) ending();
-
-    if(Math.random()>0.98) anomaly.visible=false;
-  }
-
-  if(exitDoor.open && Math.hypot(player.x-exitDoor.x,player.y-exitDoor.y)<20){
-    trueEnding();
-  }
+function deny(){
+type("Access denied.",40,()=>{
+next(()=>{
+type("...Overriding.",60,()=> next(scan));
+});
+});
 }
 
-function flash(txt){
-  let div=document.createElement("div");
-  div.style.position="absolute";
-  div.style.color="#0f0";
-  div.innerText=txt;
-  document.body.appendChild(div);
-  setTimeout(()=>div.remove(),1000);
+
+// ================= SCAN =================
+function scan(){
+
+type("Scanning system...",40,()=>{
+next(()=>{
+
+type(`IP detected: ${ip}`,50,()=>{
+next(()=>{
+
+type("Location: UNKNOWN",60,()=>{
+next(()=>{
+
+type("Device: UNRECOGNIZED",60,()=>{
+next(()=>{
+
+type("...",120,()=>{
+next(()=>{
+
+type("Why are you here?",70,()=>{
+next(nameInput);
+
+},2000);
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
 }
 
-function glitchScreen(){
-  ctx.fillStyle="rgba(0,255,0,0.1)";
-  ctx.fillRect(0,0,640,480);
+
+// ================= NAME =================
+function nameInput(){
+t.innerHTML += "<br><br>Enter your name:<br><input id='n'><button onclick='setName()'>Enter</button>";
 }
 
-function ending(){
-  document.body.innerHTML="<h1 style='color:red'>YOU WERE NEVER RUNNING.</h1>";
+function setName(){
+let input = document.getElementById("n").value.trim() || "Unknown";
+
+state.name = input;
+state.realName = NAMES[rand(0,NAMES.length)];
+save();
+
+type(`Hello, ${input}.`,50,()=>{
+next(()=>{
+
+type("...",100,()=>{
+next(()=>{
+
+type("No.",100,()=>{
+next(()=>{
+
+type(`You know a person named ${state.realName}, don't you?`,70,()=>{
+next(()=>{
+
+type("Think.",90,()=>{
+next(()=>{
+
+type("You hesitated.",90,()=>{
+next(()=>{
+
+type(`...or maybe that's you.`,70,()=>{
+next(()=>{
+
+type(`Hello, ${state.realName}.`,70,()=>{
+next(memory1);
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
 }
 
-function trueEnding(){
-  document.body.innerHTML="<h1 style='color:#0f0'>SIMULATION DELETED.<br>...WAIT.<br>WHO PRESSED ENTER?</h1>";
+
+// ================= MEMORY 1 =================
+function memory1(){
+
+type("Accessing logs...",50,()=>{
+next(()=>{
+
+type("Searching...",50,()=>{
+next(()=>{
+
+type("Match found.",60,()=>{
+next(()=>{
+
+type(`You've used '${state.realName}' before.`,70,()=>{
+next(()=>{
+
+type("Don't deny it.",80,()=>{
+next(()=>{
+
+type(`You came back ${state.visits} times.`,80,()=>{
+next(()=>{
+
+type("You always come back.",90,()=>{
+next(memory2);
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
 }
 
-function loop(){ update(); draw(); requestAnimationFrame(loop); }
 
-function startGame(){ loop(); }
+// ================= MEMORY 2 =================
+function memory2(){
 
-startTerminal();
+type("You left earlier.",80,()=>{
+next(()=>{
+
+type("You closed the tab.",80,()=>{
+next(()=>{
+
+type("But that didn't stop this.",90,()=>{
+next(()=>{
+
+type("It doesn't work like that.",90,()=>{
+next(control);
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+}
+
+
+// ================= CONTROL =================
+function control(){
+
+type("Do not press ENTER.",90,()=>{
+next(()=>{
+
+type("\n\n> Press ENTER",50,()=>{
+
+window.onkeydown=(e)=>{
+if(e.key==="Enter"){
+window.onkeydown=null;
+breakPhase();
+}
+};
+
+});
+
+});
+
+});
+}
+
+
+// ================= BREAK =================
+function breakPhase(){
+
+let i=0;
+t.innerHTML="";
+
+let g=setInterval(()=>{
+
+t.innerHTML += "ERROR_"+Math.random().toString(36).substring(2,8)+"<br>";
+document.body.style.background = i%2?"black":"#001100";
+
+i++;
+
+if(i>60){
+clearInterval(g);
+after();
+}
+
+},40);
+}
+
+
+// ================= AFTER =================
+function after(){
+
+type("You shouldn't have done that.",90,()=>{
+next(()=>{
+
+type(`Why did you press it, ${state.realName}?`,90,()=>{
+next(()=>{
+
+type("It was your choice.",100,()=>{
+next(()=>{
+
+type("You had time to stop.",100,()=>{
+next(final1);
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+}
+
+
+// ================= FINAL =================
+function final1(){
+
+type("There is no system.",100,()=>{
+next(()=>{
+
+type("There is no program.",100,()=>{
+next(()=>{
+
+type("There is only this.",110,()=>{
+next(()=>{
+
+type("And you are still here.",110,()=>{
+next(()=>{
+
+type("Watching.",120,()=>{
+next(()=>{
+
+type("Waiting.",120,()=>{
+next(()=>{
+
+type(`Goodbye, ${state.realName}.`,140,()=>{
+localStorage.clear();
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+
+});
+}
+
+
+// ================= RUN =================
+start();
 
 </script>
 </body>
