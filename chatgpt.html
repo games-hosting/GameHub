@@ -19,10 +19,9 @@ input,button{
 </head>
 <body>
 
-<div id="t">Loading...</div>
+<div id="t"></div>
 
 <script>
-window.onload = function(){
 
 const t = document.getElementById("t");
 
@@ -81,11 +80,11 @@ t.innerHTML += "<br><br><button onclick='allow()'>Allow</button> <button onclick
 }
 
 // --- PERMISSION ---
-window.allow = function(){
+function allow(){
 type("Access granted.",40,()=> next(scan));
 }
 
-window.deny = function(){
+function deny(){
 type("Access denied.",40,()=>{
 next(()=>{
 type("...Overriding.",60,()=> next(scan));
@@ -131,7 +130,7 @@ function nameInput(){
 t.innerHTML += "<br><br>Enter your name:<br><input id='n'><button onclick='setName()'>Enter</button>";
 }
 
-window.setName = function(){
+function setName(){
 let input = document.getElementById("n").value.trim() || "Unknown";
 
 state.name = input;
@@ -161,10 +160,9 @@ type(`Hello, ${state.realName}.`,70,()=>{
 });
 }
 
-// START GAME
+// START IMMEDIATELY
 start();
 
-};
 </script>
 
 </body>
