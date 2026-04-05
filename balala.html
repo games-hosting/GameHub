@@ -1,0 +1,563 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Creepster&family=Share+Tech+Mono&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+#G{font-family:'Share Tech Mono',monospace;background:#080808;color:#b8b890;min-height:620px}
+.scr{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:620px;padding:20px}
+.scr.on{display:flex}
+h1.T{font-family:'Creepster',cursive;font-size:38px;color:#ff2020;text-align:center;letter-spacing:2px;margin-bottom:6px}
+.sub{color:#444;font-size:11px;margin-bottom:28px;letter-spacing:1px}
+.btn{background:transparent;border:1px solid #ff2020;color:#ff5555;font-family:'Share Tech Mono',monospace;font-size:13px;padding:9px 24px;cursor:pointer;margin:5px;transition:all .15s}
+.btn:hover{background:#ff202018;color:#ff8888}
+.btn.g{border-color:#333;color:#555}
+.btn.g:hover{background:#ffffff08;color:#999}
+input[type=text]{background:#0c0c0c;border:1px solid #222;color:#b8b890;font-family:'Share Tech Mono',monospace;font-size:13px;padding:9px 12px;width:240px;margin:5px 0;outline:none}
+input[type=text]:focus{border-color:#ff2020}
+.rc{border:1px solid #222;padding:14px 18px;width:150px;cursor:pointer;transition:all .15s;text-align:center}
+.rc:hover,.rc.sel{border-color:#ff2020;background:#ff20200a}
+.ri{font-size:28px;margin-bottom:6px}
+.rn{font-size:12px;color:#ff5555;margin-bottom:3px}
+.rd{font-size:10px;color:#444;line-height:1.5}
+.hud{width:100%;background:#050505;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;padding:7px 14px;gap:12px;font-size:11px}
+.ht{font-family:'Creepster',cursive;font-size:20px;color:#ff2020}
+.sep{color:#1a1a1a}
+.rb{padding:2px 9px;border:1px solid;font-size:10px}
+.rb.guard{border-color:#3399ff44;color:#3399ff;background:#3399ff0a}
+.rb.monster{border-color:#ff202044;color:#ff4040;background:#ff20200a}
+.gm{display:flex;width:100%;height:510px}
+.cams{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;background:#000;padding:2px}
+.cv{background:#040404;position:relative;overflow:hidden;border:1px solid #141414;cursor:pointer;transition:border-color .1s}
+.cv:hover{border-color:#2a2a2a}
+.cv.ac{border-color:#ff2020}
+.cv.hm{border-color:#ff2020;animation:cf .5s infinite}
+@keyframes cf{0%,100%{border-color:#ff2020}50%{border-color:#ff404044}}
+.cl{position:absolute;top:5px;left:7px;font-size:9px;color:#333;z-index:2}
+.ce{position:absolute;font-size:26px;z-index:3;transition:all .4s}
+.sp{width:200px;background:#050505;border-left:1px solid #141414;display:flex;flex-direction:column;padding:10px;overflow:hidden}
+.stit{font-size:9px;color:#444;letter-spacing:2px;margin-bottom:8px;border-bottom:1px solid #111;padding-bottom:5px;margin-top:10px}
+.stit:first-child{margin-top:0}
+.db{border:1px solid #222;background:transparent;color:#777;font-family:'Share Tech Mono',monospace;font-size:11px;padding:7px;cursor:pointer;transition:all .15s;text-align:left;width:100%;margin-bottom:4px}
+.db:hover{background:#ffffff06}
+.db.cl2{border-color:#ff2020;color:#ff4040;background:#ff20200a}
+.pb{background:#0f0f00;height:5px}
+.pf{background:#ffaa00;height:5px;transition:width .5s}
+.el{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+.el::-webkit-scrollbar{width:2px}
+.el::-webkit-scrollbar-thumb{background:#1a1a1a}
+.le{font-size:10px;color:#333;line-height:1.4;padding:3px 0;border-bottom:1px solid #0c0c0c}
+.le.d{color:#ff4040}
+.le.i{color:#3399ff}
+.le.w{color:#ffaa00}
+.le.t{color:#aa44ff;font-style:italic}
+.tb{margin-top:6px;padding:7px;background:#080008;border:1px solid #220022;font-size:10px;color:#aa44ff;min-height:44px;line-height:1.5}
+.lob{justify-content:flex-start;padding-top:28px}
+.ll{display:flex;gap:28px;width:100%;max-width:700px}
+.ib{background:#0a0a0a;border:1px solid #181818;padding:14px;margin-bottom:12px}
+#rcd{font-size:26px;color:#ff2020;letter-spacing:8px;margin:6px 0}
+.pe{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #0c0c0c;font-size:12px}
+.dot{width:7px;height:7px;border-radius:50%;background:#1a1a1a;flex-shrink:0}
+.dot.guard{background:#3399ff}
+.dot.monster{background:#ff2020}
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px}
+.ov{background:#000000ee;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:40px;min-height:620px}
+.ov h2{font-family:'Creepster',cursive;font-size:44px}
+.ov h2.dead{color:#ff2020}
+.ov h2.win{color:#44ff44}
+.ov p{color:#555;font-size:12px;text-align:center;max-width:300px}
+.conn{position:absolute;top:8px;right:8px;font-size:9px;padding:2px 7px;border:1px solid #222;color:#444}
+.conn.ok{color:#3a3;border-color:#3a3}
+.conn.err{color:#a33;border-color:#a33}
+</style>
+
+<div id="G">
+
+<div id="menu" class="scr on">
+  <h1 class="T">FIVE NIGHTS<br>AT DIDDY'S</h1>
+  <p class="sub">REAL MULTIPLAYER — SHARE THE ROOM CODE</p>
+  <button class="btn" onclick="go('create')">[ HOST A GAME ]</button>
+  <button class="btn g" onclick="go('join')">[ JOIN GAME ]</button>
+  <div id="conn-status" class="conn">CONNECTING...</div>
+</div>
+
+<div id="create" class="scr">
+  <h1 class="T" style="font-size:24px">HOST GAME</h1>
+  <input type="text" id="h-name" placeholder="YOUR NAME" maxlength="12">
+  <div style="display:flex;gap:12px;margin:16px 0">
+    <div class="rc sel" id="rc-g" onclick="pickRole('guard')">
+      <div class="ri">👮</div><div class="rn">GUARD</div>
+      <div class="rd">Monitor cams. Close doors. Survive.</div>
+    </div>
+    <div class="rc" id="rc-m" onclick="pickRole('monster')">
+      <div class="ri">🎪</div><div class="rn">MONSTER</div>
+      <div class="rd">Hunt the guards. Drain power.</div>
+    </div>
+  </div>
+  <button class="btn" onclick="createRoom()">[ CREATE ROOM ]</button>
+  <button class="btn g" onclick="go('menu')">[ BACK ]</button>
+</div>
+
+<div id="join" class="scr">
+  <h1 class="T" style="font-size:24px">JOIN GAME</h1>
+  <input type="text" id="j-name" placeholder="YOUR NAME" maxlength="12">
+  <input type="text" id="j-code" placeholder="ROOM CODE" maxlength="6" style="text-transform:uppercase;letter-spacing:4px">
+  <button class="btn" onclick="joinRoom()">[ JOIN ]</button>
+  <button class="btn g" onclick="go('menu')">[ BACK ]</button>
+</div>
+
+<div id="lobby" class="scr lob">
+  <h1 class="T" style="font-size:22px;margin-bottom:12px">WAITING ROOM</h1>
+  <div class="ll">
+    <div>
+      <div class="ib">
+        <div style="font-size:9px;color:#444;letter-spacing:2px;margin-bottom:6px">ROOM CODE</div>
+        <div id="rcd">------</div>
+        <div style="font-size:10px;color:#333">give this to friends</div>
+      </div>
+      <div class="ib">
+        <div style="font-size:9px;color:#444;letter-spacing:2px;margin-bottom:4px">YOUR ROLE</div>
+        <div id="lrole" style="font-size:13px;color:#ff5555">—</div>
+      </div>
+      <button class="btn" id="start-btn" onclick="startGame()" style="display:none">[ START GAME ]</button>
+      <button class="btn g" onclick="leaveRoom()">[ LEAVE ]</button>
+    </div>
+    <div>
+      <div style="font-size:9px;color:#444;letter-spacing:2px;margin-bottom:8px;border-bottom:1px solid #111;padding-bottom:5px">PLAYERS</div>
+      <div id="plist" style="min-height:100px"></div>
+      <div style="font-size:10px;color:#222;margin-top:10px">2–4 players · host starts</div>
+    </div>
+  </div>
+</div>
+
+<div id="game" class="scr" style="padding:0;justify-content:flex-start">
+  <div class="hud">
+    <div class="ht" id="ht">12:00 AM</div>
+    <div class="sep">|</div>
+    <div style="color:#ffaa00">PWR <span id="hp" style="color:#ffdd66">100</span>%</div>
+    <div class="sep">|</div>
+    <div class="rb" id="hrb">GUARD</div>
+    <div class="sep">|</div>
+    <div style="font-size:10px;color:#2a2a2a" id="hroom">—</div>
+    <div style="flex:1"></div>
+    <div style="font-size:10px;color:#333" id="hnight">NIGHT 1</div>
+  </div>
+  <div class="gm">
+    <div class="cams" id="cams">
+      <div class="cv" id="c0" onclick="selCam(0)"><div class="cl">CAM 1A — SHOW FLOOR</div></div>
+      <div class="cv" id="c1" onclick="selCam(1)"><div class="cl">CAM 1B — BACKSTAGE</div></div>
+      <div class="cv" id="c2" onclick="selCam(2)"><div class="cl">CAM 2A — WEST HALL</div></div>
+      <div class="cv" id="c3" onclick="selCam(3)"><div class="cl">CAM 2B — EAST HALL</div></div>
+    </div>
+    <div class="sp" id="sp">
+      <div class="stit">DOORS</div>
+      <button class="db" id="ld" onclick="toggleDoor('left')">[ LEFT DOOR: OPEN ]</button>
+      <button class="db" id="rd2" onclick="toggleDoor('right')">[ RIGHT DOOR: OPEN ]</button>
+      <div style="margin:6px 0">
+        <div style="font-size:9px;color:#333;margin-bottom:2px">POWER</div>
+        <div class="pb"><div class="pf" id="pbar" style="width:100%"></div></div>
+      </div>
+      <div class="stit">EVENTS</div>
+      <div class="el" id="elog"></div>
+      <div class="tb"><span style="color:#220022;font-size:9px">INTERCEPT:</span><br><span id="taunt">...</span></div>
+    </div>
+  </div>
+</div>
+
+<div id="over" class="scr ov" style="display:none">
+  <h2 id="ov-title" class="dead">GAME OVER</h2>
+  <p id="ov-msg">You didn't last the night.</p>
+  <button class="btn" onclick="resetToMenu()">[ MAIN MENU ]</button>
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/firebase/compat/app/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase/compat/database/index.min.js"></script>
+<script>
+const FB_CONFIG = {
+  apiKey:"AIzaSyC-placeholder-use-public",
+  databaseURL:"https://fnaf-diddy-default-rtdb.firebaseio.com"
+};
+
+const TIMES=['12:00 AM','1:00 AM','2:00 AM','3:00 AM','4:00 AM','5:00 AM','6:00 AM'];
+const CNAMES=['Show Floor','Backstage','West Hall','East Hall'];
+let db=null, roomRef=null, myId=null, myRole='guard', roomCode='', isHost=false;
+let localPower=100, localHour=0, localLeft=false, localRight=false;
+let gameRunning=false, gameTimer=null, tauntCD=false;
+let lastMonsterCam=1, lastApproach=null;
+
+function uid(){return Math.random().toString(36).substr(2,8)}
+function genCode(){return Math.random().toString(36).substr(2,5).toUpperCase()}
+function go(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on')}
+
+function pickRole(r){
+  myRole=r;
+  document.getElementById('rc-g').classList.toggle('sel',r==='guard');
+  document.getElementById('rc-m').classList.toggle('sel',r==='monster');
+}
+
+async function initFirebase(){
+  try {
+    if(!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+    db=firebase.database();
+    document.getElementById('conn-status').textContent='ONLINE';
+    document.getElementById('conn-status').className='conn ok';
+  } catch(e) {
+    document.getElementById('conn-status').textContent='OFFLINE';
+    document.getElementById('conn-status').className='conn err';
+  }
+}
+
+async function createRoom(){
+  const name=(document.getElementById('h-name').value.trim()||'HOST').toUpperCase();
+  myId=uid(); roomCode=genCode(); isHost=true;
+  if(!db){alert('Firebase not ready. Try again in a moment.');return;}
+  const rRef=db.ref('rooms/'+roomCode);
+  await rRef.set({
+    host:myId,
+    started:false,
+    gameOver:false,
+    monsterCam:1,
+    approach:null,
+    hour:0,
+    power:100,
+    leftDoor:false,
+    rightDoor:false,
+    logs:[],
+    taunt:'...',
+    players:{}
+  });
+  await rRef.child('players/'+myId).set({name,role:myRole,alive:true});
+  rRef.child('players/'+myId).onDisconnect().remove();
+  roomRef=rRef;
+  listenRoom();
+  document.getElementById('rcd').textContent=roomCode;
+  document.getElementById('lrole').textContent=myRole==='guard'?'👮 SECURITY GUARD':'🎪 THE MONSTER';
+  document.getElementById('start-btn').style.display='inline-block';
+  go('lobby');
+}
+
+async function joinRoom(){
+  const name=(document.getElementById('j-name').value.trim()||'PLAYER').toUpperCase();
+  const code=document.getElementById('j-code').value.trim().toUpperCase();
+  if(!code){alert('Enter a room code');return;}
+  if(!db){alert('Firebase not ready.');return;}
+  const snap=await db.ref('rooms/'+code).once('value');
+  if(!snap.exists()){alert('Room not found: '+code);return;}
+  const data=snap.val();
+  if(data.started){alert('Game already started!');return;}
+  const players=data.players||{};
+  const roles=Object.values(players).map(p=>p.role);
+  const hasMonster=roles.includes('monster');
+  const hasGuard=roles.includes('guard');
+  let assignRole=myRole;
+  if(myRole==='monster'&&hasMonster) assignRole='guard';
+  if(myRole==='guard'&&hasGuard&&!hasMonster) assignRole='monster';
+  myRole=assignRole;
+  myId=uid(); roomCode=code; isHost=false;
+  roomRef=db.ref('rooms/'+code);
+  await roomRef.child('players/'+myId).set({name,role:myRole,alive:true});
+  roomRef.child('players/'+myId).onDisconnect().remove();
+  listenRoom();
+  document.getElementById('rcd').textContent=roomCode;
+  document.getElementById('lrole').textContent=myRole==='guard'?'👮 SECURITY GUARD':'🎪 THE MONSTER';
+  go('lobby');
+}
+
+function listenRoom(){
+  roomRef.on('value',snap=>{
+    if(!snap.exists()) return;
+    const d=snap.val();
+    const players=d.players||{};
+    renderPlayerList(players);
+    if(d.started && document.getElementById('lobby').classList.contains('on')){
+      initGameUI(d);
+      go('game');
+    }
+    if(d.started && document.getElementById('game').classList.contains('on')){
+      syncGameState(d);
+    }
+    if(d.gameOver){
+      endGame(d.guardWon);
+    }
+  });
+}
+
+function renderPlayerList(players){
+  const el=document.getElementById('plist');
+  el.innerHTML=Object.entries(players).map(([id,p])=>`
+    <div class="pe">
+      <div class="dot ${p.role}"></div>
+      <div style="flex:1;color:${id===myId?'#b8b890':'#444'}">${p.name}${id===myId?' (you)':''}</div>
+      <div style="font-size:10px;color:#333">${p.role.toUpperCase()}</div>
+    </div>`).join('');
+}
+
+async function startGame(){
+  if(!roomRef) return;
+  const snap=await roomRef.child('players').once('value');
+  const players=snap.val()||{};
+  if(Object.keys(players).length<1){alert('Need at least 1 more player');return;}
+  await roomRef.update({started:true,hour:0,power:100,leftDoor:false,rightDoor:false,monsterCam:1,approach:null,logs:[{m:'Night begins. Check cameras.',t:'i'}],taunt:'...I can see you.'});
+}
+
+function initGameUI(d){
+  localPower=d.power||100;
+  localHour=d.hour||0;
+  localLeft=d.leftDoor||false;
+  localRight=d.rightDoor||false;
+  lastMonsterCam=d.monsterCam||1;
+  lastApproach=d.approach||null;
+  updateHUD();
+  renderDoors();
+  renderCameras(d.monsterCam||1);
+  renderLogs(d.logs||[]);
+  document.getElementById('taunt').textContent=d.taunt||'...';
+  document.getElementById('hroom').textContent='ROOM: '+roomCode;
+  document.getElementById('hrb').textContent=myRole.toUpperCase();
+  document.getElementById('hrb').className='rb '+myRole;
+
+  if(myRole==='monster') renderMonsterPanel();
+  if(isHost) startHostLoop();
+}
+
+function syncGameState(d){
+  localPower=d.power||100;
+  localHour=d.hour||0;
+  localLeft=d.leftDoor||false;
+  localRight=d.rightDoor||false;
+  lastMonsterCam=d.monsterCam||1;
+  lastApproach=d.approach||null;
+  updateHUD();
+  renderDoors();
+  renderCameras(d.monsterCam||1);
+  renderLogs(d.logs||[]);
+  if(d.taunt) document.getElementById('taunt').textContent=d.taunt;
+  if(myRole==='monster') updateMonsterPanel();
+}
+
+function updateHUD(){
+  document.getElementById('ht').textContent=TIMES[Math.min(localHour,6)];
+  document.getElementById('hp').textContent=Math.ceil(localPower);
+  document.getElementById('pbar').style.width=localPower+'%';
+  document.getElementById('pbar').style.background=localPower>50?'#ffaa00':localPower>20?'#ff6600':'#ff2020';
+}
+
+function renderCameras(mCam){
+  for(let i=0;i<4;i++){
+    const c=document.getElementById('c'+i);
+    c.classList.toggle('hm',mCam===i);
+    const old=c.querySelector('.ce');
+    if(old) old.remove();
+    if(mCam===i){
+      const e=document.createElement('div');
+      e.className='ce';
+      e.style.cssText='bottom:22%;left:50%;transform:translateX(-50%)';
+      e.textContent='🎪';
+      c.appendChild(e);
+    }
+  }
+}
+
+function selCam(i){
+  document.querySelectorAll('.cv').forEach((c,idx)=>c.classList.toggle('ac',idx===i));
+  if(lastMonsterCam===i) addLocalLog('Monster on CAM '+(i+1)+'!','d');
+}
+
+function renderDoors(){
+  const l=document.getElementById('ld');
+  const r=document.getElementById('rd2');
+  l.textContent='[ LEFT DOOR: '+(localLeft?'CLOSED':'OPEN')+' ]';
+  l.className='db'+(localLeft?' cl2':'');
+  r.textContent='[ RIGHT DOOR: '+(localRight?'CLOSED':'OPEN')+' ]';
+  r.className='db'+(localRight?' cl2':'');
+}
+
+async function toggleDoor(side){
+  if(!roomRef||!gameRunning&&!isHost) return;
+  const key=side==='left'?'leftDoor':'rightDoor';
+  const cur=side==='left'?localLeft:localRight;
+  const next=!cur;
+  await roomRef.update({[key]:next});
+  await pushLog((side==='left'?'Left':'Right')+' door '+(next?'CLOSED':'opened')+'.',next?'w':'i');
+  if(next && lastApproach===side){
+    await roomRef.update({approach:null});
+    await pushLog('Monster blocked on the '+side+'!','i');
+    fetchTaunt('blocked');
+  }
+}
+
+function renderLogs(logs){
+  const el=document.getElementById('elog');
+  const arr=Array.isArray(logs)?logs:Object.values(logs);
+  el.innerHTML=arr.slice(-15).reverse().map(l=>`<div class="le ${l.t||''}">${l.m}</div>`).join('');
+}
+
+function addLocalLog(m,t){
+  const el=document.getElementById('elog');
+  const d=document.createElement('div');
+  d.className='le '+(t||'');
+  d.textContent=m;
+  el.insertBefore(d,el.firstChild);
+}
+
+async function pushLog(m,t){
+  if(!roomRef) return;
+  const snap=await roomRef.child('logs').once('value');
+  const logs=snap.val()?Object.values(snap.val()):[];
+  logs.push({m,t:t||''});
+  if(logs.length>20) logs.splice(0,logs.length-20);
+  await roomRef.child('logs').set(logs);
+}
+
+function startHostLoop(){
+  gameRunning=true;
+  gameTimer=setInterval(async()=>{
+    if(!gameRunning||!roomRef) return;
+    const snap=await roomRef.once('value');
+    const d=snap.val();
+    if(!d||d.gameOver) return;
+
+    let pw=d.power||100;
+    let drain=0.5;
+    if(d.leftDoor) drain+=0.9;
+    if(d.rightDoor) drain+=0.9;
+    pw=Math.max(0,pw-drain);
+
+    let hr=d.hour||0;
+    if(Math.random()<0.013){
+      hr=Math.min(6,hr+1);
+      await pushLog('Time: '+TIMES[hr],'i');
+    }
+
+    if(myRole==='guard'||!Object.values(d.players||{}).some(p=>p.role==='monster')){
+      if(Math.random()<0.07){
+        const newCam=Math.floor(Math.random()*4);
+        let approach=null;
+        if(newCam===2) approach='left';
+        else if(newCam===3) approach='right';
+        await roomRef.update({monsterCam:newCam,approach});
+        if(approach) await pushLog('Movement detected in '+CNAMES[newCam]+'!','d');
+      }
+      if(d.approach==='left'&&!d.leftDoor&&Math.random()<0.07){
+        await roomRef.update({gameOver:true,guardWon:false});
+        clearInterval(gameTimer);
+        return;
+      }
+      if(d.approach==='right'&&!d.rightDoor&&Math.random()<0.07){
+        await roomRef.update({gameOver:true,guardWon:false});
+        clearInterval(gameTimer);
+        return;
+      }
+    }
+
+    if(pw<=0){
+      await pushLog('POWER FAILED — DOORS UNLOCKED','d');
+      await roomRef.update({gameOver:true,guardWon:false,power:0});
+      clearInterval(gameTimer);
+      return;
+    }
+
+    if(hr>=6){
+      await pushLog('6:00 AM — SHIFT OVER','i');
+      await roomRef.update({gameOver:true,guardWon:true});
+      clearInterval(gameTimer);
+      return;
+    }
+
+    await roomRef.update({power:pw,hour:hr});
+  },600);
+}
+
+function renderMonsterPanel(){
+  const sp=document.getElementById('sp');
+  const old=document.getElementById('mpanel');
+  if(old) old.remove();
+  const div=document.createElement('div');
+  div.id='mpanel';
+  div.innerHTML=`
+    <div class="stit">MOVE TO CAMERA</div>
+    <div class="mg" id="mgrid">
+      ${CNAMES.map((n,i)=>`<button class="db" id="mb${i}" onclick="monsterMove(${i})">${n.toUpperCase()}</button>`).join('')}
+    </div>
+    <button class="db" style="border-color:#550055;color:#aa44ff" onclick="fetchTaunt('random')">[ TAUNT GUARDS ]</button>
+  `;
+  sp.insertBefore(div,sp.querySelector('.stit'));
+  updateMonsterPanel();
+}
+
+function updateMonsterPanel(){
+  for(let i=0;i<4;i++){
+    const b=document.getElementById('mb'+i);
+    if(b) b.className='db'+(lastMonsterCam===i?' cl2':'');
+  }
+}
+
+async function monsterMove(cam){
+  if(!roomRef) return;
+  let approach=null;
+  if(cam===2) approach='left';
+  else if(cam===3) approach='right';
+  await roomRef.update({monsterCam:cam,approach});
+  await pushLog('Monster moved to '+CNAMES[cam].toUpperCase(),'d');
+  fetchTaunt('move');
+}
+
+async function monsterJumpscare(){
+  if(!roomRef) return;
+  const d=(await roomRef.once('value')).val();
+  const side=lastApproach;
+  const doorClosed=side==='left'?d.leftDoor:d.rightDoor;
+  if(doorClosed){addLocalLog('Door is closed!','w');return;}
+  await roomRef.update({gameOver:true,guardWon:false});
+}
+
+function endGame(guardWon){
+  gameRunning=false;
+  if(gameTimer) clearInterval(gameTimer);
+  go('over');
+  document.getElementById('ov-title').textContent=guardWon?'6:00 AM':'GAME OVER';
+  document.getElementById('ov-title').className=guardWon?'win':'dead';
+  document.getElementById('ov-msg').textContent=guardWon?'The guards survived until morning! Night shift complete.':'The monster claimed the night. No one made it to 6AM.';
+}
+
+function leaveRoom(){
+  if(roomRef&&myId) roomRef.child('players/'+myId).remove();
+  roomRef=null; gameRunning=false;
+  if(gameTimer) clearInterval(gameTimer);
+  go('menu');
+}
+
+function resetToMenu(){
+  if(roomRef&&myId) roomRef.child('players/'+myId).remove();
+  roomRef=null; gameRunning=false;
+  if(gameTimer) clearInterval(gameTimer);
+  go('menu');
+}
+
+async function fetchTaunt(trigger){
+  if(tauntCD||!roomRef) return;
+  tauntCD=true;
+  setTimeout(()=>tauntCD=false,14000);
+  const prompts={
+    jumpscare:'You are a horrifying animatronic monster. Write ONE short chilling sentence after catching a guard. First person, no emojis.',
+    blocked:'You are a horrifying animatronic monster. A guard slammed a door in your face. Write ONE short frustrated threat. No emojis.',
+    move:'You are a horrifying animatronic monster. Write ONE eerie sentence about silently moving through a building at night. No emojis.',
+    random:'You are a horrifying animatronic monster. Write ONE creepy taunt to security guards. No emojis.'
+  };
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompts[trigger]||prompts.random}]})
+    });
+    const data=await res.json();
+    const txt=data.content?.find(b=>b.type==='text')?.text||'...';
+    if(roomRef) await roomRef.update({taunt:txt});
+    await pushLog('"'+txt.slice(0,35)+'..."','t');
+  }catch(e){
+    if(roomRef) await roomRef.update({taunt:'Static interference...'});
+  }
+}
+
+initFirebase();
+</script>
