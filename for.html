@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Test</title>
+</head>
+<body>
+    <h1>Notification Test</h1>
+    <button onclick="requestNotifications()">Request Notifications</button>
+    <script>
+        function requestNotifications() {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    for (let i = 0; i < 10; i++) {
+                        setTimeout(() => {
+                            new Notification(
+Test Notification ${i}
+, {
+                                body: 'This is a test notification.',
+                                icon: 'https://via.placeholder.com/128',
+                            });
+                        }, i * 1000); // Send a notification every 1 second
+                    }
+                } else {
+                    alert('Notification permissions denied.');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
