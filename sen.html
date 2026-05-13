@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FÖRSENT — Hässelby Runner</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:'Barlow Condensed',sans-serif;overflow:hidden}
+#wrapper{position:relative;width:680px;height:480px;overflow:hidden;background:#000}
+canvas{display:block}
+#gameCanvas{position:absolute;top:0;left:0;z-index:1}
+#cutsceneCanvas{position:absolute;top:0;left:0;z-index:20;display:none}
+#ui{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+#timer-bar{position:absolute;top:10px;left:10px;right:10px;height:7px;background:#1a1a1a;border-radius:3px;overflow:hidden;border:1px solid #333}
+#timer-fill{height:100%;background:#c9a84c;border-radius:3px;width:100%;transition:width 0.05s linear}
+#timer-text{position:absolute;top:22px;right:10px;font-family:'Bebas Neue',sans-serif;font-size:22px;color:#c9a84c;letter-spacing:2px}
+#score-text{position:absolute;top:22px;left:10px;font-family:'Bebas Neue',sans-serif;font-size:16px;color:#fff;letter-spacing:1px}
+#controls{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:10px;color:#444;letter-spacing:1px;white-space:nowrap}
+#action-flash{position:absolute;top:55px;left:50%;transform:translateX(-50%);font-family:'Bebas Neue',sans-serif;font-size:36px;color:#fff;opacity:0;pointer-events:none;text-shadow:2px 2px 0 #000;white-space:nowrap;z-index:15;transition:opacity 0.15s}
+#overlay{position:absolute;top:0;left:0;width:100%;height:100%;z-index:40;display:flex;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,0,0,0.88)}
+#overlay h1{font-family:'Bebas Neue',sans-serif;font-size:52px;color:#c9a84c;letter-spacing:4px;text-align:center;line-height:1.1}
+#overlay p{font-size:15px;color:#999;margin-top:10px;text-align:center;letter-spacing:0.5px;max-width:400px;line-height:1.7;white-space:pre-line}
+#overlay button{margin-top:22px;background:transparent;border:2px solid #c9a84c;color:#c9a84c;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;padding:10px 36px;cursor:pointer;pointer-events:all;transition:all 0.15s}
+#overlay button:hover{background:#c9a84c;color:#000}
+</style>
+</head>
+<body>
+<div id="wrapper">
+  <canvas id="gameCanvas" width="680" height="480"></canvas>
+  <canvas id="cutsceneCanvas" width="680" height="480"></canvas>
+  <div id="ui">
+    <div id="timer-bar"><div id="timer-fill"></div></div>
+    <div id="timer-text">1:00</div>
+    <div id="score-text">0m</div>
+    <div id="controls">↑/SPACE=HOPPA &nbsp; ↓/←=SLIDA &nbsp; Z=SKJUTA &nbsp; X=DISSA &nbsp; C=SLIMA</div>
+  </div>
+  <div id="action-flash"></div>
+  <div id="overlay">
+    <h1>FÖRSENT</h1>
+    <p>Du är Greekazo. Tunnelbanan åker om 60 sekunder.\nSpring till Hässelby station — akta dig för gangsters!\n\n🎵 Försent &amp; Försent 2 spelas i bakgrunden.</p>
+    <button onclick="startGame()">BÖRJA SPRINGA →</button>
+  </div>
+</div>
+
+<script>
+const gc = document.getElementById('gameCanvas');
+const ctx = gc.getContext('2d');
+const cc = document.getElementById('cutsceneCanvas');
+const cctx = cc.getContext('2d');
+const BB = "'Bebas Neue',sans-serif";
+const BC = "'Barlow Condensed',sans-serif";
+
+let state = 'menu';
+let time=60, dist=0, pts=0, spd=4, bgOff=0, frame=0;
+let obstacles=[], parts=[], spawnT=80;
+let timerInt=null, csAF=null, csF=0, csScene='', csDone=null;
+
+const GND = 310;
+const P = { x:110, y:GND, w:34, h:54, vy:0, ground:true, sliding:false, slideT:0, inv:0 };
+
+const ETYPES = [
+  {t:'gangster',c:'#c0392b',lbl:'GANGSTER',w:28,h:52,on:GND},
+  {t:'drunk',c:'#8e44ad',lbl:'FYLLEBALLE',w:28,h:50,on:GND},
+  {t:'fence',c:'#555',lbl:'RÄCKE',w:60,h:26,on:GND+28},
+  {t:'dog',c:'#8B5E3C',lbl:'HUND',w:44,h:26,on:GND+28},
+];
+
+const ACKEYS = {'ArrowUp':'hoppa',' ':'hoppa','ArrowDown':'slida','ArrowLeft':'slida','z':'skjuta','Z':'skjuta','x':'dissa','X':'dissa','c':'slima','C':'slima'};
+const ACE = {hoppa:'⬆ HOPP!',slida:'⬇ SLIDA!',skjuta:'💥 SKJUTEN!',dissa:'👎 DISSAD!',slima:'🟢 SLIMAD!'};
+const ACC = {hoppa:'#f1c40f',slida:'#3498db',skjuta:'#e74c3c',dissa:'#c9a84c',slima:'#2ecc71'};
+
+document.addEventListener('keydown', e=>{
+  if(state!=='playing') return;
+  const a = ACKEYS[e.key];
+  if(!a) return;
+  e.preventDefault();
+  if(a==='hoppa' && P.ground){ P.vy=-13.5; P.ground=false; flash(ACE.hoppa,ACC.hoppa); }
+  if(a==='slida' && P.ground){ P.sliding=true; P.slideT=28; flash(ACE.slida,ACC.slida); }
+  if(['skjuta','dissa','slima'].includes(a)){
+    const hit = obstacles.find(o=>!o.dead && Math.abs(o.x-P.x)<110);
+    if(hit){ killOb(hit,a); }
+  }
+});
+
+function flash(t,c){
+  const el=document.getElementById('action-flash');
+  el.textContent=t; el.style.color=c; el.style.opacity='1';
+  clearTimeout(el._t); el._t=setTimeout(()=>el.style.opacity='0',550);
+}
+
+function killOb(ob,a){
+  ob.dead=true; ob.deadT=0; pts+=50;
+  flash(ACE[a], ACC[a]);
+  for(let i=0;i<5;i++) spawnPart(ob.x+ob.w/2, ob.y, ACC[a]||'#fff', ['💥','✨','🔥','👊'][i%4]);
+}
+
+function spawnPart(x,y,c,t){ parts.push({x,y,vx:(Math.random()-.5)*5,vy:-3-Math.random()*3,a:1,c,t,l:35}); }
+
+function updateParts(){ parts=parts.filter(p=>p.l>0); parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy*=0.92;p.a=p.l/35;p.l--;}); }
+function drawParts(){ parts.forEach(p=>{ctx.save();ctx.globalAlpha=p.a;ctx.font=`18px serif`;ctx.fillText(p.t,p.x,p.y);ctx.restore();}); }
+
+// ───── BACKGROUND
+function drawBG(){
+  const g=ctx.createLinearGradient(0,0,0,310);
+  g.addColorStop(0,'#04040e'); g.addColorStop(1,'#121228');
+  ctx.fillStyle=g; ctx.fillRect(0,0,680,310);
+  ctx.fillStyle='#111'; ctx.fillRect(0,362,680,120);
+  ctx.fillStyle='#0d0d0d'; ctx.fillRect(0,362,680,8);
+  // Moon
+  ctx.fillStyle='#ffffee'; ctx.beginPath(); ctx.arc(600,55,16,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#04040e'; ctx.beginPath(); ctx.arc(610,51,14,0,Math.PI*2); ctx.fill();
+  // Stars
+  [[25,18],[90,35],[170,12],[260,28],[380,8],[490,32],[640,20]].forEach(([sx,sy])=>{
+    ctx.fillStyle='rgba(255,255,255,0.6)';
+    ctx.fillRect(((sx-bgOff*0.04)%680+680)%680, sy, 2,2);
+  });
+  // Far buildings
+  drawBldgs(bgOff*0.18,'#0e0e0e',90,190,50,90);
+  drawBldgs(bgOff*0.45,'#141414',130,210,40,75);
+  // Sidewalk tiles
+  ctx.fillStyle='#191919';
+  for(let i=0;i<10;i++){const tx=((i*80-bgOff*1.8)%720+720)%720-40; ctx.fillRect(tx,362,66,6);}
+  // Graffiti
+  const gx1=((800-bgOff*1.2)%1600+1600)%1600;
+  const gx2=((1400-bgOff*1.2)%1600+1600)%1600;
+  drawGraf(gx1, 275,'HÄSSELBY');
+  drawGraf(gx2, 282,'GREEKAZO 🔥');
+  // Road dashes
+  ctx.strokeStyle='#2a2a2a'; ctx.lineWidth=2;
+  ctx.setLineDash([30,20]); ctx.lineDashOffset=-bgOff*1.8;
+  ctx.beginPath(); ctx.moveTo(0,400); ctx.lineTo(680,400); ctx.stroke();
+  ctx.setLineDash([]);
+  // Distance markers
+  if(dist>50){
+    const md = (Math.floor(dist/50)*50);
+    const markX = (((md-dist)*8)+bgOff*0.1)%680;
+    ctx.fillStyle='#333'; ctx.fillRect(markX, 362, 3, 20);
+    ctx.fillStyle='#555'; ctx.font=`10px ${BC}`; ctx.textAlign='center';
+    ctx.fillText(md+'m', markX, 355);
+  }
+  // Subway station approaching
+  if(dist > 350){
+    const sx = 680 - (dist-350)*3;
+    if(sx < 680 && sx > -200){
+      ctx.fillStyle='#1a1a1a'; ctx.fillRect(sx, 140, 200, 222);
+      ctx.fillStyle='#c9a84c'; ctx.fillRect(sx, 140, 200, 36);
+      ctx.fillStyle='#000'; ctx.font=`bold 20px ${BB}`; ctx.textAlign='center';
+      ctx.fillText('HÄSSELBY',sx+100,164);
+      ctx.fillStyle='#c9a84c'; ctx.font=`bold 48px ${BB}`;
+      ctx.fillText('T',sx+100,232);
+      ctx.fillStyle='#1060b0'; ctx.fillRect(sx+55,248,90,114);
+      ctx.fillStyle='#1575cc'; ctx.fillRect(sx+57,250,86,110);
+      // Door frame
+      ctx.strokeStyle='#2288ee'; ctx.lineWidth=3;
+      ctx.strokeRect(sx+55,248,90,114);
+    }
+  }
+}
+
+function drawBldgs(off,col,minH,maxH,minW,maxW){
+  const seeds=[50,80,105,65,90,72,95,58,110,78,66,100];
+  let x=(-(off%(seeds.length*(maxW+20)))+seeds.length*(maxW+20))%1400 - maxW;
+  seeds.forEach((s,i)=>{
+    const w=minW+s%30, h=minH+(s*2)%(maxH-minH);
+    ctx.fillStyle=col; ctx.fillRect(x,362-h,w+20,h);
+    ctx.fillStyle='rgba(201,168,76,0.12)';
+    for(let wy=362-h+12;wy<355;wy+=18)
+      for(let wx=x+8;wx<x+w+12;wx+=16)
+        if((wx+wy+i)%3!==0) ctx.fillRect(wx,wy,8,10);
+    x+=w+20+s%18;
+  });
+}
+
+function drawGraf(x,y,t){
+  const gx=(x%1600+1600)%1600-800;
+  if(gx<-200||gx>880)return;
+  ctx.font=`bold 20px ${BB}`; ctx.fillStyle='rgba(201,168,76,0.12)';
+  ctx.textAlign='left'; ctx.fillText(t,gx,y);
+}
+
+// ───── PLAYER
+function drawPlayer(){
+  const py = P.sliding ? GND+P.h-18 : P.y;
+  const ph = P.sliding ? 18 : P.h;
+  if(P.inv>0 && P.inv%6<3) return;
+  ctx.save();
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,0.35)';
+  ctx.beginPath(); ctx.ellipse(P.x+17, GND+56, 16,5,0,0,Math.PI*2); ctx.fill();
+  const run=Math.sin(frame*0.28);
+  if(!P.sliding){
+    // Legs
+    ctx.fillStyle='#151515';
+    ctx.save(); ctx.translate(P.x+10,py+ph-4); ctx.rotate(run*0.42); ctx.fillRect(-4,0,8,22); ctx.restore();
+    ctx.save(); ctx.translate(P.x+24,py+ph-4); ctx.rotate(-run*0.42); ctx.fillRect(-4,0,8,22); ctx.restore();
+    // Sneakers
+    ctx.fillStyle='#eee'; ctx.fillRect(P.x+2,py+ph+16,15,6); ctx.fillRect(P.x+18,py+ph+16,15,6);
+    // Jacket body
+    ctx.fillStyle='#0d0d0d'; ctx.fillRect(P.x+3,py+ph-30,28,28);
+    ctx.fillStyle='#181818';
+    ctx.fillRect(P.x+5,py+ph-28,9,24); ctx.fillRect(P.x+20,py+ph-28,9,24);
+    ctx.strokeStyle='#2a2a2a'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(P.x+17,py+ph-28); ctx.lineTo(P.x+17,py+ph-4); ctx.stroke();
+    // Chain
+    ctx.strokeStyle='#c9a84c'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(P.x+17,py+ph-20,7,0.5,Math.PI-0.5); ctx.stroke();
+    // Head
+    ctx.fillStyle='#d4a96a'; ctx.beginPath(); ctx.arc(P.x+17,py+ph-36,13,0,Math.PI*2); ctx.fill();
+    // Beanie
+    ctx.fillStyle='#0d0d0d'; ctx.fillRect(P.x+5,py+ph-52,24,18);
+    ctx.beginPath(); ctx.arc(P.x+17,py+ph-50,12,Math.PI,0); ctx.fill();
+    // Eyes
+    ctx.fillStyle='#222'; ctx.fillRect(P.x+11,py+ph-38,4,4); ctx.fillRect(P.x+21,py+ph-38,4,4);
+  } else {
+    // Sliding pose
+    ctx.fillStyle='#0d0d0d'; ctx.fillRect(P.x,py,34,17);
+    ctx.fillStyle='#d4a96a'; ctx.beginPath(); ctx.arc(P.x+28,py+8,11,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#0d0d0d'; ctx.fillRect(P.x+18,py+2,20,12);
+    ctx.fillStyle='#151515'; ctx.fillRect(P.x,py+14,34,8);
+    ctx.fillStyle='#eee'; ctx.fillRect(P.x+24,py+18,14,5);
+  }
+  ctx.restore();
+}
+
+// ───── OBSTACLES
+function drawObs(){
+  obstacles.forEach(ob=>{
+    ctx.save();
+    if(ob.dead){
+      ctx.globalAlpha=1-ob.deadT/22;
+      ctx.translate(ob.x+ob.w/2, ob.y+ob.h/2);
+      ctx.rotate(ob.deadT*0.18);
+      ctx.translate(-ob.w/2,-ob.h/2);
+    } else {
+      ctx.translate(ob.x, ob.y);
+    }
+    const wk=Math.sin(frame*0.14)*(ob.t==='fence'?0:0.12);
+    if(ob.t==='gangster'||ob.t==='drunk'){
+      // Legs
+      ctx.fillStyle=ob.t==='drunk'?'#5a2d7a':'#111';
+      ctx.save(); ctx.translate(8,ob.h-4); ctx.rotate(wk); ctx.fillRect(-4,0,8,20); ctx.restore();
+      ctx.save(); ctx.translate(20,ob.h-4); ctx.rotate(-wk); ctx.fillRect(-4,0,8,20); ctx.restore();
+      ctx.fillStyle='#eee'; ctx.fillRect(2,ob.h+14,12,5); ctx.fillRect(14,ob.h+14,12,5);
+      // Body
+      ctx.fillStyle=ob.c; ctx.fillRect(2,ob.h-28,24,26);
+      // Head
+      ctx.fillStyle='#c8a070'; ctx.beginPath(); ctx.arc(14,ob.h-34,12,0,Math.PI*2); ctx.fill();
+      if(ob.t==='gangster'){
+        ctx.fillStyle='#111'; ctx.fillRect(4,ob.h-48,20,14);
+        ctx.fillStyle='#e74c3c'; ctx.fillRect(8,ob.h-38,5,4); ctx.fillRect(18,ob.h-38,5,4);
+      } else {
+        ctx.fillStyle='#7d3c98';
+        ctx.beginPath(); ctx.arc(14,ob.h-42,10,Math.PI,0); ctx.fill();
+      }
+    } else if(ob.t==='fence'){
+      ctx.fillStyle='#555'; ctx.fillRect(0,0,ob.w,ob.h);
+      ctx.fillStyle='#777'; ctx.fillRect(0,0,ob.w,4);
+      ctx.fillStyle='#888';
+      for(let i=0;i<4;i++) ctx.fillRect(i*15+5,4,3,ob.h-8);
+    } else if(ob.t==='dog'){
+      ctx.fillStyle=ob.c;
+      ctx.fillRect(0,10,ob.w,12);
+      ctx.fillRect(ob.w-14,4,16,14);
+      ctx.fillStyle='#7a4f2a';
+      [4,14,24,34].forEach(lx=>{
+        const bob=Math.sin(frame*0.22+lx)*2;
+        ctx.fillRect(lx,22+bob,5,8);
+      });
+      ctx.strokeStyle=ob.c; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(4,14); ctx.quadraticCurveTo(-12,4,-4,10); ctx.stroke();
+    }
+    // Label
+    ctx.fillStyle=ob.c; ctx.font=`bold 11px ${BC}`; ctx.textAlign='center';
+    ctx.fillText(ob.lbl, ob.w/2, -5);
+    ctx.restore();
+  });
+}
+
+// ───── COLLISION
+function checkHit(ob){
+  const py=P.sliding?GND+P.h-18:P.y, ph=P.sliding?18:P.h;
+  return P.x<ob.x+ob.w-6 && P.x+P.w-6>ob.x && py<ob.y+ob.h && py+ph>ob.y;
+}
+
+// ───── SPAWN
+function doSpawn(){
+  spawnT--;
+  if(spawnT>0) return;
+  spawnT = Math.max(50,100-dist/20) + Math.random()*40;
+  const et=ETYPES[Math.floor(Math.random()*ETYPES.length)];
+  obstacles.push({...et, x:700, y:et.on, dead:false, deadT:0});
+}
+
+// ───── MAIN LOOP
+function gLoop(){
+  if(state!=='playing') return;
+  frame++;
+  bgOff+=spd;
+  dist+=spd/10;
+  spd = 4+dist/180;
+
+  ctx.clearRect(0,0,680,480);
+  drawBG();
+
+  doSpawn();
+  obstacles.forEach(ob=>{ if(!ob.dead) ob.x-=spd; else ob.deadT++; });
+  obstacles=obstacles.filter(ob=>ob.x>-120 && !(ob.dead&&ob.deadT>24));
+
+  // Physics
+  if(!P.ground){ P.vy+=0.72; P.y+=P.vy; if(P.y>=GND){P.y=GND;P.vy=0;P.ground=true;} }
+  if(P.sliding){ P.slideT--; if(P.slideT<=0) P.sliding=false; }
+  if(P.inv>0) P.inv--;
+
+  // Collision
+  obstacles.forEach(ob=>{
+    if(ob.dead||P.inv>0) return;
+    if(checkHit(ob)){
+      P.inv=55; time-=7; pts=Math.max(0,pts-15);
+      flash('AYYY DUMBO! -7s','#e74c3c');
+      spawnPart(P.x,P.y,'#e74c3c','💥'); spawnPart(P.x+20,P.y-10,'#e74c3c','😵');
+    }
+  });
+
+  drawObs(); drawPlayer(); drawParts(); updateParts();
+
+  // Speed streaks
+  if(spd>7){
+    ctx.strokeStyle=`rgba(255,255,255,${(spd-7)*0.015})`; ctx.lineWidth=1;
+    for(let i=0;i<8;i++){
+      ctx.beginPath(); ctx.moveTo(Math.random()*300+300,290+i*10); ctx.lineTo(Math.random()*100+550,290+i*10); ctx.stroke();
+    }
+  }
+
+  // HUD
+  document.getElementById('score-text').textContent=`DIST: ${Math.round(dist)}m | +${pts}p`;
+  document.getElementById('timer-fill').style.width=(time/60*100)+'%';
+  if(time<15) document.getElementById('timer-fill').style.background='#e74c3c';
+  const m=Math.floor(time/60), s=Math.floor(time%60);
+  document.getElementById('timer-text').textContent=`${m}:${s.toString().padStart(2,'0')}`;
+
+  requestAnimationFrame(gLoop);
+}
+
+// ───── TIMER
+function startTimer(){
+  clearInterval(timerInt);
+  timerInt=setInterval(()=>{
+    if(state!=='playing') return;
+    time--;
+    if(dist>580){ endGame(true); return; }
+    if(time<=0){ endGame(false); }
+  },1000);
+}
+
+function endGame(won){
+  state='cutscene';
+  clearInterval(timerInt);
+  cancelAnimationFrame(csAF);
+  cc.style.display='block';
+  ctx.clearRect(0,0,680,480);
+  csF=0; csScene=won?'win':'lose';
+  csDone=()=>{
+    cc.style.display='none';
+    if(won){
+      showOv('FÖRSENT 3 ÄR SPELAD IN','Du tog sista tåget, satte igång studion,\noch gav Einár ett sista vers. 🕯️\n\nGreekazo är tillbaka.','SPELA IGEN');
+    } else {
+      showOv('FÖRSENT — SOM VANLIGT','1.cuz skrattade i 10 minuter.\nDu stod kvar på perrongen ensam.\n\nTunnelbana avgår var 5:e minut\nmen den känslan stannar kvar.','FÖRSÖK IGEN');
+    }
+  };
+  csLoop();
+}
+
+function csLoop(){
+  cctx.clearRect(0,0,680,480);
+  if(csScene==='lose') drawLose(csF);
+  else drawWin(csF);
+  csF++;
+  const maxF=csScene==='lose'?370:430;
+  if(csF<maxF) csAF=requestAnimationFrame(csLoop);
+  else { cc.style.display='none'; if(csDone) csDone(); }
+}
+
+// ──────────────────────────────────────────
+// LOSE CUTSCENE
+// ──────────────────────────────────────────
+function drawLose(f){
+  const W=680,H=480;
+  // Scene 1: Running to station (0-100)
+  if(f<100){
+    const t=f/100;
+    nightStreet(cctx,W,H);
+    // Station sign far
+    const sx=350+200*(1-t);
+    cctx.fillStyle='#1a1a1a'; cctx.fillRect(sx,170,180,210);
+    cctx.fillStyle='#c9a84c'; cctx.fillRect(sx,170,180,38);
+    cctx.fillStyle='#000'; cctx.font=`bold 22px ${BB}`; cctx.textAlign='center';
+    cctx.fillText('HÄSSELBY',sx+90,195);
+    cctx.fillStyle='#c9a84c'; cctx.font=`bold 50px ${BB}`; cctx.fillText('T',sx+90,258);
+    cctx.fillStyle='#1060b0'; cctx.fillRect(sx+55,264,70,116);
+    cctx.fillStyle='#1575cc'; cctx.fillRect(sx+57,266,66,112);
+    cctx.strokeStyle='#2288ee'; cctx.lineWidth=3; cctx.strokeRect(sx+55,264,70,116);
+    // Running Greekazo
+    const gx=80+t*220;
+    const bob=Math.sin(f*0.5)*7;
+    drawGrekCS(cctx,gx,250+bob,1.3,true,f);
+    // Speed lines
+    cctx.strokeStyle='rgba(255,255,255,0.08)'; cctx.lineWidth=1;
+    for(let i=0;i<10;i++){
+      cctx.beginPath(); cctx.moveTo(0,200+i*12); cctx.lineTo(gx-10,200+i*12); cctx.stroke();
+    }
+    caption(cctx,W,H,'"nej nej nej nej NEJ—"','');
+    cctx.strokeStyle='#c9a84c'; cctx.lineWidth=3; cctx.strokeRect(2,2,W-4,H-4);
+  }
+  // Scene 2: Doors closing in his face (100-220)
+  else if(f<220){
+    const t=(f-100)/120;
+    // Platform interior
+    cctx.fillStyle='#0a0a14'; cctx.fillRect(0,0,W,H);
+    cctx.fillStyle='#131320'; cctx.fillRect(0,280,W,200);
+    cctx.fillStyle='rgba(201,168,76,0.6)'; cctx.fillRect(0,278,W,4);
+    // Strip lights on ceiling
+    cctx.fillStyle='rgba(255,240,180,0.06)';
+    for(let i=0;i<6;i++) cctx.fillRect(i*130,0,80,180);
+    // Train
+    const trainX=-80-t*140;
+    cctx.fillStyle='#1a3a80'; cctx.fillRect(trainX,290,500,160);
+    cctx.fillStyle='#22448a'; cctx.fillRect(trainX,290,500,22);
+    // Train windows with silhouettes inside
+    for(let i=0;i<5;i++){
+      cctx.fillStyle='rgba(255,220,120,0.25)'; cctx.fillRect(trainX+20+i*80,318,60,80);
+      cctx.fillStyle='rgba(0,0,0,0.5)';
+      cctx.beginPath(); cctx.arc(trainX+50+i*80,345,11,0,Math.PI*2); cctx.fill();
+      cctx.fillRect(trainX+39+i*80,355,22,40);
+    }
+    // Closing doors - smooth close
+    const dc=Math.min(1,t*1.8);
+    const dw=Math.round(32*dc);
+    cctx.fillStyle='#2a55bb'; 
+    cctx.fillRect(trainX+175,305,dw,100); // left door
+    cctx.fillRect(trainX+240-dw,305,dw,100); // right door
+    // Door gap glow
+    if(dc<0.95){
+      cctx.strokeStyle='rgba(50,150,255,0.4)'; cctx.lineWidth=2;
+      cctx.beginPath(); cctx.moveTo(trainX+175+dw,305); cctx.lineTo(trainX+175+dw,405); cctx.stroke();
+      cctx.beginPath(); cctx.moveTo(trainX+240-dw,305); cctx.lineTo(trainX+240-dw,405); cctx.stroke();
+    }
+    // Greekazo reaching out
+    drawGrekCS(cctx,440,265,1.2,false,f);
+    // Arm reaching toward train
+    cctx.fillStyle='#0d0d0d';
+    cctx.save(); cctx.translate(440+17,275);
+    cctx.rotate(-0.6-Math.sin(f*0.1)*0.15);
+    cctx.fillRect(-4,-22,8,22); cctx.restore();
+    cctx.save(); cctx.translate(440+17,275);
+    cctx.rotate(0.4+Math.sin(f*0.1)*0.15);
+    cctx.fillRect(-4,-22,8,22); cctx.restore();
+    // Red flash on full close
+    if(dc>0.88){ cctx.fillStyle=`rgba(180,20,20,${(dc-0.88)*1.5})`; cctx.fillRect(0,0,W,H); }
+    // Train moving away completely
+    if(t>0.8){
+      const wake=Math.round((t-0.8)/0.2*180);
+      cctx.fillStyle='rgba(20,40,120,0.12)';
+      cctx.fillRect(trainX+500,295,wake,145);
+    }
+    const msg = t<0.5?'"VÄNTA—! DÖRRN—!"':t<0.85?'Dörrarna stänger.':'Tåget åker iväg.';
+    caption(cctx,W,H,msg,'Hässelby C → T-Centralen');
+    cctx.strokeStyle='#e74c3c'; cctx.lineWidth=3; cctx.strokeRect(2,2,W-4,H-4);
+  }
+  // Scene 3: 1.cuz laughs (220-370)
+  else {
+    const t=(f-220)/150;
+    cctx.fillStyle='#05050c'; cctx.fillRect(0,0,W,H);
+    cctx.fillStyle='#0c0c18'; cctx.fillRect(0,300,W,180);
+    cctx.fillStyle='rgba(201,168,76,0.4)'; cctx.fillRect(0,298,W,4);
+    // Empty track
+    cctx.fillStyle='#09090f'; cctx.fillRect(0,302,W,60);
+    cctx.fillStyle='#1e1e28';
+    for(let i=0;i<9;i++) cctx.fillRect(i*80+10,314,48,8);
+    // Greekazo slumped
+    drawGrekCS(cctx,160,268,1.1,false,f);
+    // Head drooping forward
+    cctx.fillStyle='#d4a96a'; cctx.save(); cctx.translate(160+17,272);
+    cctx.rotate(0.45); cctx.beginPath(); cctx.arc(0,-8,13,0,Math.PI*2); cctx.fill();
+    cctx.restore();
+    // 1.cuz entering from right
+    const cx=Math.max(340, 680-t*380);
+    draw1cuzCS(cctx,cx,265,1.1);
+    // Speech bubble fades in
+    if(t>0.4){
+      const bt=(t-0.4)/0.6;
+      cctx.globalAlpha=bt;
+      // Bubble
+      cctx.fillStyle='#f5f5f5'; cctx.beginPath();
+      if(cctx.roundRect) cctx.roundRect(240,130,390,115,12); else cctx.rect(240,130,390,115);
+      cctx.fill();
+      cctx.fillStyle='#f5f5f5';
+      cctx.beginPath(); cctx.moveTo(310,245); cctx.lineTo(336,258); cctx.lineTo(348,245); cctx.fill();
+      cctx.fillStyle='#111'; cctx.textAlign='center';
+      cctx.font=`bold 30px ${BB}`; cctx.fillText('HAHAHA SÄMST 💀',436,180);
+      cctx.font=`17px ${BC}`; cctx.fillText('du missade tåget BRO',436,208);
+      cctx.font=`14px ${BC}`; cctx.fillStyle='#555'; cctx.fillText('"sämst i världen"',436,233);
+      cctx.globalAlpha=1;
+    }
+    // FÖRSENT stamp
+    if(t>0.72){
+      const st=(t-0.72)/0.28;
+      cctx.save(); cctx.globalAlpha=Math.min(1,st*1.5);
+      cctx.translate(W/2,H/2-20); cctx.rotate(-0.07);
+      cctx.strokeStyle='#c0392b'; cctx.lineWidth=6;
+      if(cctx.roundRect) cctx.roundRect(-150,-55,300,110,4); else cctx.rect(-150,-55,300,110);
+      cctx.stroke();
+      cctx.fillStyle='rgba(192,57,43,0.12)'; cctx.fill();
+      cctx.fillStyle='#c0392b'; cctx.font=`bold 78px ${BB}`; cctx.textAlign='center'; cctx.textBaseline='middle';
+      cctx.fillText('FÖRSENT',0,0);
+      cctx.restore();
+    }
+    cctx.strokeStyle='#c0392b'; cctx.lineWidth=3; cctx.strokeRect(2,2,W-4,H-4);
+  }
+  cineBars(cctx,W,H);
+}
+
+// ──────────────────────────────────────────
+// WIN CUTSCENE
+// ──────────────────────────────────────────
+function drawWin(f){
+  const W=680,H=480;
+  // Scene 1: Last-second jump onto train (0-100)
+  if(f<100){
+    const t=f/100;
+    nightStreet(cctx,W,H);
+    cctx.fillStyle='#111'; cctx.fillRect(0,290,W,190);
+    cctx.fillStyle='rgba(201,168,76,0.6)'; cctx.fillRect(0,288,W,4);
+    // Train - about to leave
+    cctx.fillStyle='#1a3a80'; cctx.fillRect(40,298,480,160);
+    cctx.fillStyle='#22448a'; cctx.fillRect(40,298,480,20);
+    for(let i=0;i<5;i++){
+      cctx.fillStyle='rgba(255,220,100,0.25)'; cctx.fillRect(60+i*82,324,62,78);
+      cctx.fillStyle='rgba(0,0,0,0.4)'; cctx.beginPath(); cctx.arc(91+i*82,348,10,0,Math.PI*2); cctx.fill();
+    }
+    // Doors closing (but Greekazo catches them)
+    const dc=Math.min(0.9,t*1.5);
+    const dw=Math.round(28*dc);
+    cctx.fillStyle='#2a55bb'; cctx.fillRect(200,308,dw,96); cctx.fillRect(260-dw,308,dw,96);
+    // Greekazo flying leap
+    const gx=50+t*190, gy=260-Math.sin(t*Math.PI)*70;
+    drawGrekCS(cctx,gx,gy,1.3,true,f);
+    // Sparks/flash at landing
+    if(t>0.8){ cctx.fillStyle=`rgba(201,168,76,${(t-0.8)*2})`; cctx.fillRect(0,0,W,H); }
+    caption(cctx,W,H,'"EY HÅLL DÖRRN— JAG E HÄR"','');
+    cctx.strokeStyle='#c9a84c'; cctx.lineWidth=3; cctx.strokeRect(2,2,W-4,H-4);
+  }
+  // Scene 2: Studio recording Försent 3 (100-230)
+  else if(f<230){
+    const t=(f-100)/130;
+    // Studio room
+    cctx.fillStyle='#0a0608'; cctx.fillRect(0,0,W,H);
+    cctx.fillStyle='#110a08'; cctx.fillRect(0,300,W,180);
+    // Warm ceiling glow
+    cctx.fillStyle='rgba(201,120,40,0.06)'; cctx.fillRect(0,0,W,H);
+    // Monitor screen
+    cctx.fillStyle='#0c1525'; cctx.fillRect(160,160,300,140);
+    cctx.strokeStyle='#1a2a50'; cctx.lineWidth=2; cctx.strokeRect(160,160,300,140);
+    cctx.fillStyle='#2a3a80'; cctx.fillRect(160,160,300,24);
+    cctx.fillStyle='#7a8cc0'; cctx.font=`14px ${BC}`; cctx.textAlign='center';
+    cctx.fillText('försent_3_final.wav',310,178);
+    // Waveform
+    cctx.strokeStyle='#c9a84c'; cctx.lineWidth=1.5;
+    cctx.beginPath();
+    for(let x=170;x<455;x+=3){
+      const amp=Math.sin(x*0.25+f*0.18)*12*(0.5+0.5*Math.sin(x*0.04));
+      x===170?cctx.moveTo(x,255+amp):cctx.lineTo(x,255+amp);
+    }
+    cctx.stroke();
+    // Progress bar
+    cctx.fillStyle='#1a1a2a'; cctx.fillRect(170,282,280,8);
+    cctx.fillStyle='#c9a84c'; cctx.fillRect(170,282,Math.round(280*Math.min(1,t*1.4)),8);
+    // Mixing desk
+    cctx.fillStyle='#0e0a06'; cctx.fillRect(80,320,480,120);
+    cctx.fillStyle='#c9a84c'; cctx.fillRect(80,320,480,6);
+    for(let i=0;i<14;i++){
+      const hh=40+Math.sin(f*0.1+i*0.8)*20;
+      const col=`hsl(${35+i*4},${50+Math.sin(f*0.08+i)*15}%,${15+Math.sin(f*0.12+i)*10}%)`;
+      cctx.fillStyle=col; cctx.fillRect(90+i*32,440-hh,18,hh);
+      cctx.fillStyle='#c9a84c'; cctx.beginPath(); cctx.arc(99+i*32,430-hh,5,0,Math.PI*2); cctx.fill();
+    }
+    // Greekazo at mic
+    drawGrekCS(cctx,300,245,1.2,false,f);
+    cctx.fillStyle='#888'; cctx.fillRect(316,198,5,44);
+    cctx.fillStyle='#aaa'; cctx.beginPath(); cctx.arc(318,195,10,0,Math.PI*2); cctx.fill();
+    // REC light
+    const recA=0.6+0.4*Math.sin(f*0.25);
+    cctx.fillStyle=`rgba(220,30,30,${recA})`;
+    cctx.beginPath(); cctx.arc(560,40,11,0,Math.PI*2); cctx.fill();
+    cctx.fillStyle='#e74c3c'; cctx.font=`13px ${BC}`; cctx.textAlign='left'; cctx.fillText('● REC',545,68);
+    if(t>0.8){ cctx.fillStyle=`rgba(201,168,76,${(t-0.8)*0.4})`; cctx.fillRect(0,0,W,H); }
+    caption(cctx,W,H,'FÖRSENT 3 — INSPELNING','');
+    cctx.strokeStyle='#c9a84c'; cctx.lineWidth=3; cctx.strokeRect(2,2,W-4,H-4);
+  }
+  // Scene 3: Einár rises (230-430)
+  else {
+    const t=(f-230)/200;
+    // Deep black fades to gold
+    const bg=Math.round(t*10);
+    cctx.fillStyle=`rgb(${bg},${Math.round(bg*0.8)},${Math.round(bg*1.5)})`; cctx.fillRect(0,0,W,H);
+    // Light rays from above
+    if(t>0.1){
+      const lt=(t-0.1)/0.9;
+      cctx.save();
+      for(let i=0;i<14;i++){
+        cctx.globalAlpha=lt*0.07;
+        cctx.fillStyle='#c9a84c';
+        cctx.beginPath();
+        const angle=i*(Math.PI*2/14);
+        cctx.moveTo(W/2,0);
+        cctx.lineTo(W/2+Math.cos(angle+0.2)*700,700);
+        cctx.lineTo(W/2+Math.cos(angle)*700,700);
+        cctx.closePath(); cctx.fill();
+      }
+      cctx.globalAlpha=1;
+      // Central glow
+      const grd=cctx.createRadialGradient(W/2,0,0,W/2,0,350);
+      grd.addColorStop(0,`rgba(201,168,76,${lt*0.35})`);
+      grd.addColorStop(0.5,`rgba(201,168,76,${lt*0.08})`);
+      grd.addColorStop(1,'rgba(0,0,0,0)');
+      cctx.fillStyle=grd; cctx.fillRect(0,0,W,H);
+      cctx.restore();
+    }
+    // Ground / stage
+    cctx.fillStyle=`rgba(14,10,22,${Math.min(1,t*2)})`; cctx.fillRect(0,355,W,125);
+    cctx.fillStyle=`rgba(201,168,76,${Math.min(0.7,t*0.7)})`; cctx.fillRect(0,353,W,4);
+    // Einár descending
+    if(t>0.2){
+      const et=Math.min(1,(t-0.2)/0.6);
+      const ey=-80+et*350;
+      drawEinarCS(cctx, W/2-55, ey, 1.4, et);
+    }
+    // Greekazo arms raised
+    if(t>0.35){
+      const gt=(t-0.35)/0.65;
+      cctx.globalAlpha=Math.min(1,gt*2.5);
+      drawGrekCS(cctx,W/2-30,292,1.2,false,f);
+      cctx.fillStyle='#0d0d0d';
+      cctx.save(); cctx.translate(W/2-30+17,305); cctx.rotate(-1.3); cctx.fillRect(-4,-22,8,22); cctx.restore();
+      cctx.save(); cctx.translate(W/2-30+17,305); cctx.rotate(1.3); cctx.fillRect(-4,-22,8,22); cctx.restore();
+      cctx.globalAlpha=1;
+    }
+    // Title
+    if(t>0.62){
+      const tt=(t-0.62)/0.38;
+      cctx.globalAlpha=Math.min(1,tt*1.5);
+      cctx.fillStyle='#c9a84c'; cctx.textAlign='center';
+      cctx.font=`bold 64px ${BB}`; cctx.fillText('FÖRSENT 3',W/2,118);
+      cctx.font=`21px ${BC}`; cctx.fillStyle='rgba(201,168,76,0.7)';
+      cctx.fillText('ft. EINÁR (2002–2021)',W/2,152);
+      if(t>0.82){
+        cctx.fillStyle=`rgba(255,255,255,${(t-0.82)/0.18*0.7})`;
+        cctx.font=`13px ${BC}`;
+        cctx.fillText('i minnet av Nils Grönberg — alltid i hjärtat',W/2,182);
+      }
+      cctx.globalAlpha=1;
+    }
+    // White fade out
+    if(t>0.94){ cctx.fillStyle=`rgba(255,255,255,${(t-0.94)/0.06})`; cctx.fillRect(0,0,W,H); }
+    cctx.strokeStyle=`rgba(201,168,76,${Math.min(1,t*3)})`; cctx.lineWidth=3; cctx.strokeRect(2,2,W-4,H-4);
+  }
+  cineBars(cctx,W,H);
+}
+
+// ──────────────────────────────────────────
+// DRAWING HELPERS
+// ──────────────────────────────────────────
+function nightStreet(c,W,H){
+  const g=c.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#03030c'); g.addColorStop(1,'#0d0d20');
+  c.fillStyle=g; c.fillRect(0,0,W,H);
+  c.fillStyle='#0a0a0a'; c.fillRect(0,350,W,130);
+  c.fillStyle='rgba(201,168,76,0.5)'; c.fillRect(0,348,W,4);
+  // Buildings
+  const bldg=[[20,150,60,200],[90,120,80,230],[180,100,55,250],[280,130,70,220],[380,90,90,260],[480,140,65,210],[560,110,70,240],[620,130,60,220]];
+  bldg.forEach(([bx,bh,bw])=>{
+    c.fillStyle='#0e0e0e'; c.fillRect(bx,350-bh,bw,bh);
+    c.fillStyle='rgba(201,168,76,0.1)';
+    for(let wy=350-bh+10;wy<340;wy+=18)
+      for(let wx=bx+8;wx<bx+bw-8;wx+=16)
+        if((wx+wy)%3!==0) c.fillRect(wx,wy,8,10);
+  });
+  // Moon
+  c.fillStyle='#fffde0'; c.beginPath(); c.arc(580,55,17,0,Math.PI*2); c.fill();
+  c.fillStyle='#03030c'; c.beginPath(); c.arc(591,50,15,0,Math.PI*2); c.fill();
+}
+
+function drawGrekCS(c,x,y,sc,run,frm){
+  c.save(); c.translate(x,y); c.scale(sc,sc);
+  const rn=run?Math.sin(frm*0.3)*0.45:0;
+  c.fillStyle='rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(17,76,14,4,0,0,Math.PI*2); c.fill();
+  c.fillStyle='#151515';
+  c.save(); c.translate(10,52); c.rotate(rn); c.fillRect(-4,0,8,22); c.restore();
+  c.save(); c.translate(24,52); c.rotate(-rn); c.fillRect(-4,0,8,22); c.restore();
+  c.fillStyle='#ddd'; c.fillRect(4,72,14,6); c.fillRect(18,72,14,6);
+  c.fillStyle='#0d0d0d'; c.fillRect(3,26,28,28);
+  c.fillStyle='#1a1a1a'; c.fillRect(5,28,9,24); c.fillRect(20,28,9,24);
+  c.strokeStyle='#2a2a2a'; c.lineWidth=1;
+  c.beginPath(); c.moveTo(17,28); c.lineTo(17,52); c.stroke();
+  c.strokeStyle='#c9a84c'; c.lineWidth=2; c.beginPath(); c.arc(17,42,7,0.5,Math.PI-0.5); c.stroke();
+  c.fillStyle='#d4a96a'; c.beginPath(); c.arc(17,18,13,0,Math.PI*2); c.fill();
+  c.fillStyle='#0d0d0d'; c.fillRect(5,4,24,16);
+  c.beginPath(); c.arc(17,6,12,Math.PI,0); c.fill();
+  c.fillStyle='#222'; c.fillRect(11,14,4,4); c.fillRect(21,14,4,4);
+  c.restore();
+}
+
+function draw1cuzCS(c,x,y,sc){
+  c.save(); c.translate(x,y); c.scale(sc,sc);
+  c.fillStyle='rgba(0,0,0,0.3)'; c.beginPath(); c.ellipse(17,76,14,4,0,0,Math.PI*2); c.fill();
+  c.fillStyle='#222'; c.fillRect(8,52,8,22); c.fillRect(20,52,8,22);
+  c.fillStyle='#f0f0f0'; c.fillRect(4,72,14,6); c.fillRect(18,72,14,6);
+  c.fillStyle='#0a0a0a'; c.fillRect(3,26,28,28);
+  // Tattoo arms
+  c.strokeStyle='rgba(120,120,120,0.5)'; c.lineWidth=1;
+  c.beginPath(); c.moveTo(3,30); c.bezierCurveTo(-1,38,1,45,3,50); c.stroke();
+  c.beginPath(); c.moveTo(31,30); c.bezierCurveTo(35,38,33,45,31,50); c.stroke();
+  // Watch
+  c.fillStyle='#777'; c.fillRect(30,38,4,8); c.fillStyle='#c9a84c'; c.fillRect(29,39,6,6);
+  c.fillStyle='#c8956a'; c.beginPath(); c.arc(17,18,13,0,Math.PI*2); c.fill();
+  c.fillStyle='#0a0a0a'; c.beginPath(); c.arc(17,10,13,Math.PI,0); c.fill(); c.fillRect(4,10,26,6);
+  // Laughing expression
+  c.strokeStyle='#333'; c.lineWidth=2;
+  c.beginPath(); c.arc(17,22,7,0.15,Math.PI-0.15); c.stroke();
+  c.fillStyle='#333'; c.beginPath(); c.arc(11,15,3,0,Math.PI,true); c.stroke();
+  c.beginPath(); c.arc(23,15,3,0,Math.PI,true); c.stroke();
+  c.restore();
+}
+
+function drawEinarCS(c,x,y,sc,op){
+  c.save(); c.translate(x,y); c.scale(sc,sc);
+  c.globalAlpha=Math.min(1,op*0.9);
+  c.shadowColor='#c9a84c'; c.shadowBlur=24*op;
+  // Glowing silhouette
+  const alpha=Math.min(1,op);
+  c.fillStyle=`rgba(240,220,170,${alpha})`;
+  c.fillRect(8,52,8,22); c.fillRect(20,52,8,22);
+  c.fillRect(3,26,28,28);
+  c.beginPath(); c.arc(17,18,14,0,Math.PI*2); c.fill();
+  // Halo
+  c.shadowBlur=0;
+  c.strokeStyle=`rgba(201,168,76,${alpha})`;
+  c.lineWidth=3;
+  c.beginPath(); c.arc(17,-5,17,0,Math.PI*2); c.stroke();
+  // Inner halo glow
+  c.strokeStyle=`rgba(255,230,100,${alpha*0.4})`;
+  c.lineWidth=6;
+  c.beginPath(); c.arc(17,-5,17,0,Math.PI*2); c.stroke();
+  // Arms open - welcoming
+  c.fillStyle=`rgba(240,220,170,${alpha})`;
+  c.save(); c.translate(17,34); c.rotate(-0.9); c.fillRect(-4,-20,8,20); c.restore();
+  c.save(); c.translate(17,34); c.rotate(0.9); c.fillRect(-4,-20,8,20); c.restore();
+  c.globalAlpha=1; c.shadowBlur=0;
+  c.restore();
+}
+
+function caption(c,W,H,main,sub){
+  c.fillStyle='rgba(0,0,0,0.72)'; c.fillRect(0,H-72,W,72);
+  c.fillStyle='#f0f0f0'; c.font=`22px ${BB}`; c.textAlign='left';
+  c.fillText(main,16,H-40);
+  if(sub){ c.fillStyle='#888'; c.font=`14px ${BC}`; c.fillText(sub,16,H-14); }
+}
+
+function cineBars(c,W,H){
+  c.fillStyle='#000'; c.fillRect(0,0,W,22); c.fillRect(0,H-22,W,22);
+}
+
+// ───── OVERLAY
+function showOv(title,desc,btn){
+  document.getElementById('overlay-title').textContent=title;
+  document.getElementById('overlay-desc').textContent=desc;
+  document.getElementById('overlay-btn').textContent=btn;
+  document.getElementById('overlay').style.display='flex';
+}
+
+function startGame(){
+  document.getElementById('overlay').style.display='none';
+  cc.style.display='none';
+  state='playing';
+  obstacles=[]; parts=[]; dist=0; pts=0; spd=4; bgOff=0; frame=0; spawnT=80;
+  P.y=GND; P.vy=0; P.ground=true; P.sliding=false; P.slideT=0; P.inv=0;
+  time=60;
+  document.getElementById('timer-fill').style.background='#c9a84c';
+  startTimer();
+  gLoop();
+}
+
+// Static start BG
+(function(){
+  const g=ctx.createLinearGradient(0,0,0,480);
+  g.addColorStop(0,'#03030c'); g.addColorStop(1,'#0d0d20');
+  ctx.fillStyle=g; ctx.fillRect(0,0,680,480);
+  ctx.fillStyle='#111'; ctx.fillRect(0,362,680,118);
+  ctx.fillStyle='rgba(201,168,76,0.5)'; ctx.fillRect(0,360,680,4);
+  drawGrekCS(ctx,300,268,1.4,false,0);
+})();
+</script>
+</body>
+</html>
