@@ -111,6 +111,251 @@
   </style>
 </head>
 <body>
+  <!-- NEW SITE NOTICE -->
+<div id="newSiteNotice" class="new-site-overlay">
+  <div class="new-site-card">
+
+    <button
+      id="closeNewSiteNotice"
+      class="new-site-close"
+      type="button"
+      aria-label="Close"
+    >
+      ×
+    </button>
+
+    <div class="new-site-badge">SITE UPDATE</div>
+
+    <h2>Woah there</h2>
+
+    <p>
+      This site is old as hell.
+      <br>
+      I made a new one, so you should probably use that instead.
+    </p>
+
+    <a
+      class="new-site-button"
+      href="https://school-hater.github.io/notdoinganythingsuspicious/"
+    >
+      Go to the new site →
+    </a>
+
+    <p class="new-site-tiktok">
+      You can find the code on my
+      <a
+        href="https://www.tiktok.com/@enrollmentbypasser"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        TikTok
+      </a>
+    </p>
+
+  </div>
+</div>
+
+<style>
+  .new-site-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(9px);
+    -webkit-backdrop-filter: blur(9px);
+
+    animation: noticeFadeIn 0.3s ease both;
+  }
+
+  .new-site-card {
+    width: min(390px, 100%);
+    position: relative;
+
+    padding: 28px;
+
+    background: #111318;
+    color: #eceef1;
+
+    border: 1px solid #292d35;
+    border-radius: 14px;
+
+    text-align: center;
+
+    box-shadow:
+      0 25px 80px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(255,255,255,.02);
+
+    animation: noticeCardIn 0.4s cubic-bezier(.22,1,.36,1) both;
+  }
+
+  .new-site-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+
+    width: 30px;
+    height: 30px;
+
+    border: 0;
+    border-radius: 7px;
+
+    color: #777c85;
+    background: transparent;
+
+    font-size: 22px;
+    line-height: 30px;
+
+    cursor: pointer;
+
+    transition:
+      color .2s ease,
+      background .2s ease,
+      transform .2s ease;
+  }
+
+  .new-site-close:hover {
+    color: #eceef1;
+    background: #1b1e24;
+    transform: scale(1.05);
+  }
+
+  .new-site-badge {
+    display: inline-block;
+
+    margin-bottom: 13px;
+    padding: 5px 8px;
+
+    color: #9297a0;
+    background: #0b0d10;
+
+    border: 1px solid #292d35;
+    border-radius: 5px;
+
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: .12em;
+  }
+
+  .new-site-card h2 {
+    margin: 0 0 9px;
+
+    font-size: 21px;
+    font-weight: 500;
+    letter-spacing: -.4px;
+  }
+
+  .new-site-card > p {
+    margin: 0 0 21px;
+
+    color: #9297a0;
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  .new-site-button {
+    display: block;
+
+    padding: 11px 16px;
+
+    color: #0b0c0e;
+    background: #f0f1f3;
+
+    border-radius: 8px;
+
+    font-size: 12px;
+    font-weight: 650;
+
+    text-decoration: none;
+
+    transition:
+      opacity .2s ease,
+      transform .2s ease;
+  }
+
+  .new-site-button:hover {
+    opacity: .86;
+    transform: translateY(-1px);
+  }
+
+  .new-site-button:active {
+    transform: scale(.98);
+  }
+
+  .new-site-tiktok {
+    margin: 15px 0 0 !important;
+    color: #626771 !important;
+    font-size: 10px !important;
+  }
+
+  .new-site-tiktok a {
+    color: #9297a0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .new-site-tiktok a:hover {
+    color: #eceef1;
+  }
+
+  @keyframes noticeFadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes noticeCardIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(.97);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @media (max-width: 440px) {
+    .new-site-card {
+      padding: 25px 21px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .new-site-overlay,
+    .new-site-card {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  const newSiteNotice =
+    document.getElementById("newSiteNotice");
+
+  const closeNewSiteNotice =
+    document.getElementById("closeNewSiteNotice");
+
+  closeNewSiteNotice.addEventListener("click", () => {
+    newSiteNotice.style.opacity = "0";
+
+    setTimeout(() => {
+      newSiteNotice.remove();
+    }, 200);
+  });
+</script>
+
   <div class="login-box">
     <img class="logo" src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google">
     <h1>Sign in</h1>
